@@ -3,21 +3,21 @@ package services
 import (
 	"errors"
 
-	"github.com/notFil/cspotlight/internal/common"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/repositories"
+	"github.com/notFil/cspotlight/pkg/auth"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
 	RegisterUser(user *models.UserCreateDTO) (bool, error)
-	GetUserByID(id string, claims common.AuthClaims) (*models.UserFetchDTO, error)
+	GetUserByID(id string, claims auth.AuthClaims) (*models.UserFetchDTO, error)
 	GetUserByUsername(username string) (*models.UserFetchDTO, error)
 	AuthenticateUser(authRequest *models.AuthRequest) (*models.UserFetchDTO, error)
 	UpdateUser(id string, user *models.UserUpdateDTO) (*models.UserFetchDTO, error)
-	ListUsers(common.AuthClaims) ([]*models.UserFetchDTO, error)
-	ListUsersByTeamID(teamID string, claims common.AuthClaims) ([]*models.UserFetchDTO, error)
-	DeleteUser(id string, claims common.AuthClaims) error
+	ListUsers(auth.AuthClaims) ([]*models.UserFetchDTO, error)
+	ListUsersByTeamID(teamID string, claims auth.AuthClaims) ([]*models.UserFetchDTO, error)
+	DeleteUser(id string, claims auth.AuthClaims) error
 }
 
 type userService struct {
@@ -30,7 +30,7 @@ func NewUserService(userRepo repositories.UserRepository) UserService {
 	}
 }
 
-func (s *userService) GetUserByID(id string, claims common.AuthClaims) (*models.UserFetchDTO, error) {
+func (s *userService) GetUserByID(id string, claims auth.AuthClaims) (*models.UserFetchDTO, error) {
 	if !claims.IsAdmin() && claims.UserID != id {
 		return nil, errors.New("Unauthorized")
 	}
@@ -91,7 +91,7 @@ func (s *userService) AuthenticateUser(authRequest *models.AuthRequest) (*models
 	return u.ToFetchDTO(), nil
 }
 
-func (s *userService) ListUsers(claims common.AuthClaims) ([]*models.UserFetchDTO, error) {
+func (s *userService) ListUsers(claims auth.AuthClaims) ([]*models.UserFetchDTO, error) {
 	var users []*models.User
 	var err error
 
@@ -114,7 +114,7 @@ func (s *userService) ListUsers(claims common.AuthClaims) ([]*models.UserFetchDT
 	return userDTOs, nil
 }
 
-func (s *userService) ListUsersByTeamID(teamID string, claims common.AuthClaims) ([]*models.UserFetchDTO, error) {
+func (s *userService) ListUsersByTeamID(teamID string, claims auth.AuthClaims) ([]*models.UserFetchDTO, error) {
 	users, err := s.userRepo.ListUsersByTeamID(teamID)
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (s *userService) ListUsersByTeamID(teamID string, claims common.AuthClaims)
 	return userDTOs, nil
 }
 
-func (s *userService) DeleteUser(id string, claims common.AuthClaims) error {
+func (s *userService) DeleteUser(id string, claims auth.AuthClaims) error {
 	u, err := s.userRepo.GetUserByID(id)
 	if err != nil {
 		return err

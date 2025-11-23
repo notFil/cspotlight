@@ -21,7 +21,7 @@ type User struct {
 	UpdatedAt    time.Time
 	DeletedAt    gorm.DeletedAt `gorm:"index"`
 	TeamID       *string        `gorm:"type:uuid"`
-	Team         Team
+	Team         Team           `gorm:"foreignKey:TeamID"`
 }
 
 type UserFetchDTO struct {

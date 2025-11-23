@@ -3,9 +3,11 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/notFil/cspotlight/pkg/auth"
+	"github.com/notFil/cspotlight/pkg/response"
+
 	"github.com/gin-gonic/gin"
 	"github.com/notFil/cspotlight/configs"
-	"github.com/notFil/cspotlight/internal/common"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/services"
 )
@@ -36,23 +38,23 @@ func NewAuthHandler(userService services.UserService, jwtConfig configs.JWTConfi
 func (h *AuthHandler) Login(c *gin.Context) {
 	var authRequest models.AuthRequest
 	if err := c.BindJSON(&authRequest); err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Authentication failed")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Authentication failed")
 		return
 	}
 
 	user, err := h.userService.AuthenticateUser(&authRequest)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusUnauthorized, "Authentication failed")
+		response.ErrorResponse(c, http.StatusUnauthorized, "Authentication failed")
 		return
 	}
 
-	jwt, err := common.GenerateJWT(h.jwtConfig.SecretKey, user, h.jwtConfig.ExpiryInMinutes)
+	jwt, err := auth.GenerateJWT(h.jwtConfig.SecretKey, user, h.jwtConfig.ExpiryInMinutes)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Authentication failed")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Authentication failed")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusOK, "Login successful", jwt)
+	response.SuccessResponse(c, http.StatusOK, "Login successful", jwt)
 }
 
 // Register godoc
@@ -69,17 +71,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) Register(c *gin.Context) {
 	var user models.UserCreateDTO
 	if err := c.BindJSON(&user); err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	_, err := h.userService.RegisterUser(&user)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to register user")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to register user")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusCreated, "User registered successfully", nil)
+	response.SuccessResponse(c, http.StatusCreated, "User registered successfully", nil)
 }
 
 // Sign out godoc

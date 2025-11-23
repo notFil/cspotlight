@@ -4,31 +4,36 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/notFil/cspotlight/pkg/constants"
+
+	"github.com/notFil/cspotlight/pkg/auth"
+
+	"github.com/notFil/cspotlight/pkg/response"
+
 	"github.com/gin-gonic/gin"
-	"github.com/notFil/cspotlight/internal/common"
 )
 
 func JWTAuthMiddleware(secretKey string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			common.ErrorResponse(c, http.StatusUnauthorized, "Authorization header required")
+			response.ErrorResponse(c, http.StatusUnauthorized, "Authorization header required")
 			c.Abort()
 			return
 		}
 
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			common.ErrorResponse(c, http.StatusUnauthorized, "Authorization header required")
+			response.ErrorResponse(c, http.StatusUnauthorized, "Authorization header required")
 			c.Abort()
 			return
 		}
 
 		tokenString := parts[1]
 
-		claims, err := common.ValidateJWT(secretKey, tokenString)
+		claims, err := auth.ValidateJWT(secretKey, tokenString)
 		if err != nil {
-			common.ErrorResponse(c, http.StatusUnauthorized, err.Error())
+			response.ErrorResponse(c, http.StatusUnauthorized, err.Error())
 		}
 		c.Set("UserID", claims.Subject)
 		c.Set("TeamID", claims.TeamID)
@@ -42,14 +47,14 @@ func RequiredRole(allowedRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, exists := c.Get("Role")
 		if !exists {
-			common.ErrorResponse(c, http.StatusForbidden, "Insufficient permissions")
+			response.ErrorResponse(c, http.StatusForbidden, "Insufficient permissions")
 			c.Abort()
 			return
 		}
 
 		roleStr, ok := role.(string)
 		if !ok {
-			common.ErrorResponse(c, http.StatusForbidden, "Insufficient permissions")
+			response.ErrorResponse(c, http.StatusForbidden, "Insufficient permissions")
 			c.Abort()
 			return
 		}
@@ -63,7 +68,7 @@ func RequiredRole(allowedRoles ...string) gin.HandlerFunc {
 		}
 
 		if !isAuthorized {
-			common.ErrorResponse(c, http.StatusForbidden, "Insufficient permissions")
+			response.ErrorResponse(c, http.StatusForbidden, "Insufficient permissions")
 			c.Abort()
 			return
 		}
@@ -79,13 +84,13 @@ func GetClaims() gin.HandlerFunc {
 		role := c.MustGet("Role")
 
 		teamIDStr := teamID.(string)
-		claims := common.AuthClaims{
+		claims := auth.AuthClaims{
 			UserID: userID.(string),
 			TeamID: &teamIDStr,
 			Role:   role.(string),
 		}
 
-		c.Set(common.ClaimsContextKey, claims)
+		c.Set(constants.ClaimsContextKey, claims)
 		c.Next()
 	}
 }

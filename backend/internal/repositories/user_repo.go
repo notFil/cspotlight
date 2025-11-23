@@ -28,14 +28,14 @@ func (r *userRepository) CreateUser(user *models.User) error {
 }
 
 func (r *userRepository) GetUserByID(id string) (user *models.User, err error) {
-	if err = r.db.First(&user, "id = ?", id).Error; err != nil {
+	if err = r.db.Preload("Team").First(&user, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
 func (r *userRepository) GetUserByUsername(username string) (user *models.User, err error) {
-	if err = r.db.First(&user, "username = ?", username).Error; err != nil {
+	if err = r.db.Preload("Team").First(&user, "username = ?", username).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
@@ -50,14 +50,14 @@ func (r *userRepository) DeleteUser(id string) error {
 }
 
 func (r *userRepository) ListUsers() (users []*models.User, err error) {
-	if err = r.db.Find(&users).Error; err != nil {
+	if err = r.db.Preload("Team").Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
 }
 
 func (r *userRepository) ListUsersByTeamID(teamID string) (users []*models.User, err error) {
-	if err = r.db.Where("team_id = ?", teamID).Find(&users).Error; err != nil {
+	if err = r.db.Preload("Team").Where("team_id = ?", teamID).Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil

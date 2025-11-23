@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/notFil/cspotlight/pkg/database"
+
 	"github.com/notFil/cspotlight/configs"
 	"github.com/notFil/cspotlight/internal/router"
-	"github.com/notFil/cspotlight/internal/store"
 )
 
 func main() {
@@ -18,7 +19,7 @@ func main() {
 
 	fmt.Printf("Starting server on port %d\n", port)
 
-	db := store.ConnectDB(cfg.Store)
+	db := database.ConnectDB(cfg.Store)
 
 	router := router.SetUpRouter(db, cfg.JWTAuth)
 

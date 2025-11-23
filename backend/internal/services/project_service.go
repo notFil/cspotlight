@@ -3,17 +3,18 @@ package services
 import (
 	"errors"
 
-	"github.com/notFil/cspotlight/internal/common"
+	"github.com/notFil/cspotlight/pkg/auth"
+
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/repositories"
 )
 
 type ProjectService interface {
-	GetProjectByID(id string, claims common.AuthClaims) (*models.ProjectFetchDTO, error)
-	CreateProject(project *models.ProjectUpsertDTO, claims common.AuthClaims) (bool, error)
-	UpdateProject(id string, project *models.ProjectUpsertDTO, claims common.AuthClaims) (*models.ProjectFetchDTO, error)
-	DeleteProject(id string, claims common.AuthClaims) error
-	ListProjects(claims common.AuthClaims) ([]*models.ProjectFetchDTO, error)
+	GetProjectByID(id string, claims auth.AuthClaims) (*models.ProjectFetchDTO, error)
+	CreateProject(project *models.ProjectUpsertDTO, claims auth.AuthClaims) (bool, error)
+	UpdateProject(id string, project *models.ProjectUpsertDTO, claims auth.AuthClaims) (*models.ProjectFetchDTO, error)
+	DeleteProject(id string, claims auth.AuthClaims) error
+	ListProjects(claims auth.AuthClaims) ([]*models.ProjectFetchDTO, error)
 }
 
 type projectService struct {
@@ -26,7 +27,7 @@ func NewProjectService(projectRepo repositories.ProjectRepository) ProjectServic
 	}
 }
 
-func (s *projectService) GetProjectByID(id string, claims common.AuthClaims) (*models.ProjectFetchDTO, error) {
+func (s *projectService) GetProjectByID(id string, claims auth.AuthClaims) (*models.ProjectFetchDTO, error) {
 	p, err := s.projectRepo.GetProjectByID(id)
 	if err != nil {
 		return nil, err
@@ -38,7 +39,7 @@ func (s *projectService) GetProjectByID(id string, claims common.AuthClaims) (*m
 	return p.ToFetchDTO(), nil
 }
 
-func (s *projectService) CreateProject(project *models.ProjectUpsertDTO, claims common.AuthClaims) (bool, error) {
+func (s *projectService) CreateProject(project *models.ProjectUpsertDTO, claims auth.AuthClaims) (bool, error) {
 	p := project.ToProject()
 	if !claims.IsSuperadmin() {
 		p.TeamID = *claims.TeamID
@@ -49,7 +50,7 @@ func (s *projectService) CreateProject(project *models.ProjectUpsertDTO, claims 
 	return true, nil
 }
 
-func (s *projectService) UpdateProject(id string, project *models.ProjectUpsertDTO, claims common.AuthClaims) (*models.ProjectFetchDTO, error) {
+func (s *projectService) UpdateProject(id string, project *models.ProjectUpsertDTO, claims auth.AuthClaims) (*models.ProjectFetchDTO, error) {
 	p, err := s.projectRepo.GetProjectByID(id)
 	if err != nil {
 		return nil, err
@@ -65,7 +66,7 @@ func (s *projectService) UpdateProject(id string, project *models.ProjectUpsertD
 	return p.ToFetchDTO(), nil
 }
 
-func (s *projectService) DeleteProject(id string, claims common.AuthClaims) error {
+func (s *projectService) DeleteProject(id string, claims auth.AuthClaims) error {
 	p, err := s.projectRepo.GetProjectByID(id)
 	if err != nil {
 		return err
@@ -76,7 +77,7 @@ func (s *projectService) DeleteProject(id string, claims common.AuthClaims) erro
 	return s.projectRepo.DeleteProject(id)
 }
 
-func (s *projectService) ListProjects(claims common.AuthClaims) (projects []*models.ProjectFetchDTO, err error) {
+func (s *projectService) ListProjects(claims auth.AuthClaims) (projects []*models.ProjectFetchDTO, err error) {
 	var ps []*models.Project
 	if claims.IsSuperadmin() {
 		ps, err = s.projectRepo.ListProjects()

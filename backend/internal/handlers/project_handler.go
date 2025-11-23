@@ -4,9 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/notFil/cspotlight/internal/common"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/services"
+	"github.com/notFil/cspotlight/pkg/auth"
+	"github.com/notFil/cspotlight/pkg/response"
 )
 
 type ProjectHandler struct {
@@ -32,14 +33,14 @@ func NewProjectHandler(projectService services.ProjectService) *ProjectHandler {
 func (h *ProjectHandler) GetProjectByID(c *gin.Context) {
 	id := c.Param("id")
 
-	claims := common.GetUserClaims(c)
+	claims := auth.GetUserClaims(c)
 
 	user, err := h.projectService.GetProjectByID(id, claims)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		response.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	common.SuccessResponse(c, http.StatusOK, "", user)
+	response.SuccessResponse(c, http.StatusOK, "", user)
 }
 
 // CreateProject godoc
@@ -54,21 +55,21 @@ func (h *ProjectHandler) GetProjectByID(c *gin.Context) {
 // @Failure      500   {object}  map[string]interface{} "Failed to create project"
 // @Router       /api/projects [post]
 func (h *ProjectHandler) CreateProject(c *gin.Context) {
-	claims := common.GetUserClaims(c)
+	claims := auth.GetUserClaims(c)
 
 	project := &models.ProjectUpsertDTO{}
 	if err := c.BindJSON(project); err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	created, err := h.projectService.CreateProject(project, claims)
 	if err != nil || !created {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to create project")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to create project")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusCreated, "Project created successfully", nil)
+	response.SuccessResponse(c, http.StatusCreated, "Project created successfully", nil)
 }
 
 // UpdateProject godoc
@@ -86,21 +87,21 @@ func (h *ProjectHandler) CreateProject(c *gin.Context) {
 func (h *ProjectHandler) UpdateProject(c *gin.Context) {
 	id := c.Param("id")
 
-	claims := common.GetUserClaims(c)
+	claims := auth.GetUserClaims(c)
 
 	project := &models.ProjectUpsertDTO{}
 	if err := c.BindJSON(project); err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	updatedProject, err := h.projectService.UpdateProject(id, project, claims)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to update project")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to update project")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusOK, "", updatedProject)
+	response.SuccessResponse(c, http.StatusOK, "", updatedProject)
 }
 
 // DeleteProject godoc
@@ -115,14 +116,14 @@ func (h *ProjectHandler) UpdateProject(c *gin.Context) {
 func (h *ProjectHandler) DeleteProject(c *gin.Context) {
 	id := c.Param("id")
 
-	claims := common.GetUserClaims(c)
+	claims := auth.GetUserClaims(c)
 
 	if err := h.projectService.DeleteProject(id, claims); err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete project")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete project")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusOK, "Project deleted successfully", nil)
+	response.SuccessResponse(c, http.StatusOK, "Project deleted successfully", nil)
 }
 
 // ListProjects godoc
@@ -134,13 +135,13 @@ func (h *ProjectHandler) DeleteProject(c *gin.Context) {
 // @Failure      500  {object}  map[string]interface{} "Failed to list projects"
 // @Router       /api/projects [get]
 func (h *ProjectHandler) ListProjects(c *gin.Context) {
-	claims := common.GetUserClaims(c)
+	claims := auth.GetUserClaims(c)
 
 	projects, err := h.projectService.ListProjects(claims)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to list projects")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to list projects")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusOK, "", projects)
+	response.SuccessResponse(c, http.StatusOK, "", projects)
 }

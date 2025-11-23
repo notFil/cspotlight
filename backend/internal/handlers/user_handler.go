@@ -3,8 +3,10 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/notFil/cspotlight/pkg/auth"
+	"github.com/notFil/cspotlight/pkg/response"
+
 	"github.com/gin-gonic/gin"
-	"github.com/notFil/cspotlight/internal/common"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/services"
 )
@@ -32,14 +34,14 @@ func NewUserHandler(s services.UserService) *UserHandler {
 func (h *UserHandler) GetUserByID(c *gin.Context) {
 	id := c.Param("id")
 
-	claims := common.GetUserClaims(c)
+	claims := auth.GetUserClaims(c)
 
 	user, err := h.userService.GetUserByID(id, claims)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		response.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	common.SuccessResponse(c, http.StatusOK, "", user)
+	response.SuccessResponse(c, http.StatusOK, "", user)
 }
 
 // CreateUser godoc
@@ -56,17 +58,17 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	var user models.UserCreateDTO
 	if err := c.BindJSON(&user); err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	created, err := h.userService.RegisterUser(&user)
 	if err != nil || !created {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to create user")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to create user")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusCreated, "User created successfully", nil)
+	response.SuccessResponse(c, http.StatusCreated, "User created successfully", nil)
 }
 
 // UpdateUser godoc
@@ -85,17 +87,17 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	id := c.Param("id")
 	var user models.UserUpdateDTO
 	if err := c.BindJSON(&user); err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	updatedUser, err := h.userService.UpdateUser(id, &user)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to update user")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to update user")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusOK, "User updated successfully", updatedUser)
+	response.SuccessResponse(c, http.StatusOK, "User updated successfully", updatedUser)
 }
 
 // DeleteUser godoc
@@ -110,15 +112,15 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 
-	claims := common.GetUserClaims(c)
+	claims := auth.GetUserClaims(c)
 
 	err := h.userService.DeleteUser(id, claims)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete user")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete user")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusOK, "User deleted successfully", nil)
+	response.SuccessResponse(c, http.StatusOK, "User deleted successfully", nil)
 }
 
 // ListUsers godoc
@@ -130,16 +132,16 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 // @Failure      500  {object}  map[string]interface{} "Failed to list users"
 // @Router       /api/users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
-	claims := common.GetUserClaims(c)
+	claims := auth.GetUserClaims(c)
 
 	users, err := h.userService.ListUsers(claims)
 
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to list users")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to list users")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusOK, "", users)
+	response.SuccessResponse(c, http.StatusOK, "", users)
 }
 
 // ListUsersByTeamID godoc
@@ -154,13 +156,13 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 func (h *UserHandler) ListUsersByTeamID(c *gin.Context) {
 	teamID := c.Param("teamID")
 
-	claims := common.GetUserClaims(c)
+	claims := auth.GetUserClaims(c)
 
 	users, err := h.userService.ListUsersByTeamID(teamID, claims)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to list users by team ID")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to list users by team ID")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusOK, "", users)
+	response.SuccessResponse(c, http.StatusOK, "", users)
 }

@@ -1,8 +1,10 @@
-package common
+package auth
 
 import (
 	"fmt"
 	"time"
+
+	"github.com/notFil/cspotlight/pkg/constants"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -71,5 +73,5 @@ func (c *AuthClaims) IsSuperadmin() bool {
 }
 
 func GetUserClaims(c *gin.Context) AuthClaims {
-	return c.MustGet(ClaimsContextKey).(AuthClaims)
+	return c.MustGet(constants.ClaimsContextKey).(AuthClaims)
 }

@@ -3,8 +3,9 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/notFil/cspotlight/pkg/response"
+
 	"github.com/gin-gonic/gin"
-	"github.com/notFil/cspotlight/internal/common"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/services"
 )
@@ -33,10 +34,10 @@ func (h *TeamHandler) GetTeamByID(c *gin.Context) {
 	id := c.Param("id")
 	user, err := h.teamService.GetTeamByID(id)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		response.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	common.SuccessResponse(c, http.StatusOK, "", user)
+	response.SuccessResponse(c, http.StatusOK, "", user)
 }
 
 // CreateTeam godoc
@@ -53,17 +54,17 @@ func (h *TeamHandler) GetTeamByID(c *gin.Context) {
 func (h *TeamHandler) CreateTeam(c *gin.Context) {
 	team := &models.TeamUpsertDTO{}
 	if err := c.BindJSON(team); err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	created, err := h.teamService.CreateTeam(team)
 	if err != nil || !created {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to create team")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to create team")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusCreated, "Team created successfully", nil)
+	response.SuccessResponse(c, http.StatusCreated, "Team created successfully", nil)
 }
 
 // UpdateTeam godoc
@@ -82,17 +83,17 @@ func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 	id := c.Param("id")
 	team := &models.TeamUpsertDTO{}
 	if err := c.BindJSON(team); err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	updatedTeam, err := h.teamService.UpdateTeam(id, team)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to update team")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to update team")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusOK, "", updatedTeam)
+	response.SuccessResponse(c, http.StatusOK, "", updatedTeam)
 }
 
 // DeleteTeam godoc
@@ -107,11 +108,11 @@ func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 func (h *TeamHandler) DeleteTeam(c *gin.Context) {
 	id := c.Param("id")
 	if _, err := h.teamService.DeleteTeam(id); err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete team")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete team")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusOK, "Team deleted successfully", nil)
+	response.SuccessResponse(c, http.StatusOK, "Team deleted successfully", nil)
 }
 
 // ListTeams godoc
@@ -125,9 +126,9 @@ func (h *TeamHandler) DeleteTeam(c *gin.Context) {
 func (h *TeamHandler) ListTeams(c *gin.Context) {
 	teams, err := h.teamService.ListTeams()
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to list teams")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to list teams")
 		return
 	}
 
-	common.SuccessResponse(c, http.StatusOK, "", teams)
+	response.SuccessResponse(c, http.StatusOK, "", teams)
 }
