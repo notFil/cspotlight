@@ -19,6 +19,16 @@ export interface User {
   updatedAt?: string; // Making optional as it's not in the sample response, but keeping for compatibility if needed
 }
 
+export interface UserCreate {
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  role: 'user' | 'admin' | 'superadmin';
+  disabled: boolean;
+  teamId: string;
+}
+
 export interface Project {
   id: string;
   name: string;

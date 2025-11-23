@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -12,30 +12,18 @@ import { Edit, Trash2, Plus } from "lucide-react";
 import type { User } from "@/types";
 import { UserModal } from "./user-modal";
 import { DeleteConfirmModal } from "./delete-confirmation-modal";
-import { userService } from "@/services/user.service";
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/use-users";
 
 export const UserTable = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
 
-  const fetchUsers = async () => {
-    try {
-      setIsLoading(true);
-      const data = await userService.getUsers();
-      setUsers(data);
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  // React Query hooks
+  const { data: users = [], isLoading, isError, error } = useUsers();
+  const createUser = useCreateUser();
+  const updateUser = useUpdateUser();
+  const deleteUser = useDeleteUser();
 
   const handleAdd = () => {
     setSelectedUser(undefined);
@@ -52,28 +40,39 @@ export const UserTable = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSave = (user: User) => {
-    // TODO: Implement create/update via API
-    if (selectedUser) {
-      // Edit
-      setUsers(users.map(u => u.id === user.id ? user : u));
-    } else {
-      // Add
-      setUsers([...users, user]);
+  const handleSave = async (user: User) => {
+    try {
+      if (selectedUser) {
+        // Edit - send PUT request
+        await updateUser.mutateAsync({ id: user.id, data: user });
+      } else {
+        // Add - send POST request
+        await createUser.mutateAsync(user);
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Failed to save user:", error);
     }
-    setIsModalOpen(false);
   };
 
-  const handleDeleteConfirm = () => {
-    // TODO: Implement delete via API
-    if (selectedUser) {
-      setUsers(users.filter(u => u.id !== selectedUser.id));
-      setIsDeleteModalOpen(false);
+  const handleDeleteConfirm = async () => {
+    try {
+      if (selectedUser) {
+        // Send DELETE request
+        await deleteUser.mutateAsync(selectedUser.id);
+        setIsDeleteModalOpen(false);
+      }
+    } catch (error) {
+      console.error("Failed to delete user:", error);
     }
   };
 
   if (isLoading) {
     return <div>Loading users...</div>;
+  }
+
+  if (isError) {
+    return <div>Error loading users: {error instanceof Error ? error.message : 'Unknown error'}</div>;
   }
 
   return (

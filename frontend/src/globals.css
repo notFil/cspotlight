@@ -500,6 +500,13 @@
     background-color: rgba(255, 255, 255, 0.05);
 }
 
+/* Input field styling to match cards and select */
+[data-slot="input"] {
+    border: 1px solid hsl(var(--border) / 0.5);
+    border-radius: 0.75rem;
+    /* rounded-xl */
+}
+
 /* Select component styling to match cards */
 [data-slot="select-trigger"] {
     background-color: hsl(var(--card));

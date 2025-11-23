@@ -193,7 +193,7 @@ export const UserModal: React.FC<UserModalProps> = ({
               control={form.control}
               name="disabled"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <FormItem className="flex flex-row items-center justify-between rounded-xl border border-border/50 p-3 shadow-sm">
                   <div className="space-y-0.5">
                     <FormLabel>Disabled</FormLabel>
                   </div>
