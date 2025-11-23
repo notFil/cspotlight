@@ -1,8 +1,0 @@
-{
-	"devDependencies": {
-		"tailwindcss-animate": "^1.0.7"
-	},
-	"dependencies": {
-		"recharts": "^3.4.1"
-	}
-}
