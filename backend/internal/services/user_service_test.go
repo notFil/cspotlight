@@ -1,0 +1,191 @@
+package services
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/notFil/cspotlight/internal/models"
+	"github.com/notFil/cspotlight/pkg/auth"
+	"golang.org/x/crypto/bcrypt"
+)
+
+// MockUserRepository is a manual mock for UserRepository
+type MockUserRepository struct {
+	users map[string]*models.User
+}
+
+func NewMockUserRepository() *MockUserRepository {
+	return &MockUserRepository{
+		users: make(map[string]*models.User),
+	}
+}
+
+func (m *MockUserRepository) CreateUser(user *models.User) error {
+	if _, exists := m.users[user.ID]; exists {
+		return errors.New("user already exists")
+	}
+	m.users[user.ID] = user
+	return nil
+}
+
+func (m *MockUserRepository) GetUserByID(id string) (*models.User, error) {
+	if user, exists := m.users[id]; exists {
+		return user, nil
+	}
+	return nil, errors.New("user not found")
+}
+
+func (m *MockUserRepository) GetUserByUsername(username string) (*models.User, error) {
+	for _, user := range m.users {
+		if user.Username == username {
+			return user, nil
+		}
+	}
+	return nil, errors.New("user not found")
+}
+
+func (m *MockUserRepository) UpdateUser(user *models.User) error {
+	if _, exists := m.users[user.ID]; exists {
+		m.users[user.ID] = user
+		return nil
+	}
+	return errors.New("user not found")
+}
+
+func (m *MockUserRepository) DeleteUser(id string) error {
+	if _, exists := m.users[id]; exists {
+		delete(m.users, id)
+		return nil
+	}
+	return errors.New("user not found")
+}
+
+func (m *MockUserRepository) ListUsers() ([]*models.User, error) {
+	var users []*models.User
+	for _, user := range m.users {
+		users = append(users, user)
+	}
+	return users, nil
+}
+
+func (m *MockUserRepository) ListUsersByTeamID(teamID string) ([]*models.User, error) {
+	var users []*models.User
+	for _, user := range m.users {
+		if user.TeamID != nil && *user.TeamID == teamID {
+			users = append(users, user)
+		}
+	}
+	return users, nil
+}
+
+func TestRegisterUser(t *testing.T) {
+	mockRepo := NewMockUserRepository()
+	service := NewUserService(mockRepo)
+
+	userDTO := &models.UserCreateDTO{
+		FirstName: "John",
+		LastName:  "Doe",
+		Username:  "johndoe",
+		Email:     "john@example.com",
+		Password:  "password123",
+		Role:      "user",
+	}
+
+	success, err := service.RegisterUser(userDTO)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if !success {
+		t.Fatalf("expected success to be true")
+	}
+
+	// Verify user was created with hashed password
+	createdUser, err := mockRepo.GetUserByUsername("johndoe")
+	if err != nil {
+		t.Fatalf("expected to find user, got error: %v", err)
+	}
+	if createdUser.PasswordHash == "password123" {
+		t.Fatalf("expected password to be hashed")
+	}
+}
+
+func TestGetUserByID(t *testing.T) {
+	mockRepo := NewMockUserRepository()
+	service := NewUserService(mockRepo)
+
+	userID := "test-id"
+	user := &models.User{
+		ID:       userID,
+		Username: "testuser",
+		Role:     "user",
+	}
+	mockRepo.CreateUser(user)
+
+	// Test authorized access (same user)
+	claims := auth.AuthClaims{UserID: userID, Role: "user"}
+	fetchedUser, err := service.GetUserByID(userID, claims)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if fetchedUser.ID != userID {
+		t.Errorf("expected user ID %s, got %s", userID, fetchedUser.ID)
+	}
+
+	// Test unauthorized access
+	otherClaims := auth.AuthClaims{UserID: "other-id", Role: "user"}
+	_, err = service.GetUserByID(userID, otherClaims)
+	if err == nil {
+		t.Fatal("expected unauthorized error, got nil")
+	}
+	if err.Error() != "Unauthorized" {
+		t.Errorf("expected 'Unauthorized' error, got %v", err)
+	}
+
+	// Test admin access (should be allowed)
+	adminClaims := auth.AuthClaims{UserID: "admin-id", Role: "admin"}
+	fetchedUserAdmin, err := service.GetUserByID(userID, adminClaims)
+	if err != nil {
+		t.Fatalf("expected no error for admin, got %v", err)
+	}
+	if fetchedUserAdmin.ID != userID {
+		t.Errorf("expected user ID %s, got %s", userID, fetchedUserAdmin.ID)
+	}
+}
+
+func TestAuthenticateUser(t *testing.T) {
+	mockRepo := NewMockUserRepository()
+	service := NewUserService(mockRepo)
+
+	password := "password123"
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	user := &models.User{
+		ID:           "test-id",
+		Username:     "testuser",
+		PasswordHash: string(hashedPassword),
+	}
+	mockRepo.CreateUser(user)
+
+	// Test correct password
+	authRequest := &models.AuthRequest{
+		Username: "testuser",
+		Password: password,
+	}
+	authenticatedUser, err := service.AuthenticateUser(authRequest)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if authenticatedUser.Username != "testuser" {
+		t.Errorf("expected username testuser, got %s", authenticatedUser.Username)
+	}
+
+	// Test incorrect password
+	badAuthRequest := &models.AuthRequest{
+		Username: "testuser",
+		Password: "wrongpassword",
+	}
+	_, err = service.AuthenticateUser(badAuthRequest)
+	if err == nil {
+		t.Fatal("expected error for wrong password, got nil")
+	}
+}

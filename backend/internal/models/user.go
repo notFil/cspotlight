@@ -25,15 +25,16 @@ type User struct {
 }
 
 type UserFetchDTO struct {
-	ID        string `json:"id"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Username  string `json:"username"`
-	Role      string `json:"role"`
-	Email     string `json:"email"`
-	Disabled  bool   `json:"disabled"`
-	TeamID    string `json:"teamId"`
-	TeamName  string `json:"teamName"`
+	ID        string    `json:"id"`
+	FirstName string    `json:"firstName"`
+	LastName  string    `json:"lastName"`
+	Username  string    `json:"username"`
+	Role      string    `json:"role"`
+	Email     string    `json:"email"`
+	Disabled  bool      `json:"disabled"`
+	TeamID    string    `json:"teamId"`
+	TeamName  string    `json:"teamName"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type UserCreateDTO struct {
