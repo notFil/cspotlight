@@ -3,7 +3,6 @@ package models
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -12,6 +11,7 @@ type Project struct {
 	Name        string `gorm:"type:varchar(20)"`
 	Description string `gorm:"type:varchar(500)"`
 	TeamID      string `gorm:"type:uuid"`
+	Disabled    bool
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt `gorm:"index"`
@@ -21,20 +21,16 @@ type ProjectFetchDTO struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	Disabled    bool
 	TeamID      string `json:"teamId"`
+	LastActive  string `json:"lastActive"`
 }
 
 type ProjectUpsertDTO struct {
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
 	TeamID      string `json:"teamId" binding:"required"`
-}
-
-func (p *Project) BeforeCreate(tx *gorm.DB) error {
-	if p.ID == "" {
-		p.ID = uuid.New().String()
-	}
-	return nil
+	Disabled    bool   `json:"disabled"`
 }
 
 func (p *Project) ToFetchDTO() *ProjectFetchDTO {

@@ -167,3 +167,22 @@ func (h *UserHandler) ListUsersByTeamID(c *gin.Context) {
 
 	response.SuccessResponse(c, http.StatusOK, "", users)
 }
+
+func (h *UserHandler) SetDefaultProject(c *gin.Context) {
+	var req struct {
+		ProjectID string `json:"projectID"`
+	}
+	if err := c.BindJSON(&req); err != nil {
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to set default project")
+	}
+
+	claims := auth.GetUserClaims(c)
+
+	err := h.userService.SetDefaultProject(req.ProjectID, claims)
+	if err != nil {
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to set default project")
+	}
+
+	response.SuccessResponse(c, http.StatusOK, "Default project set successfully", nil)
+
+}

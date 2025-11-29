@@ -3,7 +3,6 @@ package models
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -25,13 +24,6 @@ type TeamFetchDTO struct {
 type TeamUpsertDTO struct {
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
-}
-
-func (t *Team) BeforeCreate(tx *gorm.DB) error {
-	if t.ID == "" {
-		t.ID = uuid.New().String()
-	}
-	return nil
 }
 
 func (t *TeamUpsertDTO) ToTeam() *Team {

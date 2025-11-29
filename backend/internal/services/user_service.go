@@ -15,18 +15,21 @@ type UserService interface {
 	GetUserByUsername(username string) (*models.UserFetchDTO, error)
 	AuthenticateUser(authRequest *models.AuthRequest) (*models.UserFetchDTO, error)
 	UpdateUser(id string, user *models.UserUpdateDTO, claims auth.Claims) (*models.UserFetchDTO, error)
+	SetDefaultProject(projectID string, claims *auth.Claims) error
 	GetUsers(claims auth.Claims) ([]*models.UserFetchDTO, error)
 	ListUsersByTeamID(teamID string, claims auth.Claims) ([]*models.UserFetchDTO, error)
 	DeleteUser(id string, claims auth.Claims) error
 }
 
 type userService struct {
-	userRepo repositories.UserRepository
+	userRepo    repositories.UserRepository
+	projectRepo repositories.ProjectRepository
 }
 
-func NewUserService(userRepo repositories.UserRepository) UserService {
+func NewUserService(userRepo repositories.UserRepository, projectRepo repositories.ProjectRepository) UserService {
 	return &userService{
-		userRepo: userRepo,
+		userRepo:    userRepo,
+		projectRepo: projectRepo,
 	}
 }
 
@@ -51,7 +54,7 @@ func (s *userService) GetUserByUsername(username string) (*models.UserFetchDTO, 
 
 func (s *userService) RegisterUser(user *models.UserCreateDTO) (bool, error) {
 	u := user.ToUser()
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.PasswordHash), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return false, err
 	}
@@ -137,9 +140,25 @@ func (s *userService) DeleteUser(id string, claims auth.Claims) error {
 	}
 	if !claims.IsAdmin() {
 		if u.TeamID == nil || claims.TeamID != *u.TeamID {
-			return errors.New("Unauthorized")
+			return errors.New("unauthorized")
 		}
 	}
 
 	return s.userRepo.DeleteUser(id)
+}
+
+func (s *userService) SetDefaultProject(projectID string, claims *auth.Claims) error {
+	p, err := s.projectRepo.GetProjectByID(projectID)
+	if p == nil || err != nil {
+		return errors.New("project not found")
+	}
+	if p.TeamID != claims.TeamID {
+		return errors.New("unauthorized")
+	}
+	u, err := s.userRepo.GetUserByID(claims.UserID)
+	if err != nil {
+		return err
+	}
+	u.DefaultProjectID = &projectID
+	return s.userRepo.UpdateUser(u)
 }

@@ -38,19 +38,19 @@ func NewAuthHandler(userService services.UserService, jwtConfig config.JWTConfig
 func (h *AuthHandler) Login(c *gin.Context) {
 	var authRequest models.AuthRequest
 	if err := c.BindJSON(&authRequest); err != nil {
-		response.ErrorResponse(c, http.StatusInternalServerError, "Authentication failed")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Authentication failed: binding")
 		return
 	}
 
 	user, err := h.userService.AuthenticateUser(&authRequest)
 	if err != nil {
-		response.ErrorResponse(c, http.StatusUnauthorized, "Authentication failed")
+		response.ErrorResponse(c, http.StatusUnauthorized, "Authentication failed: authenticate")
 		return
 	}
 
 	tokens, err := auth.GenerateJWT(user, h.jwtConfig)
 	if err != nil {
-		response.ErrorResponse(c, http.StatusInternalServerError, "Authentication failed")
+		response.ErrorResponse(c, http.StatusInternalServerError, "Authentication failed: generate jwt")
 		return
 	}
 

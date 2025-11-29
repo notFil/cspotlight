@@ -16,7 +16,7 @@ import (
 type Claims struct {
 	jwt.RegisteredClaims
 
-	UserID   string `json:"userID"`
+	UserID   string `json:"userID,omitempty"`
 	Username string `json:"username"`
 	TeamID   string `json:"team,omitempty"`
 	Role     string `json:"role"`
@@ -77,15 +77,6 @@ func GenerateJWT(user *models.UserFetchDTO, cfg config.JWTConfig) (token *Token,
 	}, nil
 }
 
-func generateJWT(claims *Claims, secretKey string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(secretKey))
-	if err != nil {
-		return "", err
-	}
-	return tokenString, nil
-}
-
 func ValidateAccessToken(tokenString string, secretKey string) (claims *Claims, err error) {
 	return validateJWT(secretKey, tokenString)
 }
@@ -114,6 +105,15 @@ func GetUserClaims(c *gin.Context) *Claims {
 		return claims
 	}
 	return nil
+}
+
+func generateJWT(claims *Claims, secretKey string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(secretKey))
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
 }
 
 func validateJWT(secretKey string, tokenString string) (*Claims, error) {
