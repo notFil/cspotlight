@@ -35,7 +35,7 @@ func (h *ProjectHandler) GetProjectByID(c *gin.Context) {
 
 	claims := auth.GetUserClaims(c)
 
-	user, err := h.projectService.GetProjectByID(id, claims)
+	user, err := h.projectService.GetProjectByID(id, *claims)
 	if err != nil {
 		response.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -63,7 +63,7 @@ func (h *ProjectHandler) CreateProject(c *gin.Context) {
 		return
 	}
 
-	created, err := h.projectService.CreateProject(project, claims)
+	created, err := h.projectService.CreateProject(project, *claims)
 	if err != nil || !created {
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to create project")
 		return
@@ -95,7 +95,7 @@ func (h *ProjectHandler) UpdateProject(c *gin.Context) {
 		return
 	}
 
-	updatedProject, err := h.projectService.UpdateProject(id, project, claims)
+	updatedProject, err := h.projectService.UpdateProject(id, project, *claims)
 	if err != nil {
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to update project")
 		return
@@ -118,7 +118,7 @@ func (h *ProjectHandler) DeleteProject(c *gin.Context) {
 
 	claims := auth.GetUserClaims(c)
 
-	if err := h.projectService.DeleteProject(id, claims); err != nil {
+	if err := h.projectService.DeleteProject(id, *claims); err != nil {
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete project")
 		return
 	}
@@ -137,7 +137,7 @@ func (h *ProjectHandler) DeleteProject(c *gin.Context) {
 func (h *ProjectHandler) ListProjects(c *gin.Context) {
 	claims := auth.GetUserClaims(c)
 
-	projects, err := h.projectService.ListProjects(claims)
+	projects, err := h.projectService.ListProjects(*claims)
 	if err != nil {
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to list projects")
 		return

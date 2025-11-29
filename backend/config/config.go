@@ -1,4 +1,4 @@
-package configs
+package config
 
 import (
 	"log"
@@ -18,8 +18,10 @@ type ServerConfig struct {
 }
 
 type JWTConfig struct {
-	SecretKey       string
-	ExpiryInMinutes int
+	SecretKey              string
+	RefreshSecretKey       string
+	ExpiryInMinutes        int
+	RefreshExpiryInMinutes int
 }
 
 type StoreConfig struct {
@@ -44,8 +46,10 @@ func LoadConfig() Config {
 	}
 
 	jwtAuth := JWTConfig{
-		SecretKey:       viper.GetString("JWT_SECRET_KEY"),
-		ExpiryInMinutes: viper.GetInt("JWT_SECRET_EXPIRY_MINUTES"),
+		SecretKey:              viper.GetString("JWT_SECRET_KEY"),
+		ExpiryInMinutes:        viper.GetInt("JWT_ACCESS_TOKEN_EXPIRY_MINUTES"),
+		RefreshSecretKey:       viper.GetString("JWT_REFRESH_SECRET_KEY"),
+		RefreshExpiryInMinutes: viper.GetInt("JWT_REFRESH_TOKEN_EXPIRY_MINUTES"),
 	}
 
 	store := StoreConfig{

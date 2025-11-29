@@ -38,6 +38,14 @@ export interface Project {
   updatedAt: string;
 }
 
+export interface AuthTokenData {
+  accessToken: string;
+  refreshToken: string;
+  createdAt: string;
+  expiresIn: string;
+  refreshExpiresIn: string;
+}
+
 export interface APIResponse<T> {
   data: T;
   message?: string;

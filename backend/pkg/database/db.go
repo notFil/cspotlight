@@ -1,12 +1,12 @@
 package database
 
 import (
-	"github.com/notFil/cspotlight/configs"
+	"github.com/notFil/cspotlight/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func ConnectDB(cfg configs.StoreConfig) *gorm.DB {
+func ConnectDB(cfg config.StoreConfig) *gorm.DB {
 	dsn := cfg.DatabaseURL
 	db, err := gorm.Open(postgres.New(
 		postgres.Config{

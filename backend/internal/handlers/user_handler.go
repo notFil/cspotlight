@@ -36,7 +36,7 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 
 	claims := auth.GetUserClaims(c)
 
-	user, err := h.userService.GetUserByID(id, claims)
+	user, err := h.userService.GetUserByID(id, *claims)
 	if err != nil {
 		response.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -91,7 +91,8 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	updatedUser, err := h.userService.UpdateUser(id, &user)
+	claims := auth.GetUserClaims(c)
+	updatedUser, err := h.userService.UpdateUser(id, &user, *claims)
 	if err != nil {
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to update user")
 		return
@@ -114,7 +115,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 	claims := auth.GetUserClaims(c)
 
-	err := h.userService.DeleteUser(id, claims)
+	err := h.userService.DeleteUser(id, *claims)
 	if err != nil {
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete user")
 		return
@@ -134,7 +135,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	claims := auth.GetUserClaims(c)
 
-	users, err := h.userService.ListUsers(claims)
+	users, err := h.userService.GetUsers(*claims)
 
 	if err != nil {
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to list users")
@@ -158,7 +159,7 @@ func (h *UserHandler) ListUsersByTeamID(c *gin.Context) {
 
 	claims := auth.GetUserClaims(c)
 
-	users, err := h.userService.ListUsersByTeamID(teamID, claims)
+	users, err := h.userService.ListUsersByTeamID(teamID, *claims)
 	if err != nil {
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to list users by team ID")
 		return

@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/notFil/cspotlight/configs"
+	"github.com/notFil/cspotlight/config"
 	docs "github.com/notFil/cspotlight/docs"
 	"github.com/notFil/cspotlight/internal/handlers"
 	"github.com/notFil/cspotlight/internal/middleware"
@@ -16,7 +16,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func SetUpRouter(db *gorm.DB, jwtConfig configs.JWTConfig) *gin.Engine {
+func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 	router := gin.Default()
 
 	// ------------------------------------------------------
@@ -65,14 +65,14 @@ func SetUpRouter(db *gorm.DB, jwtConfig configs.JWTConfig) *gin.Engine {
 	{
 		auth.POST("/login", authHandler.Login)
 		auth.POST("/register", authHandler.Register)
+		auth.POST("/refresh", authHandler.RefreshToken)
 	}
 
 	// -------------------------
 	// Protected (JWT required)
 	// -------------------------
 	protected := api.Group("")
-	protected.Use(middleware.JWTAuthMiddleware(jwtConfig.SecretKey))
-	protected.Use(middleware.GetClaims())
+	protected.Use(middleware.JWTAuth(jwtConfig.SecretKey))
 
 	// ---------- Projects ----------
 	projects := protected.Group("/projects")

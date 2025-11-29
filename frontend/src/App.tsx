@@ -6,6 +6,7 @@ import Management from './pages/management';
 import Projects from './pages/projects';
 import Profile from './pages/profile';
 import ProtectedRoute from './components/common/protected-route';
+import '@/services/auth'; // Import to ensure AuthService is initialized and callback registered
 
 function App() {
   return (

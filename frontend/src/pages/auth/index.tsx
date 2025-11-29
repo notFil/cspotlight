@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Link, useNavigate } from "react-router-dom"
-import { login } from "@/services/auth"
+import { authService } from "@/services/auth"
 import ThemeToggle from "@/components/common/theme-toggle"
 
 export default function Auth() {
@@ -20,8 +20,9 @@ export default function Auth() {
     setLoading(true)
 
     try {
-      const token = await login({ username, password })
-      localStorage.setItem("authToken", token)
+      const { accessToken, refreshToken } = await authService.login({ username, password })
+      localStorage.setItem("authToken", accessToken)
+      localStorage.setItem("refreshToken", refreshToken)
       navigate("/")
     } catch (err: any) {
       console.error("Login failed", err)

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/notFil/cspotlight/config"
 	"github.com/notFil/cspotlight/pkg/constants"
 
 	"github.com/gin-gonic/gin"
@@ -11,34 +13,71 @@ import (
 	"github.com/notFil/cspotlight/internal/models"
 )
 
-type AuthClaims struct {
-	UserID string
-	TeamID *string
-	Role   string
-}
+type Claims struct {
+	jwt.RegisteredClaims
 
-type claims struct {
+	UserID   string `json:"userID"`
 	Username string `json:"username"`
 	TeamID   string `json:"team,omitempty"`
 	Role     string `json:"role"`
-
-	jwt.RegisteredClaims
 }
 
-func GenerateJWT(secretKey string, user *models.UserFetchDTO, expiryMinutes int) (string, error) {
-	expirationTime := time.Now().Add(time.Duration(expiryMinutes) * time.Minute)
-	claims := &claims{
+type Token struct {
+	AccessToken      string `json:"accessToken"`
+	RefreshToken     string `json:"refreshToken"`
+	CreatedAt        string `json:"createdAt"`
+	ExpiresIn        string `json:"expiresIn"`
+	RefreshExpiresIn string `json:"refreshExpiresIn"`
+}
+
+func GenerateJWT(user *models.UserFetchDTO, cfg config.JWTConfig) (token *Token, err error) {
+	currentTime := time.Now()
+	expirationTime := currentTime.Add(time.Duration(cfg.ExpiryInMinutes) * time.Minute)
+	refreshExpirationTime := currentTime.Add(time.Duration(cfg.RefreshExpiryInMinutes) * time.Minute)
+
+	accessTokenClaims := Claims{
 		Username: user.Username,
 		TeamID:   user.TeamID,
 		Role:     user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			NotBefore: jwt.NewNumericDate(time.Now()),
+			IssuedAt:  jwt.NewNumericDate(currentTime),
+			NotBefore: jwt.NewNumericDate(currentTime),
 			Subject:   user.ID,
+			ID:        uuid.New().String(),
 		},
 	}
 
+	refreshTokenClaims := Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(refreshExpirationTime),
+			IssuedAt:  jwt.NewNumericDate(currentTime),
+			NotBefore: jwt.NewNumericDate(currentTime),
+			Subject:   user.ID,
+			ID:        uuid.New().String(),
+		},
+	}
+
+	accessToken, err := generateJWT(&accessTokenClaims, cfg.SecretKey)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, err := generateJWT(&refreshTokenClaims, cfg.RefreshSecretKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Token{
+		AccessToken:      accessToken,
+		RefreshToken:     refreshToken,
+		CreatedAt:        currentTime.Format(time.RFC3339),
+		ExpiresIn:        expirationTime.Sub(currentTime).String(),
+		RefreshExpiresIn: refreshExpirationTime.Sub(currentTime).String(),
+	}, nil
+}
+
+func generateJWT(claims *Claims, secretKey string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
@@ -47,8 +86,38 @@ func GenerateJWT(secretKey string, user *models.UserFetchDTO, expiryMinutes int)
 	return tokenString, nil
 }
 
-func ValidateJWT(secretKey string, tokenString string) (*claims, error) {
-	claims := &claims{}
+func ValidateAccessToken(tokenString string, secretKey string) (claims *Claims, err error) {
+	return validateJWT(secretKey, tokenString)
+}
+
+func ValidateRefreshToken(tokenString string, secretKey string) (claims *Claims, err error) {
+	return validateJWT(secretKey, tokenString)
+}
+
+func (c *Claims) IsAdmin() bool {
+	if c.Role == "admin" || c.Role == "superadmin" {
+		return true
+	}
+	return false
+}
+
+func (c *Claims) IsSuperadmin() bool {
+	return c.Role == "superadmin"
+}
+
+func GetUserClaims(c *gin.Context) *Claims {
+	claims, exists := c.Get(constants.ClaimsContextKey)
+	if !exists {
+		return nil
+	}
+	if claims, ok := claims.(*Claims); ok {
+		return claims
+	}
+	return nil
+}
+
+func validateJWT(secretKey string, tokenString string) (*Claims, error) {
+	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
 		return []byte(secretKey), nil
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
@@ -59,19 +128,4 @@ func ValidateJWT(secretKey string, tokenString string) (*claims, error) {
 		return nil, fmt.Errorf("invalid token")
 	}
 	return claims, nil
-}
-
-func (c *AuthClaims) IsAdmin() bool {
-	if c.Role == "admin" || c.Role == "superadmin" {
-		return true
-	}
-	return false
-}
-
-func (c *AuthClaims) IsSuperadmin() bool {
-	return c.Role == "superadmin"
-}
-
-func GetUserClaims(c *gin.Context) AuthClaims {
-	return c.MustGet(constants.ClaimsContextKey).(AuthClaims)
 }

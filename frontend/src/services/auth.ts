@@ -1,6 +1,23 @@
 import { apiClient } from "./api";
+import type { AuthTokenData } from "@/types";
 
-export const login = async (credentials: any): Promise<string> => {
-  const response = await apiClient.post<string>('/api/v1/auth/login', credentials);
-  return response.data;
-};
+class AuthService {
+  constructor() {
+    apiClient.setRefreshAuthTokenMethod(this.refreshAuthToken.bind(this));
+  }
+
+  public async login(credentials: any): Promise<AuthTokenData> {
+    const response = await apiClient.post<AuthTokenData>('/api/v1/auth/login', credentials);
+    return response.data;
+  }
+
+  public async refreshAuthToken(refreshToken: string): Promise<AuthTokenData> {
+    const response = await apiClient.post<AuthTokenData>(
+      '/api/v1/auth/refresh',
+      { refreshToken }
+    );
+    return response.data;
+  }
+}
+
+export const authService = new AuthService();

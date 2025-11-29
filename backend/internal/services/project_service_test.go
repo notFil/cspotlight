@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/pkg/auth"
@@ -83,7 +84,7 @@ func TestCreateProject(t *testing.T) {
 	}
 
 	// Test as superadmin
-	adminClaims := auth.AuthClaims{UserID: "admin", Role: "superadmin"}
+	adminClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "admin"}, Role: "superadmin"}
 	success, err := service.CreateProject(projectDTO, adminClaims)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -94,7 +95,7 @@ func TestCreateProject(t *testing.T) {
 
 	// Test as user (should force team ID)
 	userTeamID := "user-team-id"
-	userClaims := auth.AuthClaims{UserID: "user", Role: "user", TeamID: &userTeamID}
+	userClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user"}, Role: "user", TeamID: userTeamID}
 	projectDTOUser := &models.ProjectUpsertDTO{
 		Name:        "User Project",
 		Description: "A user project",
@@ -137,7 +138,7 @@ func TestGetProjectByID(t *testing.T) {
 	mockRepo.projects[projectID] = project
 
 	// Test authorized access (same team)
-	claims := auth.AuthClaims{UserID: "user", Role: "user", TeamID: &teamID}
+	claims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user"}, Role: "user", TeamID: teamID}
 	fetchedProject, err := service.GetProjectByID(projectID, claims)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -148,14 +149,14 @@ func TestGetProjectByID(t *testing.T) {
 
 	// Test unauthorized access (different team)
 	otherTeamID := "team-2"
-	otherClaims := auth.AuthClaims{UserID: "other", Role: "user", TeamID: &otherTeamID}
+	otherClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "other"}, Role: "user", TeamID: otherTeamID}
 	_, err = service.GetProjectByID(projectID, otherClaims)
 	if err == nil {
 		t.Fatal("expected unauthorized error, got nil")
 	}
 
 	// Test superadmin access
-	adminClaims := auth.AuthClaims{UserID: "admin", Role: "superadmin"}
+	adminClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "admin"}, Role: "superadmin"}
 	fetchedProjectAdmin, err := service.GetProjectByID(projectID, adminClaims)
 	if err != nil {
 		t.Fatalf("expected no error for admin, got %v", err)
@@ -183,7 +184,7 @@ func TestUpdateProject(t *testing.T) {
 	}
 
 	// Test authorized update
-	claims := auth.AuthClaims{UserID: "user", Role: "user", TeamID: &teamID}
+	claims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user"}, Role: "user", TeamID: teamID}
 	updatedProject, err := service.UpdateProject(projectID, updateDTO, claims)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -194,7 +195,7 @@ func TestUpdateProject(t *testing.T) {
 
 	// Test unauthorized update
 	otherTeamID := "team-2"
-	otherClaims := auth.AuthClaims{UserID: "other", Role: "user", TeamID: &otherTeamID}
+	otherClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "other"}, Role: "user", TeamID: otherTeamID}
 	_, err = service.UpdateProject(projectID, updateDTO, otherClaims)
 	if err == nil {
 		t.Fatal("expected unauthorized error, got nil")
@@ -216,14 +217,14 @@ func TestDeleteProject(t *testing.T) {
 
 	// Test unauthorized delete
 	otherTeamID := "team-2"
-	otherClaims := auth.AuthClaims{UserID: "other", Role: "user", TeamID: &otherTeamID}
+	otherClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "other"}, Role: "user", TeamID: otherTeamID}
 	err := service.DeleteProject(projectID, otherClaims)
 	if err == nil {
 		t.Fatal("expected unauthorized error, got nil")
 	}
 
 	// Test authorized delete
-	claims := auth.AuthClaims{UserID: "user", Role: "user", TeamID: &teamID}
+	claims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user"}, Role: "user", TeamID: teamID}
 	err = service.DeleteProject(projectID, claims)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)

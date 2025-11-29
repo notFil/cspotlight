@@ -11,13 +11,13 @@ import (
 
 type UserService interface {
 	RegisterUser(user *models.UserCreateDTO) (bool, error)
-	GetUserByID(id string, claims auth.AuthClaims) (*models.UserFetchDTO, error)
+	GetUserByID(id string, claims auth.Claims) (*models.UserFetchDTO, error)
 	GetUserByUsername(username string) (*models.UserFetchDTO, error)
 	AuthenticateUser(authRequest *models.AuthRequest) (*models.UserFetchDTO, error)
-	UpdateUser(id string, user *models.UserUpdateDTO) (*models.UserFetchDTO, error)
-	ListUsers(auth.AuthClaims) ([]*models.UserFetchDTO, error)
-	ListUsersByTeamID(teamID string, claims auth.AuthClaims) ([]*models.UserFetchDTO, error)
-	DeleteUser(id string, claims auth.AuthClaims) error
+	UpdateUser(id string, user *models.UserUpdateDTO, claims auth.Claims) (*models.UserFetchDTO, error)
+	GetUsers(claims auth.Claims) ([]*models.UserFetchDTO, error)
+	ListUsersByTeamID(teamID string, claims auth.Claims) ([]*models.UserFetchDTO, error)
+	DeleteUser(id string, claims auth.Claims) error
 }
 
 type userService struct {
@@ -30,7 +30,7 @@ func NewUserService(userRepo repositories.UserRepository) UserService {
 	}
 }
 
-func (s *userService) GetUserByID(id string, claims auth.AuthClaims) (*models.UserFetchDTO, error) {
+func (s *userService) GetUserByID(id string, claims auth.Claims) (*models.UserFetchDTO, error) {
 	if !claims.IsAdmin() && claims.UserID != id {
 		return nil, errors.New("Unauthorized")
 	}
@@ -62,10 +62,13 @@ func (s *userService) RegisterUser(user *models.UserCreateDTO) (bool, error) {
 	return true, nil
 }
 
-func (s *userService) UpdateUser(id string, user *models.UserUpdateDTO) (*models.UserFetchDTO, error) {
+func (s *userService) UpdateUser(id string, user *models.UserUpdateDTO, claims auth.Claims) (*models.UserFetchDTO, error) {
 	u, err := s.userRepo.GetUserByID(id)
 	if err != nil {
 		return nil, err
+	}
+	if !claims.IsAdmin() && claims.UserID != id {
+		return nil, errors.New("Unauthorized")
 	}
 	u.Username = user.Username
 	u.Email = user.Email
@@ -91,12 +94,12 @@ func (s *userService) AuthenticateUser(authRequest *models.AuthRequest) (*models
 	return u.ToFetchDTO(), nil
 }
 
-func (s *userService) ListUsers(claims auth.AuthClaims) ([]*models.UserFetchDTO, error) {
+func (s *userService) GetUsers(claims auth.Claims) ([]*models.UserFetchDTO, error) {
 	var users []*models.User
 	var err error
 
 	if !claims.IsSuperadmin() {
-		users, err = s.userRepo.ListUsersByTeamID(*claims.TeamID)
+		users, err = s.userRepo.ListUsersByTeamID(claims.TeamID)
 		if err != nil {
 			return nil, err
 		}
@@ -114,7 +117,7 @@ func (s *userService) ListUsers(claims auth.AuthClaims) ([]*models.UserFetchDTO,
 	return userDTOs, nil
 }
 
-func (s *userService) ListUsersByTeamID(teamID string, claims auth.AuthClaims) ([]*models.UserFetchDTO, error) {
+func (s *userService) ListUsersByTeamID(teamID string, claims auth.Claims) ([]*models.UserFetchDTO, error) {
 	users, err := s.userRepo.ListUsersByTeamID(teamID)
 	if err != nil {
 		return nil, err
@@ -127,13 +130,15 @@ func (s *userService) ListUsersByTeamID(teamID string, claims auth.AuthClaims) (
 	return userDTOs, nil
 }
 
-func (s *userService) DeleteUser(id string, claims auth.AuthClaims) error {
+func (s *userService) DeleteUser(id string, claims auth.Claims) error {
 	u, err := s.userRepo.GetUserByID(id)
 	if err != nil {
 		return err
 	}
-	if !claims.IsSuperadmin() && claims.TeamID != u.TeamID {
-		return errors.New("Unauthorized")
+	if !claims.IsAdmin() {
+		if u.TeamID == nil || claims.TeamID != *u.TeamID {
+			return errors.New("Unauthorized")
+		}
 	}
 
 	return s.userRepo.DeleteUser(id)

@@ -6,14 +6,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/notFil/cspotlight/config"
 	"github.com/notFil/cspotlight/pkg/database"
 
-	"github.com/notFil/cspotlight/configs"
 	"github.com/notFil/cspotlight/internal/router"
 )
 
 func main() {
-	cfg := configs.LoadConfig()
+	cfg := config.LoadConfig()
 
 	port := cfg.Server.Port
 

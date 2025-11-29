@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/pkg/auth"
 	"golang.org/x/crypto/bcrypt"
@@ -122,7 +123,7 @@ func TestGetUserByID(t *testing.T) {
 	mockRepo.CreateUser(user)
 
 	// Test authorized access (same user)
-	claims := auth.AuthClaims{UserID: userID, Role: "user"}
+	claims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: userID}, UserID: userID, Role: "user"}
 	fetchedUser, err := service.GetUserByID(userID, claims)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -132,7 +133,7 @@ func TestGetUserByID(t *testing.T) {
 	}
 
 	// Test unauthorized access
-	otherClaims := auth.AuthClaims{UserID: "other-id", Role: "user"}
+	otherClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "other-id"}, UserID: "other-id", Role: "user"}
 	_, err = service.GetUserByID(userID, otherClaims)
 	if err == nil {
 		t.Fatal("expected unauthorized error, got nil")
@@ -142,7 +143,7 @@ func TestGetUserByID(t *testing.T) {
 	}
 
 	// Test admin access (should be allowed)
-	adminClaims := auth.AuthClaims{UserID: "admin-id", Role: "admin"}
+	adminClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "admin-id"}, UserID: "admin-id", Role: "admin"}
 	fetchedUserAdmin, err := service.GetUserByID(userID, adminClaims)
 	if err != nil {
 		t.Fatalf("expected no error for admin, got %v", err)

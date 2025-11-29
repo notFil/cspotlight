@@ -13,7 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func JWTAuthMiddleware(secretKey string) gin.HandlerFunc {
+func JWTAuth(secretKey string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -31,13 +31,12 @@ func JWTAuthMiddleware(secretKey string) gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		claims, err := auth.ValidateJWT(secretKey, tokenString)
+		claims, err := auth.ValidateAccessToken(tokenString, secretKey)
 		if err != nil {
 			response.ErrorResponse(c, http.StatusUnauthorized, err.Error())
 		}
-		c.Set("UserID", claims.Subject)
-		c.Set("TeamID", claims.TeamID)
-		c.Set("Role", claims.Role)
+
+		c.Set(constants.ClaimsContextKey, claims)
 
 		c.Next()
 	}
@@ -73,24 +72,6 @@ func RequiredRole(allowedRoles ...string) gin.HandlerFunc {
 			return
 		}
 
-		c.Next()
-	}
-}
-
-func GetClaims() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		userID := c.MustGet("UserID")
-		teamID := c.MustGet("TeamID")
-		role := c.MustGet("Role")
-
-		teamIDStr := teamID.(string)
-		claims := auth.AuthClaims{
-			UserID: userID.(string),
-			TeamID: &teamIDStr,
-			Role:   role.(string),
-		}
-
-		c.Set(constants.ClaimsContextKey, claims)
 		c.Next()
 	}
 }
