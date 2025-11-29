@@ -2,22 +2,24 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/notFil/cspotlight/config"
 	"github.com/notFil/cspotlight/pkg/database"
+	"github.com/notFil/cspotlight/pkg/logger"
+	"go.uber.org/zap"
 
 	"github.com/notFil/cspotlight/internal/router"
 )
 
 func main() {
 	cfg := config.LoadConfig()
+	logger.InitializeLogger(cfg.Server.Environment)
 
 	port := cfg.Server.Port
 
-	fmt.Printf("Starting server on port %d\n", port)
+	logger.Logger.Info("Starting server on port %d", zap.Int("port", port))
 
 	db := database.ConnectDB(cfg.Store)
 
@@ -30,6 +32,6 @@ func main() {
 	}
 
 	if err := srv.ListenAndServe(); err != nil {
-		log.Fatalf("failed to run server: %v", err)
+		logger.Logger.Fatal("failed to run server: %v", zap.Error(err))
 	}
 }

@@ -32,6 +32,7 @@ type StoreConfig struct {
 func init() {
 	viper.SetConfigFile(".env")
 	viper.SetConfigType("env")
+
 	if err := viper.ReadInConfig(); err != nil {
 		log.Printf(".env not loaded: %v", err)
 	}
@@ -42,7 +43,8 @@ func init() {
 // LoadConfig returns string for key from Viper
 func LoadConfig() Config {
 	server := ServerConfig{
-		Port: viper.GetInt("PORT"),
+		Port:        viper.GetInt("PORT"),
+		Environment: viper.GetString("ENVIRONMENT"),
 	}
 
 	jwtAuth := JWTConfig{

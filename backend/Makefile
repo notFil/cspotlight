@@ -1,10 +1,9 @@
 APP_EXECUTABLE=app
 
 include .env
-export GOOSE_DRIVER=postgres
 export GOOSE_DBSTRING=$(subst ",,$(DB_URL))
 
-.PHONY: serve build run clean up down
+.PHONY: serve build run clean up down test
 
 serve:
 	go run cmd/api/main.go
@@ -28,3 +27,6 @@ up:
 
 down:
 	goose -dir migrations down
+
+test:
+	go test ./... -v

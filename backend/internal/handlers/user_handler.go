@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/services"
+	"github.com/notFil/cspotlight/pkg/logger"
+	"go.uber.org/zap"
 )
 
 type UserHandler struct {
@@ -35,9 +37,13 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 	id := c.Param("id")
 
 	claims := auth.GetUserClaims(c)
+	log := logger.FromContext(c)
+
+	log.Info("fetching user", zap.String("target_user_id", id), zap.String("user_id", claims.UserID))
 
 	user, err := h.userService.GetUserByID(id, *claims)
 	if err != nil {
+		log.Error("failed to fetch user", zap.String("target_user_id", id), zap.Error(err))
 		response.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -56,14 +62,19 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 // @Failure      500   {object}  map[string]interface{} "Failed to create user"
 // @Router       /api/users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
+	log := logger.FromContext(c)
 	var user models.UserCreateDTO
 	if err := c.BindJSON(&user); err != nil {
+		log.Warn("invalid user create payload", zap.Error(err))
 		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
+	log.Info("creating user", zap.String("email", user.Email))
+
 	created, err := h.userService.RegisterUser(&user)
 	if err != nil || !created {
+		log.Error("failed to create user", zap.String("email", user.Email), zap.Error(err))
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to create user")
 		return
 	}
@@ -85,15 +96,20 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // @Router       /api/users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	id := c.Param("id")
+	log := logger.FromContext(c)
 	var user models.UserUpdateDTO
 	if err := c.BindJSON(&user); err != nil {
+		log.Warn("invalid user update payload", zap.Error(err))
 		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	claims := auth.GetUserClaims(c)
+	log.Info("updating user", zap.String("target_user_id", id), zap.String("user_id", claims.UserID))
+
 	updatedUser, err := h.userService.UpdateUser(id, &user, *claims)
 	if err != nil {
+		log.Error("failed to update user", zap.String("target_user_id", id), zap.Error(err))
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to update user")
 		return
 	}
@@ -114,9 +130,13 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 
 	claims := auth.GetUserClaims(c)
+	log := logger.FromContext(c)
+
+	log.Info("deleting user", zap.String("target_user_id", id), zap.String("user_id", claims.UserID))
 
 	err := h.userService.DeleteUser(id, *claims)
 	if err != nil {
+		log.Error("failed to delete user", zap.String("target_user_id", id), zap.Error(err))
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete user")
 		return
 	}
@@ -134,10 +154,14 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 // @Router       /api/users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	claims := auth.GetUserClaims(c)
+	log := logger.FromContext(c)
+
+	log.Info("listing users", zap.String("user_id", claims.UserID))
 
 	users, err := h.userService.GetUsers(*claims)
 
 	if err != nil {
+		log.Error("failed to list users", zap.Error(err))
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to list users")
 		return
 	}
@@ -158,9 +182,13 @@ func (h *UserHandler) ListUsersByTeamID(c *gin.Context) {
 	teamID := c.Param("teamID")
 
 	claims := auth.GetUserClaims(c)
+	log := logger.FromContext(c)
+
+	log.Info("listing users by team", zap.String("team_id", teamID), zap.String("user_id", claims.UserID))
 
 	users, err := h.userService.ListUsersByTeamID(teamID, *claims)
 	if err != nil {
+		log.Error("failed to list users by team", zap.String("team_id", teamID), zap.Error(err))
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to list users by team ID")
 		return
 	}
@@ -169,17 +197,22 @@ func (h *UserHandler) ListUsersByTeamID(c *gin.Context) {
 }
 
 func (h *UserHandler) SetDefaultProject(c *gin.Context) {
+	log := logger.FromContext(c)
 	var req struct {
 		ProjectID string `json:"projectID"`
 	}
 	if err := c.BindJSON(&req); err != nil {
+		log.Warn("invalid set default project payload", zap.Error(err))
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to set default project")
 	}
 
 	claims := auth.GetUserClaims(c)
 
+	log.Info("setting default project", zap.String("project_id", req.ProjectID), zap.String("user_id", claims.UserID))
+
 	err := h.userService.SetDefaultProject(req.ProjectID, claims)
 	if err != nil {
+		log.Error("failed to set default project", zap.Error(err))
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to set default project")
 	}
 

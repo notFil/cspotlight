@@ -10,6 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/services"
+	"github.com/notFil/cspotlight/pkg/logger"
+	"go.uber.org/zap"
 )
 
 type AuthHandler struct {
@@ -36,25 +38,32 @@ func NewAuthHandler(userService services.UserService, jwtConfig config.JWTConfig
 // @Failure      500   {object}  map[string]interface{} "Internal server error"
 // @Router       /api/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
+	log := logger.FromContext(c)
 	var authRequest models.AuthRequest
 	if err := c.BindJSON(&authRequest); err != nil {
-		response.ErrorResponse(c, http.StatusInternalServerError, "Authentication failed: binding")
+		log.Warn("invalid login payload", zap.Error(err))
+		response.ErrorResponse(c, http.StatusInternalServerError, "Authentication failed")
 		return
 	}
 
+	log.Info("attempting login", zap.String("username", authRequest.Username))
+
 	user, err := h.userService.AuthenticateUser(&authRequest)
 	if err != nil {
-		response.ErrorResponse(c, http.StatusUnauthorized, "Authentication failed: authenticate")
+		log.Warn("authentication failed", zap.String("username", authRequest.Username), zap.Error(err))
+		response.ErrorResponse(c, http.StatusUnauthorized, "Authentication failed")
 		return
 	}
 
 	tokens, err := auth.GenerateJWT(user, h.jwtConfig)
 	if err != nil {
-		response.ErrorResponse(c, http.StatusInternalServerError, "Authentication failed: generate jwt")
+		log.Error("failed to generate jwt", zap.String("user_id", user.ID), zap.Error(err))
+		response.ErrorResponse(c, http.StatusInternalServerError, "authentication failed")
 		return
 	}
 
-	response.SuccessResponse(c, http.StatusOK, "Login successful", tokens)
+	log.Info("login successful", zap.String("user_id", user.ID))
+	response.SuccessResponse(c, http.StatusOK, "login successful", tokens)
 }
 
 // Register godoc
@@ -69,35 +78,44 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Failure      500   {object}  map[string]interface{} "Failed to register user"
 // @Router       /api/auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
+	log := logger.FromContext(c)
 	var user models.UserCreateDTO
 	if err := c.BindJSON(&user); err != nil {
-		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		log.Warn("invalid register payload", zap.Error(err))
+		response.ErrorResponse(c, http.StatusBadRequest, "invalid request payload")
 		return
 	}
+
+	log.Info("registering user", zap.String("email", user.Email))
 
 	_, err := h.userService.RegisterUser(&user)
 	if err != nil {
-		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to register user")
+		log.Error("failed to register user", zap.String("email", user.Email), zap.Error(err))
+		response.ErrorResponse(c, http.StatusInternalServerError, "failed to register user")
 		return
 	}
 
-	response.SuccessResponse(c, http.StatusCreated, "User registered successfully", nil)
+	log.Info("user registered successfully", zap.String("email", user.Email))
+	response.SuccessResponse(c, http.StatusCreated, "user registered successfully", nil)
 }
 
 // Refresh token godoc
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
+	log := logger.FromContext(c)
 	var req struct {
 		RefreshToken string `json:"refreshToken"`
 	}
 
 	if err := c.BindJSON(&req); err != nil {
-		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		log.Warn("invalid refresh token payload", zap.Error(err))
+		response.ErrorResponse(c, http.StatusBadRequest, "invalid request payload")
 		return
 	}
 
 	claims, err := auth.ValidateRefreshToken(req.RefreshToken, h.jwtConfig.RefreshSecretKey)
 	if err != nil {
-		response.ErrorResponse(c, http.StatusUnauthorized, "Failed to refresh token")
+		log.Warn("invalid refresh token", zap.Error(err))
+		response.ErrorResponse(c, http.StatusUnauthorized, "failed to refresh token")
 		return
 	}
 
@@ -106,20 +124,25 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	}
 	user, err := h.userService.GetUserByID(claims.Subject, authClaims)
 	if err != nil {
-		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to refresh token")
+		log.Error("failed to get user for refresh token", zap.String("user_id", claims.Subject), zap.Error(err))
+		response.ErrorResponse(c, http.StatusInternalServerError, "failed to refresh token")
 		return
 	}
 
 	tokens, err := auth.GenerateJWT(user, h.jwtConfig)
 	if err != nil {
-		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to refresh token")
+		log.Error("failed to generate jwt for refresh", zap.String("user_id", user.ID), zap.Error(err))
+		response.ErrorResponse(c, http.StatusInternalServerError, "failed to refresh token")
 		return
 	}
 
-	response.SuccessResponse(c, http.StatusOK, "Token refreshed", tokens)
+	log.Info("token refreshed", zap.String("user_id", user.ID))
+	response.SuccessResponse(c, http.StatusOK, "token refreshed", tokens)
 }
 
 // Sign out godoc
 func (h *AuthHandler) SignOut(c *gin.Context) {
-
+	log := logger.FromContext(c)
+	log.Info("user signed out")
+	response.SuccessResponse(c, http.StatusOK, "signed out successfully", nil)
 }

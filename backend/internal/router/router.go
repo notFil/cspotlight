@@ -17,7 +17,9 @@ import (
 )
 
 func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.Recovery())
+	router.Use(middleware.RequestLogger())
 
 	// ------------------------------------------------------
 	// MUST BE BEFORE REGISTERING ANY ROUTES
