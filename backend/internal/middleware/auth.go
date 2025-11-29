@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/notFil/cspotlight/pkg/constants"
@@ -17,14 +18,14 @@ func JWTAuth(secretKey string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			response.ErrorResponse(c, http.StatusUnauthorized, "Authorization header required")
+			response.ErrorResponse(c, http.StatusUnauthorized, "authorization header required")
 			c.Abort()
 			return
 		}
 
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			response.ErrorResponse(c, http.StatusUnauthorized, "Authorization header required")
+			response.ErrorResponse(c, http.StatusUnauthorized, "authorization header required")
 			c.Abort()
 			return
 		}
@@ -44,30 +45,22 @@ func JWTAuth(secretKey string) gin.HandlerFunc {
 
 func RequiredRole(allowedRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		role, exists := c.Get("Role")
+		ac, exists := c.Get(constants.ClaimsContextKey)
 		if !exists {
-			response.ErrorResponse(c, http.StatusForbidden, "Insufficient permissions")
+			response.ErrorResponse(c, http.StatusForbidden, "insufficient permissions")
 			c.Abort()
 			return
 		}
 
-		roleStr, ok := role.(string)
+		claims, ok := ac.(*auth.Claims)
 		if !ok {
-			response.ErrorResponse(c, http.StatusForbidden, "Insufficient permissions")
+			response.ErrorResponse(c, http.StatusForbidden, "insufficient permissions")
 			c.Abort()
 			return
 		}
 
-		isAuthorized := false
-		for _, role := range allowedRoles {
-			if roleStr == role {
-				isAuthorized = true
-				break
-			}
-		}
-
-		if !isAuthorized {
-			response.ErrorResponse(c, http.StatusForbidden, "Insufficient permissions")
+		if isAuthorized := slices.Contains(allowedRoles, claims.Role); !isAuthorized {
+			response.ErrorResponse(c, http.StatusForbidden, "insufficient permissions")
 			c.Abort()
 			return
 		}
