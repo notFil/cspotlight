@@ -46,9 +46,17 @@ export interface AuthTokenData {
   refreshExpiresIn: string;
 }
 
+export interface Pagination {
+  page: number;
+  pageSize: number;
+  totalRows: number;
+  totalPages: number;
+}
+
 export interface APIResponse<T> {
   data: T;
   message?: string;
+  pagination?: Pagination;
   error?: string;
 }
 
@@ -56,4 +64,14 @@ export interface AppState {
   isLoading: boolean;
   user?: User | null;
   theme: 'light' | 'dark';
+}
+
+export interface CSPReport {
+  url: string;
+  directive: string;
+  ipAddress: string;
+  raw: string;
+  userAgent: string;
+  count: number;
+  lastSeen: string;
 }

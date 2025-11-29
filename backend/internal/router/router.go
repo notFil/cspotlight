@@ -40,15 +40,20 @@ func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 	projectRepo := repositories.NewProjectRepository(db)
 	teamRepo := repositories.NewTeamRepository(db)
 	userRepo := repositories.NewUserRepository(db)
+	reportRepo := repositories.NewReportRepository(db)
 
 	projectService := services.NewProjectService(projectRepo)
 	teamService := services.NewTeamService(teamRepo)
-	userService := services.NewUserService(userRepo)
+	userService := services.NewUserService(userRepo, projectRepo)
+	reportService := services.NewReportService(reportRepo, projectRepo)
 
 	authHandler := handlers.NewAuthHandler(userService, jwtConfig)
 	projectHandler := handlers.NewProjectHandler(projectService)
 	teamHandler := handlers.NewTeamHandler(teamService)
 	userHandler := handlers.NewUserHandler(userService)
+	reportHandler := handlers.NewReportHandler(reportService)
+
+	// ------------------------------------------------------
 
 	// Swagger
 	docs.SwaggerInfo.BasePath = "/api/v1"
@@ -114,6 +119,14 @@ func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 			admin.DELETE("/:id", userHandler.DeleteUser)
 		}
 	}
+
+	// ---------- Reports ----------
+
+	reports := protected.Group("/reports")
+	{
+		reports.GET("/:projectID/csp", reportHandler.ListReportsByProjectID)
+	}
+	api.POST("/reports/:projectID/csp", reportHandler.CreateReport)
 
 	// ---------- Signout ----------
 	protected.POST("/signout", authHandler.SignOut)

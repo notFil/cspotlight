@@ -6,6 +6,7 @@ import Management from './pages/management';
 import Projects from './pages/projects';
 import Profile from './pages/profile';
 import ProtectedRoute from './components/common/protected-route';
+import ReportsPage from "./pages/reports/page"; // Added import
 import '@/services/auth'; // Import to ensure AuthService is initialized and callback registered
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
           <Route element={<Layout><Management /></Layout>} path="/management" />
           <Route element={<Layout><Projects /></Layout>} path="/projects" />
           <Route element={<Layout><Profile /></Layout>} path="/profile" />
+          <Route element={<Layout><ReportsPage /></Layout>} path="/reports/:projectId" /> {/* Added route */}
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
