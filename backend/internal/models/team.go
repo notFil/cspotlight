@@ -19,6 +19,7 @@ type TeamFetchDTO struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	UpdatedAt   string `json:"updatedAt"`
 }
 
 type TeamUpsertDTO struct {
@@ -38,5 +39,6 @@ func (t *Team) ToFetchDTO() *TeamFetchDTO {
 		ID:          t.ID,
 		Name:        t.Name,
 		Description: t.Description,
+		UpdatedAt:   t.UpdatedAt.Format("02 Jan 06 15:04 MST"),
 	}
 }

@@ -11,6 +11,7 @@ type Project struct {
 	Name        string `gorm:"type:varchar(20)"`
 	Description string `gorm:"type:varchar(500)"`
 	TeamID      string `gorm:"type:uuid"`
+	Team        Team   `gorm:"foreignKey:TeamID"`
 	Disabled    bool
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
@@ -23,9 +24,9 @@ type ProjectFetchDTO struct {
 	Description string `json:"description"`
 	Disabled    bool
 	TeamID      string `json:"teamId"`
+	TeamName    string `json:"teamName"`
 	LastActive  string `json:"lastActive"`
 }
-
 type ProjectUpsertDTO struct {
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
@@ -39,6 +40,8 @@ func (p *Project) ToFetchDTO() *ProjectFetchDTO {
 		Name:        p.Name,
 		Description: p.Description,
 		TeamID:      p.TeamID,
+		TeamName:    p.Team.Name,
+		Disabled:    p.Disabled,
 	}
 }
 

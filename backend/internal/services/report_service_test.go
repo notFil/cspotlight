@@ -30,6 +30,16 @@ func (m *MockReportRepository) CreateReport(report *models.CSPReport) error {
 	return nil
 }
 
+func (m *MockReportRepository) BatchCreateReports(reports []*models.CSPReport) error {
+	for _, report := range reports {
+		if report.ID == "" {
+			report.ID = uuid.New().String()
+		}
+		m.reports[report.ID] = report
+	}
+	return nil
+}
+
 func (m *MockReportRepository) GetReportByID(id string) (*models.CSPReport, error) {
 	if report, exists := m.reports[id]; exists {
 		return report, nil

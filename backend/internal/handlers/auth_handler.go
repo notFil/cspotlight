@@ -42,7 +42,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	var authRequest models.AuthRequest
 	if err := c.BindJSON(&authRequest); err != nil {
 		log.Warn("invalid login payload", zap.Error(err))
-		response.ErrorResponse(c, http.StatusInternalServerError, "Authentication failed")
+		response.ErrorResponse(c, http.StatusBadRequest, "Authentication failed")
 		return
 	}
 

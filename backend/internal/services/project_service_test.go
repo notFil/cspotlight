@@ -55,19 +55,19 @@ func (m *MockProjectRepository) DeleteProject(id string) error {
 	return errors.New("project not found")
 }
 
-func (m *MockProjectRepository) ListProjects() ([]*models.Project, error) {
-	var projects []*models.Project
+func (m *MockProjectRepository) ListProjects() ([]*models.ProjectFetchDTO, error) {
+	var projects []*models.ProjectFetchDTO
 	for _, project := range m.projects {
-		projects = append(projects, project)
+		projects = append(projects, project.ToFetchDTO())
 	}
 	return projects, nil
 }
 
-func (m *MockProjectRepository) ListProjectsByTeamID(teamID string) ([]*models.Project, error) {
-	var projects []*models.Project
+func (m *MockProjectRepository) ListProjectsByTeamID(teamID string) ([]*models.ProjectFetchDTO, error) {
+	var projects []*models.ProjectFetchDTO
 	for _, project := range m.projects {
 		if project.TeamID == teamID {
-			projects = append(projects, project)
+			projects = append(projects, project.ToFetchDTO())
 		}
 	}
 	return projects, nil

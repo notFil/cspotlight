@@ -10,8 +10,8 @@ type ProjectRepository interface {
 	GetProjectByID(id string) (*models.Project, error)
 	UpdateProject(project *models.Project) error
 	DeleteProject(id string) error
-	ListProjects() ([]*models.Project, error)
-	ListProjectsByTeamID(teamID string) ([]*models.Project, error)
+	ListProjects() ([]*models.ProjectFetchDTO, error)
+	ListProjectsByTeamID(teamID string) ([]*models.ProjectFetchDTO, error)
 }
 
 type projectRepository struct {
@@ -27,7 +27,7 @@ func (r *projectRepository) CreateProject(project *models.Project) error {
 }
 
 func (r *projectRepository) GetProjectByID(id string) (project *models.Project, err error) {
-	err = r.db.First(&project, "id = ?", id).Error
+	err = r.db.Preload("Team").First(&project, "id = ?", id).Error
 	return project, err
 }
 
@@ -39,15 +39,30 @@ func (r *projectRepository) DeleteProject(id string) error {
 	return r.db.Delete(&models.Project{}, "id = ?", id).Error
 }
 
-func (r *projectRepository) ListProjects() (projects []*models.Project, err error) {
-	if err = r.db.Find(&projects).Error; err != nil {
+func (r *projectRepository) ListProjects() (projects []*models.ProjectFetchDTO, err error) {
+	if err = r.db.Table("projects p").
+		Joins("LEFT JOIN teams t ON t.id = p.team_id").
+		Select(`p.*, t.name as team_name, COALESCE(TO_CHAR((
+			SELECT MAX(created_at)
+			FROM csp_reports r
+			WHERE r.project_id = p.id
+		), 'DD Mon YY HH24:MI "UTC"'), '') AS last_active`).
+		Scan(&projects).Error; err != nil {
 		return nil, err
 	}
 	return projects, nil
 }
 
-func (r *projectRepository) ListProjectsByTeamID(teamID string) (projects []*models.Project, err error) {
-	if err = r.db.Where("team_id = ?", teamID).Find(&projects).Error; err != nil {
+func (r *projectRepository) ListProjectsByTeamID(teamID string) (projects []*models.ProjectFetchDTO, err error) {
+	if err = r.db.Table("projects p").
+		Joins("LEFT JOIN teams t ON t.id = p.team_id").
+		Select(`p.*, t.name as team_name, COALESCE(TO_CHAR((
+			SELECT MAX(created_at)
+			FROM csp_reports r
+			WHERE r.project_id = p.id
+		), 'DD Mon YY HH24:MI "UTC"'), '') AS last_active`).
+		Where("p.team_id = ?", teamID).
+		Scan(&projects).Error; err != nil {
 		return nil, err
 	}
 	return projects, nil

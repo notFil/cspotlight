@@ -78,7 +78,7 @@ func (s *projectService) DeleteProject(id string, claims auth.Claims) error {
 }
 
 func (s *projectService) ListProjects(claims auth.Claims) ([]*models.ProjectFetchDTO, error) {
-	var ps []*models.Project
+	var ps []*models.ProjectFetchDTO
 	var err error
 	if claims.IsSuperadmin() {
 		ps, err = s.projectRepo.ListProjects()
@@ -88,10 +88,8 @@ func (s *projectService) ListProjects(claims auth.Claims) ([]*models.ProjectFetc
 	if err != nil {
 		return nil, err
 	}
-
-	var projects []*models.ProjectFetchDTO
-	for _, p := range ps {
-		projects = append(projects, p.ToFetchDTO())
+	if ps == nil {
+		ps = []*models.ProjectFetchDTO{}
 	}
-	return projects, nil
+	return ps, nil
 }

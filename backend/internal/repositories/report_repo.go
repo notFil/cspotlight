@@ -12,6 +12,7 @@ type ReportRepository interface {
 	UpdateReport(report *models.CSPReport) error
 	DeleteReport(id string) error
 	ListReportsByProjectID(projectID string, p *pagination.Pagination) ([]*models.CSPReport, *pagination.Pagination, error)
+	BatchCreateReports(reports []*models.CSPReport) error
 }
 
 type reportRepository struct {
@@ -24,6 +25,10 @@ func NewReportRepository(db *gorm.DB) ReportRepository {
 
 func (r *reportRepository) CreateReport(report *models.CSPReport) error {
 	return r.db.Create(report).Error
+}
+
+func (r *reportRepository) BatchCreateReports(reports []*models.CSPReport) error {
+	return r.db.CreateInBatches(reports, 100).Error
 }
 
 func (r *reportRepository) GetReportByID(id string) (report *models.CSPReport, err error) {
@@ -43,10 +48,6 @@ func (r *reportRepository) ListReportsByProjectID(projectID string, p *paginatio
 	var reports []*models.CSPReport
 
 	r.db.Where("project_id = ?", projectID).Count(&p.TotalRows)
-
-	if p.PageSize <= 0 {
-		p.PageSize = 50
-	}
 
 	p.TotalPages = int((p.TotalRows + int64(p.PageSize) - 1) / int64(p.PageSize))
 

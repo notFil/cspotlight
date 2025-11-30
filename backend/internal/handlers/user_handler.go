@@ -204,6 +204,7 @@ func (h *UserHandler) SetDefaultProject(c *gin.Context) {
 	if err := c.BindJSON(&req); err != nil {
 		log.Warn("invalid set default project payload", zap.Error(err))
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to set default project")
+		return
 	}
 
 	claims := auth.GetUserClaims(c)
@@ -214,6 +215,7 @@ func (h *UserHandler) SetDefaultProject(c *gin.Context) {
 	if err != nil {
 		log.Error("failed to set default project", zap.Error(err))
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to set default project")
+		return
 	}
 
 	response.SuccessResponse(c, http.StatusOK, "Default project set successfully", nil)

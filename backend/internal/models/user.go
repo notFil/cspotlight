@@ -15,6 +15,7 @@ type User struct {
 	Email            string  `gorm:"type:varchar(100)"`
 	PasswordHash     string  `gorm:"type:varchar(255)"`
 	Role             string  `gorm:"type:varchar(10)"`
+	Image            string  `gorm:"type:varchar(255)"`
 	DefaultProjectID *string `gorm:"type:uuid"`
 	DefaultProject   Project `gorm:"foreignKey:DefaultProjectID"`
 	Disabled         bool
@@ -26,16 +27,16 @@ type User struct {
 }
 
 type UserFetchDTO struct {
-	ID        string    `json:"id"`
-	FirstName string    `json:"firstName"`
-	LastName  string    `json:"lastName"`
-	Username  string    `json:"username"`
-	Role      string    `json:"role"`
-	Email     string    `json:"email"`
-	Disabled  bool      `json:"disabled"`
-	TeamID    string    `json:"teamId"`
-	TeamName  string    `json:"teamName"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID        string `json:"id"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Username  string `json:"username"`
+	Role      string `json:"role"`
+	Email     string `json:"email"`
+	Disabled  bool   `json:"disabled"`
+	TeamID    string `json:"teamId"`
+	TeamName  string `json:"teamName"`
+	UpdatedAt string `json:"updatedAt"`
 }
 
 type UserCreateDTO struct {
@@ -71,6 +72,7 @@ func (u *User) ToFetchDTO() *UserFetchDTO {
 		Email:     u.Email,
 		Disabled:  u.Disabled,
 		Role:      u.Role,
+		UpdatedAt: u.UpdatedAt.Format("02 Jan 06 15:04 MST"),
 	}
 	if u.TeamID != nil {
 		dto.TeamID = *u.TeamID

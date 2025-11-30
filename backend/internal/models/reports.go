@@ -41,11 +41,12 @@ type CSPReportCreateDTO struct {
 	Type       string     `json:"type"`
 	URL        string     `json:"url"`
 	UserAgent  string     `json:"user_agent"`
+	SourceIP   string     `json:"-"`
 }
 
 type CSPReportFetchDTO struct {
 	ReportBody ReportBody `json:"reportBody"`
-	Type       string     `json:"type"`
+	Directive  string     `json:"directive"`
 	URL        string     `json:"url"`
 	SourceIP   string     `json:"sourceIP"`
 	UserAgent  string     `json:"user_agent"`
@@ -58,6 +59,7 @@ func (r *CSPReportCreateDTO) ToCSPReport() *CSPReport {
 		Type:      r.Type,
 		URL:       r.URL,
 		UserAgent: r.UserAgent,
+		SourceIP:  r.SourceIP,
 	}
 	c.ReportBody = datatypes.NewJSONType(r.ReportBody)
 	return c
@@ -65,11 +67,11 @@ func (r *CSPReportCreateDTO) ToCSPReport() *CSPReport {
 
 func (c *CSPReport) ToFetchDTO() *CSPReportFetchDTO {
 	r := &CSPReportFetchDTO{
-		Type:      c.Type,
 		URL:       c.URL,
 		UserAgent: c.UserAgent,
 		SourceIP:  c.SourceIP,
 	}
-	c.ReportBody = datatypes.NewJSONType(r.ReportBody)
+	r.ReportBody = c.ReportBody.Data()
+	r.Directive = r.ReportBody.EffectiveDirective
 	return r
 }

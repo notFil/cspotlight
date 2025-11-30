@@ -15,6 +15,7 @@ type ReportService interface {
 	UpdateReport(report *models.CSPReport) error
 	DeleteReport(id string) error
 	ListReportsByProjectID(projectID string, p *pagination.Pagination, claims auth.Claims) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
+	BatchCreateReports(reports []*models.CSPReportCreateDTO, projectID string) error
 }
 
 type reportService struct {
@@ -33,6 +34,16 @@ func (s *reportService) CreateReport(report *models.CSPReportCreateDTO, projectI
 	r := report.ToCSPReport()
 	r.ProjectID = projectID
 	return s.reportRepo.CreateReport(r)
+}
+
+func (s *reportService) BatchCreateReports(reports []*models.CSPReportCreateDTO, projectID string) error {
+	var cspReports []*models.CSPReport
+	for _, r := range reports {
+		cspReport := r.ToCSPReport()
+		cspReport.ProjectID = projectID
+		cspReports = append(cspReports, cspReport)
+	}
+	return s.reportRepo.BatchCreateReports(cspReports)
 }
 
 func (s *reportService) GetReportByID(id string) (*models.CSPReport, error) {
