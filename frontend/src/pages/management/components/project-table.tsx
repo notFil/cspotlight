@@ -12,32 +12,17 @@ import { Edit, Trash2, Plus } from "lucide-react";
 import type { Project } from "@/types";
 import { ProjectModal } from "./project-modal";
 import { DeleteConfirmModal } from "./delete-confirmation-modal";
-
-// Mock data
-const MOCK_PROJECTS: Project[] = [
-  {
-    id: '1',
-    name: 'Project Alpha',
-    description: 'Main application project',
-    team: 'Team Alpha',
-    reporting_url: 'https://report.example.com/alpha',
-    last_updated: '2023-10-26',
-  },
-  {
-    id: '2',
-    name: 'Project Beta',
-    description: 'Secondary service',
-    team: 'Team Beta',
-    reporting_url: 'https://report.example.com/beta',
-    last_updated: '2023-10-25',
-  },
-];
+import { useProjects, useCreateProject, useUpdateProject, useDeleteProject } from "@/hooks/use-projects";
 
 export const ProjectTable = () => {
-  const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | undefined>(undefined);
+
+  const { data: projects = [], isLoading, isError, error } = useProjects();
+  const { mutateAsync: createProject } = useCreateProject();
+  const { mutateAsync: updateProject } = useUpdateProject();
+  const { mutateAsync: deleteProject } = useDeleteProject();
 
   const handleAdd = () => {
     setSelectedProject(undefined);
@@ -54,23 +39,31 @@ export const ProjectTable = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSave = (project: Project) => {
-    if (selectedProject) {
+  const handleSave = async (project: Project) => {
+    if (selectedProject?.id) {
       // Edit
-      setProjects(projects.map(p => p.id === project.id ? project : p));
+      await updateProject({ id: selectedProject.id, data: project });
     } else {
       // Add
-      setProjects([...projects, { ...project, id: Math.random().toString(36).substr(2, 9), last_updated: new Date().toISOString().split('T')[0] }]);
+      await createProject(project);
     }
     setIsModalOpen(false);
   };
 
-  const handleDeleteConfirm = () => {
-    if (selectedProject) {
-      setProjects(projects.filter(p => p.id !== selectedProject.id));
+  const handleDeleteConfirm = async () => {
+    if (selectedProject && selectedProject.id) {
+      await deleteProject(selectedProject.id);
       setIsDeleteModalOpen(false);
     }
   };
+
+  if (isLoading) {
+    return <div>Loading projects...</div>;
+  }
+
+  if (isError) {
+    return <div>Error loading projects: {error instanceof Error ? error.message : 'Unknown error'}</div>;
+  }
 
   return (
     <div className="space-y-4">
@@ -91,22 +84,30 @@ export const ProjectTable = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {projects.map((project) => (
-            <TableRow key={project.id}>
-              <TableCell className="font-medium">{project.name}</TableCell>
-              <TableCell>{project.team}</TableCell>
-              <TableCell className="max-w-xs truncate">{project.reporting_url}</TableCell>
-              <TableCell>{project.last_updated}</TableCell>
-              <TableCell className="text-right">
-                <Button variant="ghost" size="icon" onClick={() => handleEdit(project)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(project)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+          {projects.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                No project available in this instance
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            projects.map((project) => (
+              <TableRow key={project.id}>
+                <TableCell className="font-medium">{project.name}</TableCell>
+                <TableCell>{project.teamName}</TableCell>
+                <TableCell className="max-w-xs truncate">{project.reportingUrl}</TableCell>
+                <TableCell>{project.lastActive || 'No recent activity'}</TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="icon" onClick={() => handleEdit(project)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(project)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
 

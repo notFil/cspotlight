@@ -110,7 +110,7 @@ const Projects = () => {
                 <Button
                   className="flex-1"
                   variant="outline"
-                  onClick={() => navigate(`/project/${project.id}`)}
+                  onClick={() => navigate(`/reports/${project.id}`)}
                 >
                   View Details
                 </Button>

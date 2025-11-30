@@ -26,12 +26,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import type { Project } from "@/types";
+import { useTeams } from "@/hooks/use-teams";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  team: z.string().min(1, "Team is required"),
+  teamId: z.string().min(1, "Team is required"),
+  disabled: z.boolean(),
 });
 
 interface ProjectModalProps {
@@ -47,12 +50,15 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   onSave,
   project,
 }) => {
+  const { data: teams, isLoading: isLoadingTeams } = useTeams();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       description: '',
-      team: '',
+      teamId: '',
+      disabled: false,
     },
   });
 
@@ -61,25 +67,37 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
       form.reset({
         name: project.name,
         description: project.description,
-        team: project.team,
+        teamId: project.teamId,
+        disabled: project.disabled,
       });
     } else {
       form.reset({
         name: '',
         description: '',
-        team: '',
+        teamId: '',
+        disabled: false,
       });
     }
   }, [project, isOpen, form]);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    onSave({
-      id: project?.id || '',
-      ...values,
+    const selectedTeam = teams?.find(t => t.id === values.teamId);
+
+    const newProject: Project = {
+      name: values.name,
       description: values.description || '',
-      reporting_url: project?.reporting_url || `https://report.example.com/${values.name.toLowerCase().replace(/\s+/g, '-')}`, // Mock URL generation
-      last_updated: new Date().toISOString().split('T')[0],
-    });
+      teamId: values.teamId,
+      teamName: selectedTeam?.name || '',
+      disabled: values.disabled,
+    };
+
+    if (project) {
+      newProject.id = project.id;
+      newProject.reportingUrl = project.reportingUrl;
+      newProject.lastActive = project.lastActive;
+    }
+
+    onSave(newProject);
   };
 
   return (
@@ -122,22 +140,43 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
             />
             <FormField
               control={form.control}
-              name="team"
+              name="teamId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Team</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingTeams}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a team" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Team Alpha">Team Alpha</SelectItem>
-                      <SelectItem value="Team Beta">Team Beta</SelectItem>
+                      {teams?.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="disabled"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-xl border border-border/50 p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel>Disable Project</FormLabel>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      aria-label="Toggle disabled"
+                    />
+                  </FormControl>
                 </FormItem>
               )}
             />

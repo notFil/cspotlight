@@ -12,28 +12,17 @@ import { Edit, Trash2, Plus } from "lucide-react";
 import type { Team } from "@/types";
 import { TeamModal } from "./team-modal";
 import { DeleteConfirmModal } from "./delete-confirmation-modal";
-
-// Mock data
-const MOCK_TEAMS: Team[] = [
-  {
-    id: '1',
-    name: 'Team Alpha',
-    description: 'Primary development team',
-    last_updated: '2023-10-26',
-  },
-  {
-    id: '2',
-    name: 'Team Beta',
-    description: 'Support and maintenance',
-    last_updated: '2023-10-25',
-  },
-];
+import { useTeams, useCreateTeam, useUpdateTeam, useDeleteTeam } from "@/hooks/use-teams";
 
 export const TeamTable = () => {
-  const [teams, setTeams] = useState<Team[]>(MOCK_TEAMS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | undefined>(undefined);
+
+  const { data: teams = [], isLoading, isError, error } = useTeams();
+  const { mutateAsync: createTeam } = useCreateTeam();
+  const { mutateAsync: updateTeam } = useUpdateTeam();
+  const { mutateAsync: deleteTeam } = useDeleteTeam();
 
   const handleAdd = () => {
     setSelectedTeam(undefined);
@@ -50,23 +39,31 @@ export const TeamTable = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSave = (team: Team) => {
+  const handleSave = async (team: Team) => {
     if (selectedTeam) {
       // Edit
-      setTeams(teams.map(t => t.id === team.id ? team : t));
+      await updateTeam({ id: selectedTeam.id, data: team });
     } else {
       // Add
-      setTeams([...teams, { ...team, id: Math.random().toString(36).substr(2, 9), last_updated: new Date().toISOString().split('T')[0] }]);
+      await createTeam(team);
     }
     setIsModalOpen(false);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (selectedTeam) {
-      setTeams(teams.filter(t => t.id !== selectedTeam.id));
+      await deleteTeam(selectedTeam.id);
       setIsDeleteModalOpen(false);
     }
   };
+
+  if (isLoading) {
+    return <div>Loading teams...</div>;
+  }
+
+  if (isError) {
+    return <div>Error loading teams: {error instanceof Error ? error.message : 'Unknown error'}</div>;
+  }
 
   return (
     <div className="space-y-4">
@@ -86,11 +83,17 @@ export const TeamTable = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {teams.map((team) => (
+          {teams.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                No team available in this instance
+              </TableCell>
+            </TableRow>
+          ) : teams.map((team) => (
             <TableRow key={team.id}>
               <TableCell className="font-medium">{team.name}</TableCell>
               <TableCell>{team.description}</TableCell>
-              <TableCell>{team.last_updated}</TableCell>
+              <TableCell>{team.updatedAt}</TableCell>
               <TableCell className="text-right">
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(team)}>
                   <Edit className="h-4 w-4" />

@@ -13,6 +13,7 @@ import type { User } from "@/types";
 import { UserModal } from "./user-modal";
 import { DeleteConfirmModal } from "./delete-confirmation-modal";
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/use-users";
+import { useCreateTeam } from "@/hooks/use-teams";
 
 export const UserTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,9 +22,9 @@ export const UserTable = () => {
 
   // React Query hooks
   const { data: users = [], isLoading, isError, error } = useUsers();
-  const createUser = useCreateUser();
-  const updateUser = useUpdateUser();
-  const deleteUser = useDeleteUser();
+  const { mutateAsync: createUser } = useCreateUser();
+  const { mutateAsync: updateUser } = useUpdateUser();
+  const { mutateAsync: deleteUser } = useDeleteUser();
 
   const handleAdd = () => {
     setSelectedUser(undefined);
@@ -44,10 +45,10 @@ export const UserTable = () => {
     try {
       if (selectedUser) {
         // Edit - send PUT request
-        await updateUser.mutateAsync({ id: user.id, data: user });
+        await updateUser({ id: user.id, data: user });
       } else {
         // Add - send POST request
-        await createUser.mutateAsync(user);
+        await createUser(user);
       }
       setIsModalOpen(false);
     } catch (error) {
@@ -59,7 +60,7 @@ export const UserTable = () => {
     try {
       if (selectedUser) {
         // Send DELETE request
-        await deleteUser.mutateAsync(selectedUser.id);
+        await deleteUser(selectedUser.id);
         setIsDeleteModalOpen(false);
       }
     } catch (error) {
@@ -89,16 +90,24 @@ export const UserTable = () => {
             <TableHead>First Name</TableHead>
             <TableHead>Last Name</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Team</TableHead>
             <TableHead>Last Updated</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((user) => (
+          {users.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                No user available in this instance
+              </TableCell>
+            </TableRow>
+          ) : users.map((user) => (
             <TableRow key={user.id}>
               <TableCell>{user.firstName}</TableCell>
               <TableCell>{user.lastName}</TableCell>
               <TableCell className="capitalize">{user.role}</TableCell>
+              <TableCell>{user.teamName || '-'}</TableCell>
               <TableCell>{user.updatedAt || '-'}</TableCell>
               <TableCell className="text-right">
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>

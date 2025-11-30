@@ -28,13 +28,15 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import type { User } from "@/types";
+import { useTeams } from "@/hooks/use-teams";
 
 const formSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
+  username: z.string().min(5, "Username must be at least 5 characters long"),
+  teamId: z.string().min(1, "Team is required"),
   role: z.enum(["user", "admin", "superadmin"]),
-  teamName: z.string().optional(),
   disabled: z.boolean(),
 });
 
@@ -51,14 +53,17 @@ export const UserModal: React.FC<UserModalProps> = ({
   onSave,
   user,
 }) => {
+  const { data: teams, isLoading: isLoadingTeams } = useTeams();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
+      username: '',
       email: '',
+      teamId: '',
       role: 'user',
-      teamName: '',
       disabled: false,
     },
   });
@@ -68,31 +73,44 @@ export const UserModal: React.FC<UserModalProps> = ({
       form.reset({
         firstName: user.firstName,
         lastName: user.lastName,
+        username: user.username,
         email: user.email,
         role: user.role,
-        teamName: user.teamName || '',
+        teamId: user.teamId,
         disabled: user.disabled,
       });
     } else {
       form.reset({
         firstName: '',
         lastName: '',
+        username: '',
         email: '',
         role: 'user',
-        teamName: '',
+        teamId: '',
         disabled: false,
       });
     }
   }, [user, isOpen, form]);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    onSave({
-      id: user?.id || '',
-      ...values,
-      username: values.email.split('@')[0], // Generate username from email for now
-      teamId: user?.teamId || 'default-team-id', // Placeholder as we don't have team selection logic fully wired
-      teamName: values.teamName || '',
-    } as User);
+    const selectedTeam = teams?.find(t => t.id === values.teamId);
+
+    const newUser: User = {
+      firstName: values.firstName,
+      lastName: values.lastName,
+      email: values.email,
+      role: values.role,
+      teamId: values.teamId,
+      teamName: selectedTeam?.name || '',
+      disabled: values.disabled,
+      username: values.username || '',
+    };
+
+    if (user) {
+      newUser.id = user.id;
+    }
+
+    onSave(newUser);
   };
 
   return (
@@ -144,6 +162,19 @@ export const UserModal: React.FC<UserModalProps> = ({
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input placeholder="doenut" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -169,19 +200,22 @@ export const UserModal: React.FC<UserModalProps> = ({
               />
               <FormField
                 control={form.control}
-                name="teamName"
+                name="teamId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Team</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingTeams}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a team" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Team Alpha">Team Alpha</SelectItem>
-                        <SelectItem value="Team Beta">Team Beta</SelectItem>
+                        {teams?.map((team) => (
+                          <SelectItem key={team.id} value={team.id}>
+                            {team.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />

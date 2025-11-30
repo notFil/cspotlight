@@ -7,7 +7,7 @@ export interface Team {
 }
 
 export interface User {
-  id: string;
+  id?: string;
   firstName: string;
   lastName: string;
   username: string;
@@ -30,12 +30,14 @@ export interface UserCreate {
 }
 
 export interface Project {
-  id: string;
+  id?: string;
   name: string;
   description: string;
-  team: string; // Team ID or Name
-  reportingUrl: string;
-  updatedAt: string;
+  teamId: string;
+  teamName: string;
+  reportingUrl?: string;
+  lastActive?: string;
+  disabled: boolean;
 }
 
 export interface AuthTokenData {
@@ -74,4 +76,11 @@ export interface CSPReport {
   userAgent: string;
   count: number;
   lastSeen: string;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  description: string;
+  updatedAt: string;
 }

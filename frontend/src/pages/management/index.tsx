@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { UserTable } from './components/user-table';
 import { ProjectTable } from './components/project-table';
 import { TeamTable } from './components/team-table';
+import { CSPGuide } from './components/csp-guide';
 
 const Management = () => {
   const [activeTab, setActiveTab] = useState<'users' | 'projects' | 'teams'>('users');
@@ -41,7 +42,12 @@ const Management = () => {
         {/* Content */}
         <div>
           {activeTab === 'users' && <UserTable />}
-          {activeTab === 'projects' && <ProjectTable />}
+          {activeTab === 'projects' && (
+            <>
+              <ProjectTable />
+              <CSPGuide />
+            </>
+          )}
           {activeTab === 'teams' && <TeamTable />}
         </div>
 
