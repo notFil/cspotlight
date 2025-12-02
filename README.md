@@ -8,9 +8,6 @@
 
 - 📥 **CSP Report Ingestion**: Receive and store incoming CSP violation reports via a secure API.
 - 📊 **Analytics Dashboard**: Visualize violations by source, type, page, and frequency.
-- 🎯 **Severity Scoring**: Highlight suspicious or potentially dangerous violations (e.g., `eval`, inline scripts, third-party JS).
-- 🕵️ **Enrichment**: Optional GeoIP lookup, user-agent parsing, and referrer analysis.
-- 🔔 **Alerts & Integrations**: Configurable Slack/email alerting for high-risk reports.
 - 🐳 **Dockerized & Deployable**: Run locally or deploy via Docker, Kubernetes, or serverless platforms.
 
 ---
@@ -25,7 +22,8 @@
 
 ### Prerequisites
 
-- Python 3.13+
+- Go 1.23+
+- PostgreSQL 16+
 - Docker (optional for container-based deployment)
 
 ### Installation (Local)
@@ -33,4 +31,5 @@
 ```bash
 git clone https://github.com/notFil/cspotlight.git
 cd cspotlight
-<TODO>
+
+# TODO: Add installation instructions here.
