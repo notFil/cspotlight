@@ -11,6 +11,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/hooks/use-auth"
 import { NavUser } from "./nav-user"
@@ -39,9 +41,10 @@ export function AppSidebar() {
   const { user } = useAuth()
 
   return (
-    <Sidebar collapsible="offcanvas" side="left" className="z-40">
-      <SidebarHeader className="sidebar-brand-header">
-        <h2 className="text-lg font-semibold w-full" style={{ color: "var(--color-text)" }}>
+    <Sidebar collapsible="icon" side="left" className="z-40">
+      <SidebarHeader className="flex flex-row items-center gap-2">
+        <SidebarTrigger className="hidden md:flex size-8" />
+        <h2 className="text-lg font-semibold w-full group-data-[collapsible=icon]:hidden" style={{ color: "var(--color-text)" }}>
           cspotlight
         </h2>
       </SidebarHeader>
@@ -51,7 +54,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="h-12 text-base hover:bg-primary/10 hover:text-primary transition-colors">
+                  <SidebarMenuButton asChild tooltip={item.title} className="h-12 text-base hover:bg-primary/10 hover:text-primary transition-colors">
                     <Link to={item.url}>
                       <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
@@ -63,9 +66,10 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4">
+      <SidebarFooter>
         {user && <NavUser user={user} />}
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   )
 }
