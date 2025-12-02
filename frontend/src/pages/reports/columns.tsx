@@ -10,6 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Chrome, Globe, Smartphone } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 const getBrowserIcon = (userAgent: string) => {
   const ua = userAgent.toLowerCase()
@@ -39,14 +40,32 @@ export const columns: ColumnDef<CSPReport>[] = [
     },
   },
   {
-    accessorKey: "url",
+    accessorKey: "disposition",
+    header: "Disposition",
+    cell: ({ row }) => {
+      const disposition = row.getValue("disposition") as string
+      return (
+        <Badge
+          variant={disposition === "enforce" ? "default" : "secondary"}
+          className={disposition === "enforce" ? "bg-green-500 hover:bg-green-600" : ""}
+        >
+          {disposition}
+        </Badge>
+      )
+    },
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id))
+    },
+  },
+  {
+    accessorKey: "documentURL",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          URL
+          Document URL
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
@@ -60,8 +79,9 @@ export const columns: ColumnDef<CSPReport>[] = [
       return value.includes(row.getValue(id))
     },
   },
+
   {
-    accessorKey: "ipAddress",
+    accessorKey: "sourceIP",
     header: "IP Address",
   },
   {
@@ -95,15 +115,20 @@ export const columns: ColumnDef<CSPReport>[] = [
     },
   },
   {
-    accessorKey: "raw",
+    accessorKey: "body",
     header: "Raw Report",
     cell: ({ row }) => {
-      const raw = row.getValue("raw") as string
-      let formattedRaw = raw
-      try {
-        formattedRaw = JSON.stringify(JSON.parse(raw), null, 2)
-      } catch (e) {
-        // keep original raw if parse fails
+      const body = row.getValue("body")
+      let formattedRaw = ""
+
+      if (typeof body === "object" && body !== null) {
+        formattedRaw = JSON.stringify(body, null, 2)
+      } else {
+        try {
+          formattedRaw = JSON.stringify(JSON.parse(body as string), null, 2)
+        } catch (e) {
+          formattedRaw = body as string
+        }
       }
 
       return (

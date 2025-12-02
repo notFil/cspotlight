@@ -4,25 +4,29 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
+import { useChangeImage } from "@/hooks/use-users";
 
 interface AvatarUploadProps {
   currentAvatarUrl?: string;
   username: string;
+  userId: string;
 }
 
-export function AvatarUpload({ currentAvatarUrl, username }: AvatarUploadProps) {
+export function AvatarUpload({ currentAvatarUrl, username, userId }: AvatarUploadProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatarUrl || null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const changeImageMutation = useChangeImage();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("File size must be less than 5MB");
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("File size must be less than 2MB");
         return;
       }
 
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result as string);
@@ -36,14 +40,21 @@ export function AvatarUpload({ currentAvatarUrl, username }: AvatarUploadProps) 
   };
 
   const handleSave = () => {
-    if (!previewUrl) return;
+    if (!selectedFile) return;
 
-    setIsLoading(true);
-    // Mock API call
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success("Avatar updated successfully");
-    }, 1000);
+    changeImageMutation.mutate(
+      { id: userId, data: selectedFile },
+      {
+        onSuccess: () => {
+          toast.success("Avatar updated successfully");
+          setSelectedFile(null);
+        },
+        onError: (error: any) => {
+          console.error("Failed to update avatar", error);
+          toast.error(error.response?.data?.message || "Failed to update avatar");
+        },
+      }
+    );
   };
 
   return (
@@ -72,15 +83,24 @@ export function AvatarUpload({ currentAvatarUrl, username }: AvatarUploadProps) 
           onChange={handleFileChange}
         />
         <div className="text-sm text-muted-foreground">
-          Click to upload. JPG, GIF or PNG. 5MB max.
+          Click to upload. JPG, GIF or PNG. 2MB max.
         </div>
       </CardContent>
       <CardFooter className="border-t px-6 py-4 flex justify-between">
-        <Button variant="outline" onClick={() => setPreviewUrl(currentAvatarUrl || null)}>
+        <Button
+          variant="outline"
+          onClick={() => {
+            setPreviewUrl(currentAvatarUrl || null);
+            setSelectedFile(null);
+          }}
+        >
           Reset
         </Button>
-        <Button onClick={handleSave} disabled={isLoading || previewUrl === currentAvatarUrl}>
-          {isLoading ? "Saving..." : "Save Avatar"}
+        <Button
+          onClick={handleSave}
+          disabled={changeImageMutation.isPending || !selectedFile}
+        >
+          {changeImageMutation.isPending ? "Saving..." : "Save Avatar"}
         </Button>
       </CardFooter>
     </Card>

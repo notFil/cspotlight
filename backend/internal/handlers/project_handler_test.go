@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/pkg/auth"
 	"github.com/notFil/cspotlight/pkg/constants"
@@ -70,7 +71,7 @@ func TestProjectHandler_GetProjectByID(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "id", Value: "proj-1"}}
-		c.Set(constants.ClaimsContextKey, &auth.Claims{UserID: "user-1"})
+		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
 
 		handler.GetProjectByID(c)
 
@@ -90,7 +91,7 @@ func TestProjectHandler_GetProjectByID(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "id", Value: "proj-1"}}
-		c.Set(constants.ClaimsContextKey, &auth.Claims{UserID: "user-1"})
+		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
 
 		handler.GetProjectByID(c)
 
@@ -113,7 +114,7 @@ func TestProjectHandler_CreateProject(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Set(constants.ClaimsContextKey, &auth.Claims{UserID: "user-1"})
+		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
 		body := `{"name": "New Project", "teamId": "team-1"}`
 		c.Request = httptest.NewRequest("POST", "/projects", bytes.NewBufferString(body))
 
@@ -128,7 +129,7 @@ func TestProjectHandler_CreateProject(t *testing.T) {
 		handler := NewProjectHandler(&MockProjectService{})
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Set(constants.ClaimsContextKey, &auth.Claims{UserID: "user-1"})
+		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
 		c.Request = httptest.NewRequest("POST", "/projects", bytes.NewBufferString("invalid"))
 
 		handler.CreateProject(c)
@@ -153,7 +154,7 @@ func TestProjectHandler_UpdateProject(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "id", Value: "proj-1"}}
-		c.Set(constants.ClaimsContextKey, &auth.Claims{UserID: "user-1"})
+		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
 		body := `{"name": "Updated Project", "teamId": "team-1"}`
 		c.Request = httptest.NewRequest("PUT", "/projects/proj-1", bytes.NewBufferString(body))
 
@@ -179,7 +180,7 @@ func TestProjectHandler_DeleteProject(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "id", Value: "proj-1"}}
-		c.Set(constants.ClaimsContextKey, &auth.Claims{UserID: "user-1"})
+		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
 
 		handler.DeleteProject(c)
 
@@ -199,7 +200,7 @@ func TestProjectHandler_DeleteProject(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "id", Value: "proj-1"}}
-		c.Set(constants.ClaimsContextKey, &auth.Claims{UserID: "user-1"})
+		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
 
 		handler.DeleteProject(c)
 
@@ -222,7 +223,7 @@ func TestProjectHandler_ListProjects(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Set(constants.ClaimsContextKey, &auth.Claims{UserID: "user-1"})
+		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
 
 		handler.ListProjects(c)
 

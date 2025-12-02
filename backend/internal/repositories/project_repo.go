@@ -42,11 +42,11 @@ func (r *projectRepository) DeleteProject(id string) error {
 func (r *projectRepository) ListProjects() (projects []*models.ProjectFetchDTO, err error) {
 	if err = r.db.Table("projects p").
 		Joins("LEFT JOIN teams t ON t.id = p.team_id").
-		Select(`p.*, t.name as team_name, COALESCE(TO_CHAR((
+		Select(`p.*, t.name as team_name, (
 			SELECT MAX(created_at)
 			FROM csp_reports r
 			WHERE r.project_id = p.id
-		), 'DD Mon YY HH24:MI "UTC"'), '') AS last_active`).
+		) AS last_active`).
 		Scan(&projects).Error; err != nil {
 		return nil, err
 	}
@@ -56,11 +56,11 @@ func (r *projectRepository) ListProjects() (projects []*models.ProjectFetchDTO, 
 func (r *projectRepository) ListProjectsByTeamID(teamID string) (projects []*models.ProjectFetchDTO, err error) {
 	if err = r.db.Table("projects p").
 		Joins("LEFT JOIN teams t ON t.id = p.team_id").
-		Select(`p.*, t.name as team_name, COALESCE(TO_CHAR((
+		Select(`p.*, t.name as team_name, (
 			SELECT MAX(created_at)
 			FROM csp_reports r
 			WHERE r.project_id = p.id
-		), 'DD Mon YY HH24:MI "UTC"'), '') AS last_active`).
+		) AS last_active`).
 		Where("p.team_id = ?", teamID).
 		Scan(&projects).Error; err != nil {
 		return nil, err

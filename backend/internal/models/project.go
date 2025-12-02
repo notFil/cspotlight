@@ -19,13 +19,13 @@ type Project struct {
 }
 
 type ProjectFetchDTO struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Disabled    bool
-	TeamID      string `json:"teamId"`
-	TeamName    string `json:"teamName"`
-	LastActive  string `json:"lastActive"`
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Disabled    bool       `json:"disabled"`
+	TeamID      string     `json:"teamId"`
+	TeamName    string     `json:"teamName"`
+	LastActive  *time.Time `json:"lastActive"`
 }
 type ProjectUpsertDTO struct {
 	Name        string `json:"name" binding:"required"`

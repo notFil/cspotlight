@@ -42,7 +42,7 @@ func (h *ReportHandler) CreateReport(c *gin.Context) {
 	report := models.CSPReportCreateDTO{}
 	if err := c.BindJSON(&report); err != nil {
 		log.Warn("invalid report payload", zap.Error(err))
-		response.ErrorResponse(c, http.StatusBadRequest, "invalid request payload")
+		response.Error(c, err)
 		return
 	}
 
@@ -71,12 +71,13 @@ func (h *ReportHandler) ListReportsByProjectID(c *gin.Context) {
 		PageSize: pageSize,
 	}
 
-	log.Info("listing reports", zap.String("project_id", projectID), zap.String("user_id", claims.UserID))
+	log.Info("listing reports", zap.String("project_id", projectID), zap.String("user_id", claims.Subject))
 
 	reports, meta, err := h.reportService.ListReportsByProjectID(projectID, p, *claims)
 	if err != nil {
 		log.Error("failed to list reports", zap.String("project_id", projectID), zap.Error(err))
-		response.ErrorResponse(c, http.StatusNotFound, "failed to list reports")
+		response.Error(c, err)
+		return
 	}
 	response.SuccessPagedResponse(c, http.StatusOK, "reports fetched successfully", reports, meta)
 }

@@ -8,17 +8,21 @@ import (
 )
 
 type CSPReport struct {
-	ID         string `gorm:"primaryKey;default:uuid_generate_v4()"`
-	Age        int
-	ReportBody datatypes.JSONType[ReportBody]
-	ProjectID  string `gorm:"type:uuid"`
-	Type       string `gorm:"type:varchar(20)"`
-	URL        string `gorm:"type:varchar(100)"`
-	SourceIP   string `gorm:"type:varchar(20)"`
-	UserAgent  string `json:"user_agent"`
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	DeletedAt  gorm.DeletedAt `gorm:"index"`
+	ID          string `gorm:"primaryKey;default:uuid_generate_v4()"`
+	Age         int
+	Body        datatypes.JSONType[ReportBody]
+	Disposition string `gorm:"type:varchar(20)"`
+	Directive   string `gorm:"type:varchar(50)"`
+	BlockedURL  string `gorm:"type:text"`
+	DocumentURL string `gorm:"type:text"`
+	ProjectID   string `gorm:"type:uuid"`
+	Type        string `gorm:"type:varchar(20)"`
+	URL         string `gorm:"type:varchar(100)"`
+	SourceIP    string `gorm:"type:varchar(20)"`
+	UserAgent   string `json:"user_agent"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
 type ReportBody struct {
@@ -36,21 +40,25 @@ type ReportBody struct {
 }
 
 type CSPReportCreateDTO struct {
-	Age        int        `json:"age"`
-	ReportBody ReportBody `json:"reportBody"`
-	Type       string     `json:"type"`
-	URL        string     `json:"url"`
-	UserAgent  string     `json:"user_agent"`
-	SourceIP   string     `json:"-"`
+	Age       int        `json:"age"`
+	Body      ReportBody `json:"body"`
+	Type      string     `json:"type"`
+	URL       string     `json:"url"`
+	UserAgent string     `json:"user_agent"`
+	SourceIP  string     `json:"-"`
 }
 
 type CSPReportFetchDTO struct {
-	ReportBody ReportBody `json:"reportBody"`
-	Directive  string     `json:"directive"`
-	URL        string     `json:"url"`
-	SourceIP   string     `json:"sourceIP"`
-	UserAgent  string     `json:"user_agent"`
-	Count      int        `json:"count"`
+	Body        datatypes.JSONType[ReportBody] `json:"body"`
+	Directive   string                         `json:"directive"`
+	URL         string                         `json:"url"`
+	BlockedURL  string                         `json:"blockedURL"`
+	DocumentURL string                         `json:"documentURL"`
+	Disposition string                         `json:"disposition"`
+	SourceIP    string                         `json:"sourceIP"`
+	UserAgent   string                         `json:"userAgent"`
+	LastSeen    time.Time                      `json:"lastSeen"`
+	Count       int                            `json:"count"`
 }
 
 func (r *CSPReportCreateDTO) ToCSPReport() *CSPReport {
@@ -61,17 +69,10 @@ func (r *CSPReportCreateDTO) ToCSPReport() *CSPReport {
 		UserAgent: r.UserAgent,
 		SourceIP:  r.SourceIP,
 	}
-	c.ReportBody = datatypes.NewJSONType(r.ReportBody)
+	c.Body = datatypes.NewJSONType(r.Body)
+	c.Directive = r.Body.EffectiveDirective
+	c.Disposition = r.Body.Disposition
+	c.BlockedURL = r.Body.BlockedURL
+	c.DocumentURL = r.Body.DocumentURL
 	return c
-}
-
-func (c *CSPReport) ToFetchDTO() *CSPReportFetchDTO {
-	r := &CSPReportFetchDTO{
-		URL:       c.URL,
-		UserAgent: c.UserAgent,
-		SourceIP:  c.SourceIP,
-	}
-	r.ReportBody = c.ReportBody.Data()
-	r.Directive = r.ReportBody.EffectiveDirective
-	return r
 }

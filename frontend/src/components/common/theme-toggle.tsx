@@ -1,49 +1,10 @@
-import { useState, useEffect } from 'react';
+// import { useState, useEffect } from 'react'; // Removed unused imports
+import { useAppContext } from '../../context/AppContext';
 import { Moon, Sun } from 'lucide-react';
 
 const ThemeToggle = () => {
-  const [isDark, setIsDark] = useState(() => {
-    // Check localStorage first
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      return savedTheme === 'dark';
-    }
-    // Fall back to system preference
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
-  useEffect(() => {
-    // Apply initial theme
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      document.documentElement.classList.remove('dark', 'light');
-      document.documentElement.classList.add(savedTheme);
-      setIsDark(savedTheme === 'dark');
-    } else {
-      // Use system preference if no saved theme
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.classList.remove('dark', 'light');
-      if (prefersDark) {
-        document.documentElement.classList.add('dark');
-      }
-      setIsDark(prefersDark);
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const newIsDark = !isDark;
-    setIsDark(newIsDark);
-
-    // Remove both classes first
-    document.documentElement.classList.remove('dark', 'light');
-    
-    // Add the appropriate class
-    const theme = newIsDark ? 'dark' : 'light';
-    document.documentElement.classList.add(theme);
-
-    // Store preference in localStorage
-    localStorage.setItem('theme', theme);
-  };
+  const { state, toggleTheme } = useAppContext();
+  const isDark = state.theme === 'dark';
 
   return (
     <button

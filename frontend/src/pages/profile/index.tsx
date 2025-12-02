@@ -3,15 +3,14 @@
 import { UserInfoCard } from "./components/user-info-card";
 import { PasswordUpdateForm } from "./components/password-update-form";
 import { AvatarUpload } from "./components/avatar-upload";
+import { useAuth } from "@/hooks/use-auth"
 
 const Profile = () => {
-  // Mock User Data
-  const user = {
-    name: "Phil Ogb",
-    email: "phil.ogb@example.com",
-    username: "philogb",
-    avatarUrl: "https://github.com/shadcn.png", // Placeholder image
-  };
+  const { user } = useAuth()
+
+  if (!user) {
+    return <div>Loading...</div>
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -22,19 +21,21 @@ const Profile = () => {
           {/* Left Column: Avatar and User Info */}
           <div className="md:col-span-4 space-y-6">
             <AvatarUpload
-              currentAvatarUrl={user.avatarUrl}
+              currentAvatarUrl={user.image || ""}
               username={user.username}
+              userId={user.id || ""}
             />
             <UserInfoCard
-              name={user.name}
+              name={`${user.firstName} ${user.lastName}`}
               email={user.email}
               username={user.username}
+              role={user.role}
             />
           </div>
 
           {/* Right Column: Password Update and other settings */}
           <div className="md:col-span-8 space-y-6">
-            <PasswordUpdateForm />
+            <PasswordUpdateForm userId={user.id || ""} />
           </div>
         </div>
       </div>

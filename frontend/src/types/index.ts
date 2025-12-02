@@ -13,20 +13,21 @@ export interface User {
   username: string;
   email: string;
   role: 'user' | 'admin' | 'superadmin';
+  image?: string;
   disabled: boolean;
   teamId: string;
   teamName: string;
-  updatedAt?: string; // Making optional as it's not in the sample response, but keeping for compatibility if needed
+  updatedAt?: string;
+  defaultProjectId?: string;
 }
 
-export interface UserCreate {
+export interface UserRegister {
   firstName: string;
   lastName: string;
   username: string;
   email: string;
-  role: 'user' | 'admin' | 'superadmin';
-  disabled: boolean;
-  teamId: string;
+  password: string;
+  confirmPassword: string;
 }
 
 export interface Project {
@@ -40,12 +41,35 @@ export interface Project {
   disabled: boolean;
 }
 
+export interface CSPReport {
+  directive: string;
+  documentURL: string;
+  disposition: string;
+  blockedURL: string;
+  body: string;
+  sourceIP: string;
+  userAgent: string;
+  count: number;
+  lastSeen: string;
+}
+
 export interface AuthTokenData {
   accessToken: string;
   refreshToken: string;
   createdAt: string;
   expiresIn: string;
   refreshExpiresIn: string;
+}
+
+export interface AuthRequest {
+  username: string;
+  password: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
 }
 
 export interface Pagination {
@@ -66,21 +90,11 @@ export interface AppState {
   isLoading: boolean;
   user?: User | null;
   theme: 'light' | 'dark';
+  error?: string | null;
 }
 
-export interface CSPReport {
-  url: string;
-  directive: string;
-  ipAddress: string;
-  raw: string;
-  userAgent: string;
-  count: number;
-  lastSeen: string;
-}
 
-export interface Team {
-  id: string;
-  name: string;
-  description: string;
-  updatedAt: string;
+export interface UserLogin {
+  username: string;
+  password: string;
 }

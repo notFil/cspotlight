@@ -27,16 +27,18 @@ type User struct {
 }
 
 type UserFetchDTO struct {
-	ID        string `json:"id"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Username  string `json:"username"`
-	Role      string `json:"role"`
-	Email     string `json:"email"`
-	Disabled  bool   `json:"disabled"`
-	TeamID    string `json:"teamId"`
-	TeamName  string `json:"teamName"`
-	UpdatedAt string `json:"updatedAt"`
+	ID               string    `json:"id"`
+	FirstName        string    `json:"firstName"`
+	LastName         string    `json:"lastName"`
+	Username         string    `json:"username"`
+	Role             string    `json:"role"`
+	DefaultProjectID string    `json:"defaultProjectId,omitempty"`
+	Image            string    `json:"image,omitempty"`
+	Email            string    `json:"email"`
+	Disabled         bool      `json:"disabled"`
+	TeamID           string    `json:"teamId"`
+	TeamName         string    `json:"teamName"`
+	UpdatedAt        time.Time `json:"updatedAt"`
 }
 
 type UserCreateDTO struct {
@@ -47,6 +49,15 @@ type UserCreateDTO struct {
 	Password  string `json:"password" binding:"required"`
 	Role      string `json:"role" binding:"required"`
 	TeamID    string `json:"teamId"`
+}
+
+type UserRegisterDTO struct {
+	FirstName       string `json:"firstName" binding:"required"`
+	LastName        string `json:"lastName" binding:"required"`
+	Username        string `json:"username" binding:"required"`
+	Email           string `json:"email" binding:"required,email"`
+	Password        string `json:"password" binding:"required"`
+	ConfirmPassword string `json:"confirmPassword" binding:"required"`
 }
 
 type UserUpdateDTO struct {
@@ -63,6 +74,12 @@ type AuthRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type ChangePasswordRequest struct {
+	CurrentPassword    string `json:"currentPassword" binding:"required"`
+	NewPassword        string `json:"newPassword" binding:"required"`
+	ConfirmNewPassword string `json:"confirmNewPassword" binding:"required"`
+}
+
 func (u *User) ToFetchDTO() *UserFetchDTO {
 	dto := UserFetchDTO{
 		ID:        u.ID,
@@ -70,13 +87,17 @@ func (u *User) ToFetchDTO() *UserFetchDTO {
 		LastName:  u.LastName,
 		Username:  u.Username,
 		Email:     u.Email,
+		Image:     u.Image,
 		Disabled:  u.Disabled,
 		Role:      u.Role,
-		UpdatedAt: u.UpdatedAt.Format("02 Jan 06 15:04 MST"),
+		UpdatedAt: u.UpdatedAt,
 	}
 	if u.TeamID != nil {
 		dto.TeamID = *u.TeamID
 		dto.TeamName = u.Team.Name
+	}
+	if u.DefaultProjectID != nil {
+		dto.DefaultProjectID = *u.DefaultProjectID
 	}
 	return &dto
 }
@@ -108,5 +129,15 @@ func (u *UserUpdateDTO) ToUser() *User {
 		Email:     u.Email,
 		Role:      u.Role,
 		TeamID:    teamID,
+	}
+}
+
+func (u *UserRegisterDTO) ToUser() *User {
+	return &User{
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		Username:  u.Username,
+		Email:     u.Email,
+		Role:      "user",
 	}
 }

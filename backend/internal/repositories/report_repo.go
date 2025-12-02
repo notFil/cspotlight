@@ -11,7 +11,7 @@ type ReportRepository interface {
 	GetReportByID(id string) (*models.CSPReport, error)
 	UpdateReport(report *models.CSPReport) error
 	DeleteReport(id string) error
-	ListReportsByProjectID(projectID string, p *pagination.Pagination) ([]*models.CSPReport, *pagination.Pagination, error)
+	ListReportsByProjectID(projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
 	BatchCreateReports(reports []*models.CSPReport) error
 }
 
@@ -44,13 +44,46 @@ func (r *reportRepository) DeleteReport(id string) error {
 	return r.db.Delete(&models.CSPReport{}, "id = ?", id).Error
 }
 
-func (r *reportRepository) ListReportsByProjectID(projectID string, p *pagination.Pagination) ([]*models.CSPReport, *pagination.Pagination, error) {
-	var reports []*models.CSPReport
+func (r *reportRepository) ListReportsByProjectID(projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+	var reports []*models.CSPReportFetchDTO
 
-	r.db.Where("project_id = ?", projectID).Count(&p.TotalRows)
+	// Count total unique groups for pagination
+	var totalRows int64
+	r.db.Raw(`
+		SELECT COUNT(*) 
+		FROM (
+			SELECT 1 
+			FROM csp_reports 
+			WHERE project_id = ? 
+			GROUP BY url, directive, blocked_url, disposition, document_url, body, source_ip, user_agent
+		) AS sub
+	`, projectID).Scan(&totalRows)
+	p.TotalRows = totalRows
 
-	p.TotalPages = int((p.TotalRows + int64(p.PageSize) - 1) / int64(p.PageSize))
+	p.TotalPages = int((p.TotalRows + int64(p.GetLimit()) - 1) / int64(p.GetLimit()))
 
-	result := r.db.Scopes(pagination.Paginate(p)).Order("id DESC").Find(&reports)
-	return reports, p, result.Error
+	// Fetch paginated results
+	result := r.db.Raw(`
+    SELECT 
+        url,
+        directive,
+				blocked_url,
+				disposition,
+				document_url,
+				body,
+				source_ip,
+				user_agent,
+        COUNT(*) AS count,
+        MAX(created_at) AS last_seen
+    FROM csp_reports
+    WHERE project_id = ?
+    GROUP BY url, directive, blocked_url, disposition, document_url, body, source_ip, user_agent
+    LIMIT ? OFFSET ?
+`, projectID, p.GetLimit(), p.GetOffset()).Scan(&reports)
+
+	if result.Error != nil {
+		return nil, p, result.Error
+	}
+
+	return reports, p, nil
 }

@@ -13,7 +13,7 @@ import type { User } from "@/types";
 import { UserModal } from "./user-modal";
 import { DeleteConfirmModal } from "./delete-confirmation-modal";
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/use-users";
-import { useCreateTeam } from "@/hooks/use-teams";
+import { formatTimestamp } from "@/utils/date";
 
 export const UserTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,9 +43,9 @@ export const UserTable = () => {
 
   const handleSave = async (user: User) => {
     try {
-      if (selectedUser) {
+      if (selectedUser?.id) {
         // Edit - send PUT request
-        await updateUser({ id: user.id, data: user });
+        await updateUser({ id: selectedUser.id, data: user });
       } else {
         // Add - send POST request
         await createUser(user);
@@ -58,7 +58,7 @@ export const UserTable = () => {
 
   const handleDeleteConfirm = async () => {
     try {
-      if (selectedUser) {
+      if (selectedUser?.id) {
         // Send DELETE request
         await deleteUser(selectedUser.id);
         setIsDeleteModalOpen(false);
@@ -108,7 +108,7 @@ export const UserTable = () => {
               <TableCell>{user.lastName}</TableCell>
               <TableCell className="capitalize">{user.role}</TableCell>
               <TableCell>{user.teamName || '-'}</TableCell>
-              <TableCell>{user.updatedAt || '-'}</TableCell>
+              <TableCell>{user.updatedAt ? formatTimestamp(user.updatedAt) : '-'}</TableCell>
               <TableCell className="text-right">
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
                   <Edit className="h-4 w-4" />

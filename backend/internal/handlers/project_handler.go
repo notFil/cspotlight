@@ -38,20 +38,20 @@ func (h *ProjectHandler) GetProjectByID(c *gin.Context) {
 	claims := auth.GetUserClaims(c)
 	log := logger.FromContext(c)
 
-	log.Info("fetching project", zap.String("project_id", id), zap.String("user_id", claims.UserID))
+	log.Info("fetching project", zap.String("project_id", id), zap.String("user_id", claims.Subject))
 
 	project, err := h.projectService.GetProjectByID(id, *claims)
 	if err != nil {
 		log.Error("failed to fetch project", zap.Error(err))
-		response.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		response.Error(c, err)
 		return
 	}
 	if project == nil {
 		log.Warn("project not found", zap.String("project_id", id))
-		response.ErrorResponse(c, http.StatusNotFound, "project not found")
+		response.Error(c, err)
 		return
 	}
-	response.SuccessResponse(c, http.StatusOK, "", project)
+	response.Success(c, http.StatusOK, "", project)
 }
 
 // CreateProject godoc
@@ -72,20 +72,20 @@ func (h *ProjectHandler) CreateProject(c *gin.Context) {
 	project := &models.ProjectUpsertDTO{}
 	if err := c.BindJSON(project); err != nil {
 		log.Warn("invalid request payload", zap.Error(err))
-		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		response.Error(c, err)
 		return
 	}
 
-	log.Info("creating project", zap.String("user_id", claims.UserID), zap.String("project_name", project.Name))
+	log.Info("creating project", zap.String("user_id", claims.Subject), zap.String("project_name", project.Name))
 
 	created, err := h.projectService.CreateProject(project, *claims)
 	if err != nil || !created {
 		log.Error("failed to create project", zap.Error(err))
-		response.ErrorResponse(c, http.StatusInternalServerError, "failed to create project")
+		response.Error(c, err)
 		return
 	}
 
-	response.SuccessResponse(c, http.StatusCreated, "project created successfully", nil)
+	response.Success(c, http.StatusCreated, "project created successfully", nil)
 }
 
 // UpdateProject godoc
@@ -109,20 +109,20 @@ func (h *ProjectHandler) UpdateProject(c *gin.Context) {
 	project := &models.ProjectUpsertDTO{}
 	if err := c.BindJSON(project); err != nil {
 		log.Warn("invalid request payload", zap.Error(err))
-		response.ErrorResponse(c, http.StatusBadRequest, "invalid request payload")
+		response.Error(c, err)
 		return
 	}
 
-	log.Info("updating project", zap.String("project_id", id), zap.String("user_id", claims.UserID))
+	log.Info("updating project", zap.String("project_id", id), zap.String("user_id", claims.Subject))
 
 	updatedProject, err := h.projectService.UpdateProject(id, project, *claims)
 	if err != nil {
 		log.Error("failed to update project", zap.Error(err))
-		response.ErrorResponse(c, http.StatusInternalServerError, "failed to update project")
+		response.Error(c, err)
 		return
 	}
 
-	response.SuccessResponse(c, http.StatusOK, "", updatedProject)
+	response.Success(c, http.StatusOK, "", updatedProject)
 }
 
 // DeleteProject godoc
@@ -140,15 +140,15 @@ func (h *ProjectHandler) DeleteProject(c *gin.Context) {
 	claims := auth.GetUserClaims(c)
 	log := logger.FromContext(c)
 
-	log.Info("deleting project", zap.String("project_id", id), zap.String("user_id", claims.UserID))
+	log.Info("deleting project", zap.String("project_id", id), zap.String("user_id", claims.Subject))
 
 	if err := h.projectService.DeleteProject(id, *claims); err != nil {
 		log.Error("failed to delete project", zap.Error(err))
-		response.ErrorResponse(c, http.StatusForbidden, "failed to delete project")
+		response.Error(c, err)
 		return
 	}
 
-	response.SuccessResponse(c, http.StatusOK, "project deleted successfully", nil)
+	response.Success(c, http.StatusOK, "project deleted successfully", nil)
 }
 
 // ListProjects godoc
@@ -163,14 +163,14 @@ func (h *ProjectHandler) ListProjects(c *gin.Context) {
 	claims := auth.GetUserClaims(c)
 	log := logger.FromContext(c)
 
-	log.Info("listing projects", zap.String("user_id", claims.UserID))
+	log.Info("listing projects", zap.String("user_id", claims.Subject))
 
 	projects, err := h.projectService.ListProjects(*claims)
 	if err != nil {
 		log.Error("failed to list projects", zap.Error(err))
-		response.ErrorResponse(c, http.StatusForbidden, "failed to list projects")
+		response.Error(c, err)
 		return
 	}
 
-	response.SuccessResponse(c, http.StatusOK, "", projects)
+	response.Success(c, http.StatusOK, "", projects)
 }

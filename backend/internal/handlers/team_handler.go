@@ -41,10 +41,10 @@ func (h *TeamHandler) GetTeamByID(c *gin.Context) {
 	user, err := h.teamService.GetTeamByID(id)
 	if err != nil {
 		log.Error("failed to fetch team", zap.String("team_id", id), zap.Error(err))
-		response.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		response.Error(c, err)
 		return
 	}
-	response.SuccessResponse(c, http.StatusOK, "", user)
+	response.Success(c, http.StatusOK, "", user)
 }
 
 // CreateTeam godoc
@@ -63,20 +63,19 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 	team := &models.TeamUpsertDTO{}
 	if err := c.BindJSON(team); err != nil {
 		log.Warn("invalid team payload", zap.Error(err))
-		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		response.Error(c, err)
 		return
 	}
 
 	log.Info("creating team", zap.String("team_name", team.Name))
 
-	created, err := h.teamService.CreateTeam(team)
-	if err != nil || !created {
+	if err := h.teamService.CreateTeam(team); err != nil {
 		log.Error("failed to create team", zap.Error(err))
-		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to create team")
+		response.Error(c, err)
 		return
 	}
 
-	response.SuccessResponse(c, http.StatusCreated, "Team created successfully", nil)
+	response.Success(c, http.StatusCreated, "Team created successfully", nil)
 }
 
 // UpdateTeam godoc
@@ -97,7 +96,7 @@ func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 	team := &models.TeamUpsertDTO{}
 	if err := c.BindJSON(team); err != nil {
 		log.Warn("invalid team update payload", zap.Error(err))
-		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		response.Error(c, err)
 		return
 	}
 
@@ -106,11 +105,11 @@ func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 	updatedTeam, err := h.teamService.UpdateTeam(id, team)
 	if err != nil {
 		log.Error("failed to update team", zap.String("team_id", id), zap.Error(err))
-		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to update team")
+		response.Error(c, err)
 		return
 	}
 
-	response.SuccessResponse(c, http.StatusOK, "", updatedTeam)
+	response.Success(c, http.StatusOK, "", updatedTeam)
 }
 
 // DeleteTeam godoc
@@ -128,13 +127,13 @@ func (h *TeamHandler) DeleteTeam(c *gin.Context) {
 
 	log.Info("deleting team", zap.String("team_id", id))
 
-	if _, err := h.teamService.DeleteTeam(id); err != nil {
+	if err := h.teamService.DeleteTeam(id); err != nil {
 		log.Error("failed to delete team", zap.String("team_id", id), zap.Error(err))
-		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete team")
+		response.Error(c, err)
 		return
 	}
 
-	response.SuccessResponse(c, http.StatusOK, "Team deleted successfully", nil)
+	response.Success(c, http.StatusOK, "Team deleted successfully", nil)
 }
 
 // ListTeams godoc
@@ -152,9 +151,9 @@ func (h *TeamHandler) ListTeams(c *gin.Context) {
 	teams, err := h.teamService.ListTeams()
 	if err != nil {
 		log.Error("failed to list teams", zap.Error(err))
-		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to list teams")
+		response.Error(c, err)
 		return
 	}
 
-	response.SuccessResponse(c, http.StatusOK, "", teams)
+	response.Success(c, http.StatusOK, "", teams)
 }

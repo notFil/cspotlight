@@ -29,7 +29,7 @@ func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
@@ -74,6 +74,7 @@ func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 		auth.POST("/register", authHandler.Register)
 		auth.POST("/refresh", authHandler.RefreshToken)
 	}
+	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// -------------------------
 	// Protected (JWT required)
@@ -110,13 +111,16 @@ func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 	// ---------- Users ----------
 	users := protected.Group("/users")
 	{
+		users.GET("/me", userHandler.GetCurrentUser)
 		users.GET("/:id", userHandler.GetUserByID)
+		users.PATCH("/:id/password", userHandler.ChangePassword)
+		users.PATCH("/:id/project", userHandler.SetDefaultProject)
+		users.PATCH("/:id/image", userHandler.ChangeImage)
 
 		admin := users.Group("")
 		admin.Use(middleware.RequiredRole("admin", "superadmin"))
 		{
 			admin.GET("", userHandler.ListUsers)
-			admin.POST("", userHandler.CreateUser)
 			admin.PUT("/:id", userHandler.UpdateUser)
 			admin.DELETE("/:id", userHandler.DeleteUser)
 		}
@@ -132,9 +136,6 @@ func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 
 	// ---------- Signout ----------
 	protected.POST("/signout", authHandler.SignOut)
-
-	// Swagger
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	return router
 }

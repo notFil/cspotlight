@@ -1,4 +1,5 @@
 import { ClipboardList, Folder, Home } from "lucide-react"
+import { Link } from "react-router-dom"
 
 import {
   Sidebar,
@@ -11,6 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useAuth } from "@/hooks/use-auth"
 import { NavUser } from "./nav-user"
 
 // Menu items.
@@ -32,15 +34,10 @@ const items = [
   },
 ]
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  }
-}
 
 export function AppSidebar() {
+  const { user } = useAuth()
+
   return (
     <Sidebar collapsible="offcanvas" side="left" className="z-40">
       <SidebarHeader className="sidebar-brand-header">
@@ -55,10 +52,10 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild className="h-12 text-base hover:bg-primary/10 hover:text-primary transition-colors">
-                    <a href={item.url}>
+                    <Link to={item.url}>
                       <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -67,16 +64,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-4">
-        {/* <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent/10">
-          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-            SE
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">Security Engineer</span>
-            <span className="text-xs text-muted-foreground">Admin</span>
-          </div>
-        </div> */}
-        <NavUser user={data.user} />
+        {user && <NavUser user={user} />}
       </SidebarFooter>
     </Sidebar>
   )

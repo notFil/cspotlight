@@ -70,12 +70,9 @@ func TestCreateTeam(t *testing.T) {
 		Description: "A test team",
 	}
 
-	success, err := service.CreateTeam(teamDTO)
+	err := service.CreateTeam(teamDTO)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
-	}
-	if !success {
-		t.Fatalf("expected success to be true")
 	}
 
 	// Verify team creation
@@ -151,12 +148,9 @@ func TestDeleteTeam(t *testing.T) {
 	}
 	mockRepo.teams[teamID] = team
 
-	success, err := service.DeleteTeam(teamID)
+	err := service.DeleteTeam(teamID)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
-	}
-	if !success {
-		t.Fatalf("expected success to be true")
 	}
 
 	_, err = mockRepo.GetTeamByID(teamID)

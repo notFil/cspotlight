@@ -84,21 +84,18 @@ func TestRegisterUser(t *testing.T) {
 	mockProjectRepo := NewMockProjectRepository()
 	service := NewUserService(mockRepo, mockProjectRepo)
 
-	userDTO := &models.UserCreateDTO{
-		FirstName: "John",
-		LastName:  "Doe",
-		Username:  "johndoe",
-		Email:     "john@example.com",
-		Password:  "password123",
-		Role:      "user",
+	userDTO := &models.UserRegisterDTO{
+		FirstName:       "John",
+		LastName:        "Doe",
+		Username:        "johndoe",
+		Email:           "john@example.com",
+		Password:        "password123",
+		ConfirmPassword: "password123",
 	}
 
-	success, err := service.RegisterUser(userDTO)
+	err := service.RegisterUser(userDTO)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
-	}
-	if !success {
-		t.Fatalf("expected success to be true")
 	}
 
 	// Verify user was created with hashed password
@@ -125,7 +122,7 @@ func TestGetUserByID(t *testing.T) {
 	mockRepo.CreateUser(user)
 
 	// Test authorized access (same user)
-	claims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: userID}, UserID: userID, Role: "user"}
+	claims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: userID}, Role: "user"}
 	fetchedUser, err := service.GetUserByID(userID, claims)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -135,7 +132,7 @@ func TestGetUserByID(t *testing.T) {
 	}
 
 	// Test unauthorized access
-	otherClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "other-id"}, UserID: "other-id", Role: "user"}
+	otherClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "other-id"}, Role: "user"}
 	_, err = service.GetUserByID(userID, otherClaims)
 	if err == nil {
 		t.Fatal("expected unauthorized error, got nil")
@@ -145,7 +142,7 @@ func TestGetUserByID(t *testing.T) {
 	}
 
 	// Test admin access (should be allowed)
-	adminClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "admin-id"}, UserID: "admin-id", Role: "admin"}
+	adminClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "admin-id"}, Role: "admin"}
 	fetchedUserAdmin, err := service.GetUserByID(userID, adminClaims)
 	if err != nil {
 		t.Fatalf("expected no error for admin, got %v", err)

@@ -3,13 +3,14 @@ package services
 import (
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/repositories"
+	"github.com/notFil/cspotlight/pkg/errs"
 )
 
 type TeamService interface {
-	CreateTeam(user *models.TeamUpsertDTO) (bool, error)
+	CreateTeam(user *models.TeamUpsertDTO) error
 	GetTeamByID(id string) (*models.TeamFetchDTO, error)
 	UpdateTeam(id string, team *models.TeamUpsertDTO) (*models.TeamFetchDTO, error)
-	DeleteTeam(id string) (bool, error)
+	DeleteTeam(id string) error
 	ListTeams() ([]*models.TeamFetchDTO, error)
 }
 
@@ -23,18 +24,21 @@ func NewTeamService(teamRepo repositories.TeamRepository) TeamService {
 	}
 }
 
-func (s *teamService) CreateTeam(team *models.TeamUpsertDTO) (bool, error) {
+func (s *teamService) CreateTeam(team *models.TeamUpsertDTO) error {
 	t := team.ToTeam()
 	if err := s.teamRepo.CreateTeam(t); err != nil {
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }
 
 func (s *teamService) GetTeamByID(id string) (*models.TeamFetchDTO, error) {
 	t, err := s.teamRepo.GetTeamByID(id)
 	if err != nil {
 		return nil, err
+	}
+	if t == nil {
+		return nil, errs.ErrNotFound
 	}
 	return t.ToFetchDTO(), nil
 }
@@ -52,11 +56,11 @@ func (s *teamService) UpdateTeam(id string, team *models.TeamUpsertDTO) (*models
 	return t.ToFetchDTO(), nil
 }
 
-func (s *teamService) DeleteTeam(id string) (bool, error) {
+func (s *teamService) DeleteTeam(id string) error {
 	if err := s.teamRepo.DeleteTeam(id); err != nil {
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }
 
 func (s *teamService) ListTeams() (teams []*models.TeamFetchDTO, err error) {

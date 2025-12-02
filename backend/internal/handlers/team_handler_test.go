@@ -12,18 +12,18 @@ import (
 )
 
 type MockTeamService struct {
-	CreateTeamFunc  func(team *models.TeamUpsertDTO) (bool, error)
+	CreateTeamFunc  func(team *models.TeamUpsertDTO) error
 	GetTeamByIDFunc func(id string) (*models.TeamFetchDTO, error)
 	UpdateTeamFunc  func(id string, team *models.TeamUpsertDTO) (*models.TeamFetchDTO, error)
-	DeleteTeamFunc  func(id string) (bool, error)
+	DeleteTeamFunc  func(id string) error
 	ListTeamsFunc   func() ([]*models.TeamFetchDTO, error)
 }
 
-func (m *MockTeamService) CreateTeam(team *models.TeamUpsertDTO) (bool, error) {
+func (m *MockTeamService) CreateTeam(team *models.TeamUpsertDTO) error {
 	if m.CreateTeamFunc != nil {
 		return m.CreateTeamFunc(team)
 	}
-	return true, nil
+	return nil
 }
 
 func (m *MockTeamService) GetTeamByID(id string) (*models.TeamFetchDTO, error) {
@@ -40,11 +40,11 @@ func (m *MockTeamService) UpdateTeam(id string, team *models.TeamUpsertDTO) (*mo
 	return nil, nil
 }
 
-func (m *MockTeamService) DeleteTeam(id string) (bool, error) {
+func (m *MockTeamService) DeleteTeam(id string) error {
 	if m.DeleteTeamFunc != nil {
 		return m.DeleteTeamFunc(id)
 	}
-	return true, nil
+	return nil
 }
 
 func (m *MockTeamService) ListTeams() ([]*models.TeamFetchDTO, error) {
@@ -101,8 +101,8 @@ func TestTeamHandler_CreateTeam(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockTeamService{
-			CreateTeamFunc: func(team *models.TeamUpsertDTO) (bool, error) {
-				return true, nil
+			CreateTeamFunc: func(team *models.TeamUpsertDTO) error {
+				return nil
 			},
 		}
 		handler := NewTeamHandler(mockService)
@@ -163,8 +163,8 @@ func TestTeamHandler_DeleteTeam(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockTeamService{
-			DeleteTeamFunc: func(id string) (bool, error) {
-				return true, nil
+			DeleteTeamFunc: func(id string) error {
+				return nil
 			},
 		}
 		handler := NewTeamHandler(mockService)

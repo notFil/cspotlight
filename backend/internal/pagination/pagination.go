@@ -3,10 +3,10 @@ package pagination
 import "gorm.io/gorm"
 
 type Pagination struct {
-	Page       int
-	PageSize   int
-	TotalRows  int64
-	TotalPages int
+	Page       int   `json:"page"`
+	PageSize   int   `json:"pageSize"`
+	TotalRows  int64 `json:"totalRows"`
+	TotalPages int   `json:"totalPages"`
 }
 
 func Paginate(p *Pagination) func(db *gorm.DB) *gorm.DB {
@@ -23,4 +23,22 @@ func Paginate(p *Pagination) func(db *gorm.DB) *gorm.DB {
 		offset := (p.Page - 1) * p.PageSize
 		return db.Offset(offset).Limit(p.PageSize)
 	}
+}
+
+func (p *Pagination) GetOffset() int {
+	return (p.GetPage() - 1) * p.GetLimit()
+}
+
+func (p *Pagination) GetLimit() int {
+	if p.PageSize == 0 {
+		p.PageSize = 10
+	}
+	return p.PageSize
+}
+
+func (p *Pagination) GetPage() int {
+	if p.Page == 0 {
+		p.Page = 1
+	}
+	return p.Page
 }

@@ -1,24 +1,43 @@
 import React, { createContext, useContext, useReducer } from 'react';
 import type { ReactNode } from 'react';
-import type { AppState, User } from '@/types';
+import { useNavigate } from 'react-router-dom';
+import { authService } from '@/services/auth';
+import { userService } from '@/services/user';
+import type { AppState, User, UserLogin } from '@/types';
+import { toast } from 'sonner';
 
 interface AppContextType {
     state: AppState;
     dispatch: React.Dispatch<AppAction>;
-    login: (user: User) => void;
-    logout: () => void;
+    login: (credentials: UserLogin) => Promise<void>;
+    logout: () => Promise<void>;
     toggleTheme: () => void;
 }
 
 type AppAction =
     | { type: 'SET_LOADING'; payload: boolean }
     | { type: 'SET_USER'; payload: User | null }
-    | { type: 'TOGGLE_THEME' };
+    | { type: 'TOGGLE_THEME' }
+    | { type: 'SET_ERROR'; payload: string | null };
+
+const getInitialTheme = (): 'light' | 'dark' => {
+    if (typeof window !== 'undefined') {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || savedTheme === 'light') {
+            return savedTheme;
+        }
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+    }
+    return 'light'; // Default fallback
+};
 
 const initialState: AppState = {
     isLoading: false,
     user: null,
-    theme: 'dark'
+    theme: getInitialTheme(),
+    error: null
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -26,11 +45,13 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const appReducer = (state: AppState, action: AppAction): AppState => {
     switch (action.type) {
         case 'SET_LOADING':
-            return { ...state, isLoading: action.payload };
+            return { ...state, isLoading: action.payload, error: null }; // Clear error on loading
         case 'SET_USER':
             return { ...state, user: action.payload };
         case 'TOGGLE_THEME':
             return { ...state, theme: state.theme === 'light' ? 'dark' : 'light' };
+        case 'SET_ERROR':
+            return { ...state, error: action.payload };
         default:
             return state;
     }
@@ -38,13 +59,65 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
     const [state, dispatch] = useReducer(appReducer, initialState);
+    const navigate = useNavigate();
 
-    const login = (user: User) => {
-        dispatch({ type: 'SET_USER', payload: user });
+    // Effect to apply theme changes
+    React.useEffect(() => {
+        const root = window.document.documentElement;
+        root.classList.remove('light', 'dark');
+        root.classList.add(state.theme);
+        localStorage.setItem('theme', state.theme);
+    }, [state.theme]);
+
+    // Effect to restore session
+    React.useEffect(() => {
+        const restoreSession = async () => {
+            const token = localStorage.getItem('authToken');
+            if (token && !state.user) {
+                try {
+                    const user = await userService.getCurrentUser();
+                    dispatch({ type: 'SET_USER', payload: user });
+                } catch (error) {
+                    console.error('Failed to restore session', error);
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('refreshToken');
+                }
+            }
+        };
+
+        restoreSession();
+    }, []);
+
+    const login = async (credentials: UserLogin) => {
+        dispatch({ type: 'SET_LOADING', payload: true });
+        try {
+            const { accessToken, refreshToken } = await authService.login(credentials);
+            localStorage.setItem('authToken', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
+
+            const user = await userService.getCurrentUser();
+            dispatch({ type: 'SET_USER', payload: user });
+            navigate('/');
+        } catch (error: any) {
+            console.error('Login failed', error);
+            const message = error.response?.data?.message || 'Failed to sign in. Please check your credentials.';
+            dispatch({ type: 'SET_ERROR', payload: message });
+            toast.error(message);
+        } finally {
+            dispatch({ type: 'SET_LOADING', payload: false });
+        }
     };
 
-    const logout = () => {
-        dispatch({ type: 'SET_USER', payload: null });
+    const logout = async () => {
+        try {
+            await authService.logout();
+        } catch (error) {
+            console.error('Logout failed', error);
+        } finally {
+            localStorage.clear();
+            dispatch({ type: 'SET_USER', payload: null });
+            navigate('/login');
+        }
     };
 
     const toggleTheme = () => {

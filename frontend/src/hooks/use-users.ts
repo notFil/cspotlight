@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '@/services/user';
-import type { User } from '@/types';
+import type { User, UserRegister, ChangePasswordRequest } from '@/types';
+import { useAppContext } from '@/context/AppContext';
 
 export function useUsers() {
   return useQuery({
@@ -15,6 +16,17 @@ export function useCreateUser() {
 
   return useMutation({
     mutationFn: (userData: Omit<User, 'id'>) => userService.createUser(userData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+}
+
+export function useRegisterUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userData: UserRegister) => userService.registerUser(userData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
@@ -37,6 +49,42 @@ export function useDeleteUser() {
 
   return useMutation({
     mutationFn: (id: string) => userService.deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+
+}
+
+export function useSetDefaultProject() {
+  const queryClient = useQueryClient();
+  const { dispatch } = useAppContext();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: string }) => userService.setDefaultProject(id, data),
+    onSuccess: (updatedUser) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      dispatch({ type: 'SET_USER', payload: updatedUser });
+    },
+  });
+}
+
+export function useChangePassword() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: ChangePasswordRequest }) => userService.changePassword(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+}
+
+export function useChangeImage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: File }) => userService.changeImage(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },

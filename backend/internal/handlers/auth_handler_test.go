@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"errors"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,22 +20,24 @@ func init() {
 }
 
 type MockUserService struct {
-	RegisterUserFunc      func(user *models.UserCreateDTO) (bool, error)
+	RegisterUserFunc      func(user *models.UserRegisterDTO) error
 	GetUserByIDFunc       func(id string, claims auth.Claims) (*models.UserFetchDTO, error)
 	GetUserByUsernameFunc func(username string) (*models.UserFetchDTO, error)
 	AuthenticateUserFunc  func(authRequest *models.AuthRequest) (*models.UserFetchDTO, error)
 	UpdateUserFunc        func(id string, user *models.UserUpdateDTO, claims auth.Claims) (*models.UserFetchDTO, error)
-	SetDefaultProjectFunc func(projectID string, claims *auth.Claims) error
+	SetDefaultProjectFunc func(id string, projectID string, claims auth.Claims) (*models.UserFetchDTO, error)
 	GetUsersFunc          func(claims auth.Claims) ([]*models.UserFetchDTO, error)
 	ListUsersByTeamIDFunc func(teamID string, claims auth.Claims) ([]*models.UserFetchDTO, error)
 	DeleteUserFunc        func(id string, claims auth.Claims) error
+	ChangePasswordFunc    func(id string, request *models.ChangePasswordRequest, claims auth.Claims) error
+	ChangeImageFunc       func(id string, image *multipart.FileHeader, claims auth.Claims) error
 }
 
-func (m *MockUserService) RegisterUser(user *models.UserCreateDTO) (bool, error) {
+func (m *MockUserService) RegisterUser(user *models.UserRegisterDTO) error {
 	if m.RegisterUserFunc != nil {
 		return m.RegisterUserFunc(user)
 	}
-	return true, nil
+	return nil
 }
 
 func (m *MockUserService) GetUserByID(id string, claims auth.Claims) (*models.UserFetchDTO, error) {
@@ -65,11 +68,11 @@ func (m *MockUserService) UpdateUser(id string, user *models.UserUpdateDTO, clai
 	return nil, nil
 }
 
-func (m *MockUserService) SetDefaultProject(projectID string, claims *auth.Claims) error {
+func (m *MockUserService) SetDefaultProject(id string, projectID string, claims auth.Claims) (*models.UserFetchDTO, error) {
 	if m.SetDefaultProjectFunc != nil {
-		return m.SetDefaultProjectFunc(projectID, claims)
+		return m.SetDefaultProjectFunc(id, projectID, claims)
 	}
-	return nil
+	return nil, nil
 }
 
 func (m *MockUserService) GetUsers(claims auth.Claims) ([]*models.UserFetchDTO, error) {
@@ -89,6 +92,20 @@ func (m *MockUserService) ListUsersByTeamID(teamID string, claims auth.Claims) (
 func (m *MockUserService) DeleteUser(id string, claims auth.Claims) error {
 	if m.DeleteUserFunc != nil {
 		return m.DeleteUserFunc(id, claims)
+	}
+	return nil
+}
+
+func (m *MockUserService) ChangePassword(id string, request *models.ChangePasswordRequest, claims auth.Claims) error {
+	if m.ChangePasswordFunc != nil {
+		return m.ChangePasswordFunc(id, request, claims)
+	}
+	return nil
+}
+
+func (m *MockUserService) ChangeImage(id string, image *multipart.FileHeader, claims auth.Claims) error {
+	if m.ChangeImageFunc != nil {
+		return m.ChangeImageFunc(id, image, claims)
 	}
 	return nil
 }
@@ -155,15 +172,15 @@ func TestAuthHandler_Register(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockUserService{
-			RegisterUserFunc: func(user *models.UserCreateDTO) (bool, error) {
-				return true, nil
+			RegisterUserFunc: func(user *models.UserRegisterDTO) error {
+				return nil
 			},
 		}
 		handler := NewAuthHandler(mockService, config.JWTConfig{})
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		body := `{"email": "test@example.com", "password": "password", "firstName": "Test", "lastName": "User", "username": "testuser", "role": "user"}`
+		body := `{"email": "test@example.com", "password": "password", "confirmPassword": "password", "firstName": "Test", "lastName": "User", "username": "testuser", "role": "user"}`
 		c.Request = httptest.NewRequest("POST", "/register", bytes.NewBufferString(body))
 
 		handler.Register(c)
@@ -175,15 +192,15 @@ func TestAuthHandler_Register(t *testing.T) {
 
 	t.Run("Failure", func(t *testing.T) {
 		mockService := &MockUserService{
-			RegisterUserFunc: func(user *models.UserCreateDTO) (bool, error) {
-				return false, errors.New("email exists")
+			RegisterUserFunc: func(user *models.UserRegisterDTO) error {
+				return errors.New("email exists")
 			},
 		}
 		handler := NewAuthHandler(mockService, config.JWTConfig{})
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		body := `{"email": "test@example.com", "password": "password", "firstName": "Test", "lastName": "User", "username": "testuser", "role": "user"}`
+		body := `{"email": "test@example.com", "password": "password", "confirmPassword": "password", "firstName": "Test", "lastName": "User", "username": "testuser", "role": "user"}`
 		c.Request = httptest.NewRequest("POST", "/register", bytes.NewBufferString(body))
 
 		handler.Register(c)

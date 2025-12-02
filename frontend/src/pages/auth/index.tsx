@@ -3,33 +3,26 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Link, useNavigate } from "react-router-dom"
-import { authService } from "@/services/auth"
+import { Link } from "react-router-dom"
+import { useAuth } from "@/hooks/use-auth"
 import ThemeToggle from "@/components/common/theme-toggle"
+import type { UserLogin } from "@/types"
 
 export default function Auth() {
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const navigate = useNavigate()
+  const [formData, setFormData] = useState<UserLogin>({
+    username: "",
+    password: "",
+  })
+  const { login, loading, error } = useAuth()
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target
+    setFormData((prev) => ({ ...prev, [id]: value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
-    setLoading(true)
-
-    try {
-      const { accessToken, refreshToken } = await authService.login({ username, password })
-      localStorage.setItem("authToken", accessToken)
-      localStorage.setItem("refreshToken", refreshToken)
-      navigate("/")
-    } catch (err: any) {
-      console.error("Login failed", err)
-      setError(err.response?.data?.message || "Failed to sign in. Please check your credentials.")
-    } finally {
-      setLoading(false)
-    }
+    await login(formData)
   }
 
   return (
@@ -56,8 +49,8 @@ export default function Auth() {
                 type="text"
                 placeholder="jdoe"
                 required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={formData.username}
+                onChange={handleChange}
                 disabled={loading}
               />
             </div>
@@ -75,8 +68,8 @@ export default function Auth() {
                 id="password"
                 type="password"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={handleChange}
                 disabled={loading}
               />
             </div>

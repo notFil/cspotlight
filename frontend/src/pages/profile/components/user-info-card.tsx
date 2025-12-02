@@ -6,9 +6,10 @@ interface UserInfoCardProps {
   name: string;
   email: string;
   username: string;
+  role: string;
 }
 
-export function UserInfoCard({ name, email, username }: UserInfoCardProps) {
+export function UserInfoCard({ name, email, username, role }: UserInfoCardProps) {
   return (
     <Card>
       <CardHeader>
@@ -26,6 +27,10 @@ export function UserInfoCard({ name, email, username }: UserInfoCardProps) {
         <div className="space-y-2">
           <Label htmlFor="username">Username</Label>
           <Input id="username" value={username} readOnly className="bg-muted" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="role">Role</Label>
+          <Input id="role" value={role} readOnly className="bg-muted" />
         </div>
       </CardContent>
     </Card>

@@ -88,10 +88,10 @@ export function DataTable<TData, TValue>({
     <div>
       <div className="flex items-center py-4 gap-4">
         <Input
-          placeholder="Filter URL..."
-          value={(table.getColumn("url")?.getFilterValue() as string) ?? ""}
+          placeholder="Filter Document URL..."
+          value={(table.getColumn("documentUri")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("url")?.setFilterValue(event.target.value)
+            table.getColumn("documentUri")?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
@@ -119,6 +119,21 @@ export function DataTable<TData, TValue>({
                 {directive}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={(table.getColumn("disposition")?.getFilterValue() as string) ?? "all"}
+          onValueChange={(value) =>
+            table.getColumn("disposition")?.setFilterValue(value === "all" ? "" : value)
+          }
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select Disposition" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Dispositions</SelectItem>
+            <SelectItem value="enforce">Enforce</SelectItem>
+            <SelectItem value="report-only">Report Only</SelectItem>
           </SelectContent>
         </Select>
       </div>

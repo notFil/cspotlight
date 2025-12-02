@@ -11,8 +11,6 @@ import (
 
 type ReportService interface {
 	CreateReport(report *models.CSPReportCreateDTO, projectID string) error
-	GetReportByID(id string) (*models.CSPReport, error)
-	UpdateReport(report *models.CSPReport) error
 	DeleteReport(id string) error
 	ListReportsByProjectID(projectID string, p *pagination.Pagination, claims auth.Claims) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
 	BatchCreateReports(reports []*models.CSPReportCreateDTO, projectID string) error
@@ -46,14 +44,6 @@ func (s *reportService) BatchCreateReports(reports []*models.CSPReportCreateDTO,
 	return s.reportRepo.BatchCreateReports(cspReports)
 }
 
-func (s *reportService) GetReportByID(id string) (*models.CSPReport, error) {
-	return s.reportRepo.GetReportByID(id)
-}
-
-func (s *reportService) UpdateReport(report *models.CSPReport) error {
-	return s.reportRepo.UpdateReport(report)
-}
-
 func (s *reportService) DeleteReport(id string) error {
 	return s.reportRepo.DeleteReport(id)
 }
@@ -63,7 +53,7 @@ func (s *reportService) ListReportsByProjectID(projectID string, p *pagination.P
 	if err != nil {
 		return nil, p, err
 	}
-	if project.TeamID != claims.TeamID {
+	if claims.Role != "superadmin" && project.TeamID != claims.TeamID {
 		return nil, p, errors.New("unauthorized access")
 	}
 
@@ -72,9 +62,5 @@ func (s *reportService) ListReportsByProjectID(projectID string, p *pagination.P
 		return nil, p, err
 	}
 
-	var reportDTOs []*models.CSPReportFetchDTO
-	for _, r := range reports {
-		reportDTOs = append(reportDTOs, r.ToFetchDTO())
-	}
-	return reportDTOs, p, nil
+	return reports, p, nil
 }

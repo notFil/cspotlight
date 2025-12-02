@@ -16,7 +16,6 @@ import (
 type Claims struct {
 	jwt.RegisteredClaims
 
-	UserID   string `json:"userID,omitempty"`
 	Username string `json:"username"`
 	TeamID   string `json:"team,omitempty"`
 	Role     string `json:"role"`
@@ -86,10 +85,7 @@ func ValidateRefreshToken(tokenString string, secretKey string) (claims *Claims,
 }
 
 func (c *Claims) IsAdmin() bool {
-	if c.Role == "admin" || c.Role == "superadmin" {
-		return true
-	}
-	return false
+	return c.Role == "admin"
 }
 
 func (c *Claims) IsSuperadmin() bool {

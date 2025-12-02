@@ -1,6 +1,7 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './pages/dashboard';
 import Auth from './pages/auth';
+import Signup from './pages/auth/signup';
 import Layout from './layout';
 import Management from './pages/management';
 import Projects from './pages/projects';
@@ -11,22 +12,21 @@ import '@/services/auth'; // Import to ensure AuthService is initialized and cal
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Auth />} />
+    <Routes>
+      <Route path="/login" element={<Auth />} />
+      <Route path="/signup" element={<Signup />} />
 
-        <Route element={<ProtectedRoute />}>
-          <Route element={<Layout><Dashboard /></Layout>} path="/" />
-          <Route element={<Layout><Dashboard /></Layout>} path="/project/:id" />
-          <Route element={<Layout><Management /></Layout>} path="/management" />
-          <Route element={<Layout><Projects /></Layout>} path="/projects" />
-          <Route element={<Layout><Profile /></Layout>} path="/profile" />
-          <Route element={<Layout><ReportsPage /></Layout>} path="/reports/:projectId" /> {/* Added route */}
-        </Route>
+      <Route element={<ProtectedRoute />}>
+        <Route element={<Layout><Dashboard /></Layout>} path="/" />
+        <Route element={<Layout><Dashboard /></Layout>} path="/project/:id" />
+        <Route element={<Layout><Management /></Layout>} path="/management" />
+        <Route element={<Layout><Projects /></Layout>} path="/projects" />
+        <Route element={<Layout><Profile /></Layout>} path="/profile" />
+        <Route element={<Layout><ReportsPage /></Layout>} path="/reports/:projectId" /> {/* Added route */}
+      </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
