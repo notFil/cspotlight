@@ -103,9 +103,9 @@ export function DataTable<TData, TValue>({
       <div className="flex items-center py-4 gap-4">
         <Input
           placeholder="Filter Document URL..."
-          value={(table.getColumn("documentUri")?.getFilterValue() as string) ?? ""}
+          value={(table.getColumn("blockedURL")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("documentUri")?.setFilterValue(event.target.value)
+            table.getColumn("blockedURL")?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />

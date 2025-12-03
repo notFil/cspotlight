@@ -22,6 +22,7 @@ import {
 // Color palette for directives
 const DIRECTIVE_COLORS = {
     'script-src': '#21808d',
+    'script-src-elem': '#21808d',
     'img-src': '#a84b2f',
     'style-src': '#518a91ff',
     'connect-src': '#e68161',
@@ -30,27 +31,56 @@ const DIRECTIVE_COLORS = {
 
 type DirectiveKey = keyof typeof DIRECTIVE_COLORS;
 
-const ReportsGraph = () => {
+import { useReportGraphData } from '@/hooks/use-reports';
+
+const ReportsGraph = ({ projectId }: { projectId: string }) => {
     const [duration, setDuration] = useState(30);
     const [enabledDirectives, setEnabledDirectives] = useState<Set<DirectiveKey>>(
-        new Set(['script-src', 'img-src', 'style-src', 'connect-src', 'frame-src'])
+        new Set(['script-src', 'script-src-elem', 'img-src', 'style-src', 'connect-src', 'frame-src'])
     );
 
-    // Generate sample data
+    const { data: graphData, isLoading, error } = useReportGraphData(projectId);
+
+    // Filter data based on duration
     const chartData = useMemo(() => {
-        const data = [];
-        for (let i = 0; i < duration; i++) {
-            data.push({
-                day: i + 1,
-                'script-src': Math.floor(Math.random() * 50) + 30,
-                'img-src': Math.floor(Math.random() * 40) + 20,
-                'style-src': Math.floor(Math.random() * 30) + 10,
-                'connect-src': Math.floor(Math.random() * 25) + 8,
-                'frame-src': Math.floor(Math.random() * 15) + 5,
-            });
+        console.log('ReportsGraph: graphData', graphData);
+        if (isLoading) return [];
+        if (error) {
+            console.error('ReportsGraph: error', error);
+            return [];
         }
-        return data;
-    }, [duration]);
+
+        // Handle both wrapped and unwrapped data just in case
+        const rawData = Array.isArray(graphData) ? graphData : graphData?.data;
+
+        if (!rawData || !Array.isArray(rawData)) {
+            console.warn('ReportsGraph: rawData is not an array', rawData);
+            return [];
+        }
+
+        // Transform API data to Recharts format
+        // API returns [{ daysAgo: 0, violations: [...] }, { daysAgo: 1, violations: [...] }]
+        // We want [{ day: 'Date', 'script-src': 10, ... }]
+        return rawData
+            .map((point) => {
+                const date = new Date();
+                date.setDate(date.getDate() - point.daysAgo);
+
+                const dataPoint: any = {
+                    day: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+                    originalDate: date // for sorting if needed
+                };
+
+                if (point.violations) {
+                    point.violations.forEach((v: any) => {
+                        dataPoint[v.directive] = v.count;
+                    });
+                }
+                return dataPoint;
+            })
+            .sort((a, b) => a.originalDate.getTime() - b.originalDate.getTime())
+            .slice(-duration);
+    }, [graphData, duration, isLoading, error]);
 
     return (
         <Card className="mb-6">

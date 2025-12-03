@@ -9,3 +9,12 @@ export function useReports(projectId: string, page: number = 1, pageSize: number
   });
 }
 
+export function useReportGraphData(projectId: string) {
+  return useQuery({
+    queryKey: ['report-graph-data', projectId],
+    queryFn: () => reportService.getReportGraphData(projectId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+

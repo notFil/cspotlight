@@ -91,6 +91,16 @@ export interface APIResponse<T> {
   error?: string;
 }
 
+export interface ReportGraphDataDTO {
+  daysAgo: number;
+  violations: Violation[];
+}
+
+export interface Violation {
+  directive: string;
+  count: number;
+}
+
 export interface AppState {
   isLoading: boolean;
   user?: User | null;
