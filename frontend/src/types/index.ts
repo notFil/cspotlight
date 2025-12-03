@@ -1,11 +1,4 @@
 // src/types/index.ts
-export interface Team {
-  id: string;
-  name: string;
-  description: string;
-  updatedAt: string;
-}
-
 export interface User {
   id?: string;
   firstName: string;
@@ -28,6 +21,18 @@ export interface UserRegister {
   email: string;
   password: string;
   confirmPassword: string;
+}
+
+export interface UserLogin {
+  username: string;
+  password: string;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  description: string;
+  updatedAt?: string;
 }
 
 export interface Project {
@@ -91,10 +96,4 @@ export interface AppState {
   user?: User | null;
   theme: 'light' | 'dark';
   error?: string | null;
-}
-
-
-export interface UserLogin {
-  username: string;
-  password: string;
 }

@@ -1,3 +1,5 @@
+import { useAuth } from '@/hooks/use-auth';
+import DashboardFallback from '@/pages/dashboard/components/dashboard-fallback';
 import Stats from '@/pages/dashboard/components/stats';
 import ViolationTrend from '@/pages/dashboard/components/violation-trend';
 import TopViolatedDirectives from '@/pages/dashboard/components/top-violated-directives';
@@ -7,6 +9,11 @@ import ViolationSources from '@/pages/dashboard/components/violation-sources';
 import ReportsGraph from '@/pages/dashboard/components/reports-graph';
 
 const Dashboard = () => {
+  const { user } = useAuth();
+
+  if (!user?.defaultProjectId) {
+    return <DashboardFallback />;
+  }
 
   return (
     <div className="p-6" style={{ backgroundColor: 'var(--color-background)' }}>

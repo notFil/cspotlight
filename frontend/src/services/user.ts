@@ -23,7 +23,7 @@ class UserService {
   }
 
   public async updateUser(id: string, user: Partial<User>): Promise<User> {
-    const response = await apiClient.put<User>(`/api/v1/users/${id}`, user);
+    const response = await apiClient.patch<User>(`/api/v1/users/${id}`, user);
     return response.data;
   }
 

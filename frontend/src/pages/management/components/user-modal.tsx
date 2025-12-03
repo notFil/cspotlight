@@ -45,6 +45,7 @@ interface UserModalProps {
   onClose: () => void;
   onSave: (user: User) => void;
   user?: User;
+  error?: string | null;
 }
 
 export const UserModal: React.FC<UserModalProps> = ({
@@ -52,6 +53,7 @@ export const UserModal: React.FC<UserModalProps> = ({
   onClose,
   onSave,
   user,
+  error,
 }) => {
   const { data: teams, isLoading: isLoadingTeams } = useTeams();
 
@@ -79,23 +81,16 @@ export const UserModal: React.FC<UserModalProps> = ({
         teamId: user.teamId,
         disabled: user.disabled,
       });
-    } else {
-      form.reset({
-        firstName: '',
-        lastName: '',
-        username: '',
-        email: '',
-        role: 'user',
-        teamId: '',
-        disabled: false,
-      });
     }
   }, [user, isOpen, form]);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const selectedTeam = teams?.find(t => t.id === values.teamId);
 
-    const newUser: User = {
+    if (!user) return;
+
+    const updatedUser: User = {
+      ...user,
       firstName: values.firstName,
       lastName: values.lastName,
       email: values.email,
@@ -106,21 +101,22 @@ export const UserModal: React.FC<UserModalProps> = ({
       username: values.username || '',
     };
 
-    if (user) {
-      newUser.id = user.id;
-    }
-
-    onSave(newUser);
+    onSave(updatedUser);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{user ? 'Edit User' : 'Add User'}</DialogTitle>
+          <DialogTitle>Edit User</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+              <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
+                {error}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}

@@ -8,11 +8,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Plus } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 import type { User } from "@/types";
 import { UserModal } from "./user-modal";
 import { DeleteConfirmModal } from "./delete-confirmation-modal";
-import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/use-users";
+import { useUsers, useUpdateUser, useDeleteUser } from "@/hooks/use-users";
 import { formatTimestamp } from "@/utils/date";
 import { LoadingPage } from "@/components/loading-page";
 import { ErrorPage } from "@/components/error-page";
@@ -21,20 +21,19 @@ export const UserTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // React Query hooks
   const { data: users = [], isLoading, isError, error } = useUsers();
-  const { mutateAsync: createUser } = useCreateUser();
+
   const { mutateAsync: updateUser } = useUpdateUser();
   const { mutateAsync: deleteUser } = useDeleteUser();
 
-  const handleAdd = () => {
-    setSelectedUser(undefined);
-    setIsModalOpen(true);
-  };
+
 
   const handleEdit = (user: User) => {
     setSelectedUser(user);
+    setSaveError(null);
     setIsModalOpen(true);
   };
 
@@ -44,17 +43,16 @@ export const UserTable = () => {
   };
 
   const handleSave = async (user: User) => {
+    setSaveError(null);
     try {
       if (selectedUser?.id) {
         // Edit - send PUT request
         await updateUser({ id: selectedUser.id, data: user });
-      } else {
-        // Add - send POST request
-        await createUser(user);
       }
       setIsModalOpen(false);
     } catch (error) {
       console.error("Failed to save user:", error);
+      setSaveError(error instanceof Error ? error.message : "Failed to save user");
     }
   };
 
@@ -82,9 +80,7 @@ export const UserTable = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Manage Users</h2>
-        <Button onClick={handleAdd}>
-          <Plus className="mr-2 h-4 w-4" /> Add User
-        </Button>
+
       </div>
       <Table>
         <TableHeader>
@@ -129,6 +125,7 @@ export const UserTable = () => {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
         user={selectedUser}
+        error={saveError}
       />
 
       <DeleteConfirmModal

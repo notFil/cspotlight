@@ -31,6 +31,7 @@ interface TeamModalProps {
   onClose: () => void;
   onSave: (team: Team) => void;
   team?: Team;
+  error?: string;
 }
 
 export const TeamModal: React.FC<TeamModalProps> = ({
@@ -38,6 +39,7 @@ export const TeamModal: React.FC<TeamModalProps> = ({
   onClose,
   onSave,
   team,
+  error,
 }) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -65,9 +67,7 @@ export const TeamModal: React.FC<TeamModalProps> = ({
     onSave({
       id: team?.id || '',
       ...values,
-      description: values.description || '',
-      last_updated: new Date().toISOString().split('T')[0],
-    });
+      description: values.description || ''    });
   };
 
   return (
@@ -78,6 +78,11 @@ export const TeamModal: React.FC<TeamModalProps> = ({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+              <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
+                {error}
+              </div>
+            )}
             <FormField
               control={form.control}
               name="name"

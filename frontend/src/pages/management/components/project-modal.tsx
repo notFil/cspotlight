@@ -42,6 +42,7 @@ interface ProjectModalProps {
   onClose: () => void;
   onSave: (project: Project) => void;
   project?: Project;
+  error?: string;
 }
 
 export const ProjectModal: React.FC<ProjectModalProps> = ({
@@ -49,6 +50,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   onClose,
   onSave,
   project,
+  error,
 }) => {
   const { data: teams, isLoading: isLoadingTeams } = useTeams();
 
@@ -121,6 +123,11 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
                 </FormItem>
               )}
             />
+            {error && (
+              <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
+                {error}
+              </div>
+            )}
             <FormField
               control={form.control}
               name="description"
