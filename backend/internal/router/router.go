@@ -54,6 +54,7 @@ func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 	teamHandler := handlers.NewTeamHandler(teamService)
 	userHandler := handlers.NewUserHandler(userService)
 	reportHandler := handlers.NewReportHandler(reportService)
+	analyticsHandler := handlers.NewAnalyticsHandler(reportService)
 
 	// ------------------------------------------------------
 
@@ -133,6 +134,12 @@ func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 		reports.GET("/:projectID/csp", reportHandler.ListReportsByProjectID)
 	}
 	api.POST("/reports/:projectID/csp", reportHandler.CreateReport)
+
+	// ---------- Analytics ----------
+	analytics := protected.Group("/analytics")
+	{
+		analytics.GET("/:projectID/graph-data", analyticsHandler.GetReportGraphData)
+	}
 
 	// ---------- Signout ----------
 	protected.POST("/signout", authHandler.SignOut)

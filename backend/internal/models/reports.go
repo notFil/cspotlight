@@ -61,6 +61,18 @@ type CSPReportFetchDTO struct {
 	Count       int                            `json:"count"`
 }
 
+type ReportGraphDataDTO []DataPoint
+
+type DataPoint struct {
+	DaysAgo    int         `json:"daysAgo"`
+	Violations []Violation `json:"violations"`
+}
+
+type Violation struct {
+	Directive string `json:"directive"`
+	Count     int    `json:"count"`
+}
+
 func (r *CSPReportCreateDTO) ToCSPReport() *CSPReport {
 	c := &CSPReport{
 		Age:       r.Age,

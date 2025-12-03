@@ -7,12 +7,9 @@ import (
 )
 
 type ReportRepository interface {
-	CreateReport(report *models.CSPReport) error
-	GetReportByID(id string) (*models.CSPReport, error)
-	UpdateReport(report *models.CSPReport) error
-	DeleteReport(id string) error
 	ListReportsByProjectID(projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
 	BatchCreateReports(reports []*models.CSPReport) error
+	GetReportGraphData(projectID string) (*models.ReportGraphDataDTO, error)
 }
 
 type reportRepository struct {
@@ -23,25 +20,8 @@ func NewReportRepository(db *gorm.DB) ReportRepository {
 	return &reportRepository{db: db}
 }
 
-func (r *reportRepository) CreateReport(report *models.CSPReport) error {
-	return r.db.Create(report).Error
-}
-
 func (r *reportRepository) BatchCreateReports(reports []*models.CSPReport) error {
 	return r.db.CreateInBatches(reports, 100).Error
-}
-
-func (r *reportRepository) GetReportByID(id string) (report *models.CSPReport, err error) {
-	err = r.db.First(&report, "id = ?", id).Error
-	return report, err
-}
-
-func (r *reportRepository) UpdateReport(report *models.CSPReport) error {
-	return r.db.Save(report).Error
-}
-
-func (r *reportRepository) DeleteReport(id string) error {
-	return r.db.Delete(&models.CSPReport{}, "id = ?", id).Error
 }
 
 func (r *reportRepository) ListReportsByProjectID(projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
@@ -86,4 +66,38 @@ func (r *reportRepository) ListReportsByProjectID(projectID string, p *paginatio
 	}
 
 	return reports, p, nil
+}
+
+func (r *reportRepository) GetReportGraphData(projectID string) (*models.ReportGraphDataDTO, error) {
+	var dataMap models.ReportGraphDataDTO
+
+	rows, err := r.db.Raw(`
+		SELECT 
+			(CURRENT_DATE - DATE(created_at)) AS days_ago,
+			directive,
+			COUNT(id) AS count
+		FROM csp_reports
+		WHERE project_id = ?
+		AND (CURRENT_DATE - DATE(created_at)) < 30
+    AND (CURRENT_DATE - DATE(created_at)) >= 0
+		GROUP BY days_ago, directive
+		ORDER BY days_ago ASC, directive ASC
+	`, projectID).Rows()
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var daysAgo int
+		var directive string
+		var count int64
+		if err := rows.Scan(&daysAgo, &directive, &count); err != nil {
+			return nil, err
+		}
+		dataMap = append(dataMap, models.DataPoint{DaysAgo: daysAgo, Violations: []models.Violation{{Directive: directive, Count: int(count)}}})
+	}
+
+	return &dataMap, nil
 }

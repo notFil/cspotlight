@@ -7,13 +7,13 @@ import (
 	"github.com/notFil/cspotlight/internal/pagination"
 	"github.com/notFil/cspotlight/internal/repositories"
 	"github.com/notFil/cspotlight/pkg/auth"
+	"github.com/notFil/cspotlight/pkg/errs"
 )
 
 type ReportService interface {
-	CreateReport(report *models.CSPReportCreateDTO, projectID string) error
-	DeleteReport(id string) error
 	ListReportsByProjectID(projectID string, p *pagination.Pagination, claims auth.Claims) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
 	BatchCreateReports(reports []*models.CSPReportCreateDTO, projectID string) error
+	GetReportGraphData(projectID string, claims auth.Claims) (*models.ReportGraphDataDTO, error)
 }
 
 type reportService struct {
@@ -28,12 +28,6 @@ func NewReportService(reportRepo repositories.ReportRepository, projectRepo repo
 	}
 }
 
-func (s *reportService) CreateReport(report *models.CSPReportCreateDTO, projectID string) error {
-	r := report.ToCSPReport()
-	r.ProjectID = projectID
-	return s.reportRepo.CreateReport(r)
-}
-
 func (s *reportService) BatchCreateReports(reports []*models.CSPReportCreateDTO, projectID string) error {
 	var cspReports []*models.CSPReport
 	for _, r := range reports {
@@ -43,11 +37,6 @@ func (s *reportService) BatchCreateReports(reports []*models.CSPReportCreateDTO,
 	}
 	return s.reportRepo.BatchCreateReports(cspReports)
 }
-
-func (s *reportService) DeleteReport(id string) error {
-	return s.reportRepo.DeleteReport(id)
-}
-
 func (s *reportService) ListReportsByProjectID(projectID string, p *pagination.Pagination, claims auth.Claims) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
 	project, err := s.projectRepo.GetProjectByID(projectID)
 	if err != nil {
@@ -63,4 +52,15 @@ func (s *reportService) ListReportsByProjectID(projectID string, p *pagination.P
 	}
 
 	return reports, p, nil
+}
+
+func (s *reportService) GetReportGraphData(projectID string, claims auth.Claims) (*models.ReportGraphDataDTO, error) {
+	project, err := s.projectRepo.GetProjectByID(projectID)
+	if err != nil {
+		return nil, err
+	}
+	if claims.Role != "superadmin" && project.TeamID != claims.TeamID {
+		return nil, errs.ErrUnauthorized
+	}
+	return s.reportRepo.GetReportGraphData(projectID)
 }
