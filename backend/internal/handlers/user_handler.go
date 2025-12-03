@@ -95,10 +95,9 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	claims := auth.GetUserClaims(c)
-	log.Info("updating user", zap.String("target_user_id", id), zap.String("user_id", claims.Subject))
+	log.Info("updating user", zap.String("target_user_id", id), zap.String("user_id", id))
 
-	updatedUser, err := h.userService.UpdateUser(id, &user, *claims)
+	updatedUser, err := h.userService.UpdateUser(id, &user)
 	if err != nil {
 		log.Error("failed to update user", zap.String("target_user_id", id), zap.Error(err))
 		response.Error(c, err)
@@ -120,12 +119,11 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 
-	claims := auth.GetUserClaims(c)
 	log := logger.FromContext(c)
 
-	log.Info("deleting user", zap.String("target_user_id", id), zap.String("user_id", claims.Subject))
+	log.Info("deleting user", zap.String("target_user_id", id), zap.String("user_id", id))
 
-	err := h.userService.DeleteUser(id, *claims)
+	err := h.userService.DeleteUser(id)
 	if err != nil {
 		log.Error("failed to delete user", zap.String("target_user_id", id), zap.Error(err))
 		response.Error(c, err)

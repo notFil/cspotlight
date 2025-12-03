@@ -118,10 +118,10 @@ func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 		users.PATCH("/:id/image", userHandler.ChangeImage)
 
 		admin := users.Group("")
-		admin.Use(middleware.RequiredRole("admin", "superadmin"))
+		admin.Use(middleware.RequiredRole("superadmin"))
 		{
 			admin.GET("", userHandler.ListUsers)
-			admin.PUT("/:id", userHandler.UpdateUser)
+			admin.PATCH("/:id", userHandler.UpdateUser)
 			admin.DELETE("/:id", userHandler.DeleteUser)
 		}
 	}

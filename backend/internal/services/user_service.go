@@ -23,11 +23,11 @@ type UserService interface {
 	RegisterUser(user *models.UserRegisterDTO) error
 	GetUserByID(id string, claims auth.Claims) (*models.UserFetchDTO, error)
 	AuthenticateUser(authRequest *models.AuthRequest) (*models.UserFetchDTO, error)
-	UpdateUser(id string, user *models.UserUpdateDTO, claims auth.Claims) (*models.UserFetchDTO, error)
+	UpdateUser(id string, user *models.UserUpdateDTO) (*models.UserFetchDTO, error)
 	SetDefaultProject(id string, projectID string, claims auth.Claims) (*models.UserFetchDTO, error)
 	GetUsers(claims auth.Claims) ([]*models.UserFetchDTO, error)
 	ListUsersByTeamID(teamID string, claims auth.Claims) ([]*models.UserFetchDTO, error)
-	DeleteUser(id string, claims auth.Claims) error
+	DeleteUser(id string) error
 	ChangePassword(id string, request *models.ChangePasswordRequest, claims auth.Claims) error
 	ChangeImage(id string, image *multipart.FileHeader, claims auth.Claims) error
 }
@@ -74,16 +74,13 @@ func (s *userService) RegisterUser(user *models.UserRegisterDTO) error {
 	return nil
 }
 
-func (s *userService) UpdateUser(id string, user *models.UserUpdateDTO, claims auth.Claims) (*models.UserFetchDTO, error) {
+func (s *userService) UpdateUser(id string, user *models.UserUpdateDTO) (*models.UserFetchDTO, error) {
 	u, err := s.userRepo.GetUserByID(id)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.IsAdmin() && claims.Subject != id {
-		return nil, errs.ErrUnauthorized
-	}
-	u.Username = user.Username
-	u.Email = user.Email
+	u.Role = user.Role
+	u.Disabled = user.Disabled
 	if user.TeamID != "" {
 		u.TeamID = &user.TeamID
 	} else {
@@ -142,16 +139,7 @@ func (s *userService) ListUsersByTeamID(teamID string, claims auth.Claims) ([]*m
 	return userDTOs, nil
 }
 
-func (s *userService) DeleteUser(id string, claims auth.Claims) error {
-	u, err := s.userRepo.GetUserByID(id)
-	if err != nil {
-		return err
-	}
-
-	if !claims.IsSuperadmin() && u.TeamID != nil && claims.TeamID != *u.TeamID {
-		return errs.ErrUnauthorized
-	}
-
+func (s *userService) DeleteUser(id string) error {
 	return s.userRepo.DeleteUser(id)
 }
 

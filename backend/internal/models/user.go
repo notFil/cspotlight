@@ -41,16 +41,6 @@ type UserFetchDTO struct {
 	UpdatedAt        time.Time `json:"updatedAt"`
 }
 
-type UserCreateDTO struct {
-	FirstName string `json:"firstName" binding:"required"`
-	LastName  string `json:"lastName" binding:"required"`
-	Username  string `json:"username" binding:"required"`
-	Email     string `json:"email" binding:"required,email"`
-	Password  string `json:"password" binding:"required"`
-	Role      string `json:"role" binding:"required"`
-	TeamID    string `json:"teamId"`
-}
-
 type UserRegisterDTO struct {
 	FirstName       string `json:"firstName" binding:"required"`
 	LastName        string `json:"lastName" binding:"required"`
@@ -67,6 +57,7 @@ type UserUpdateDTO struct {
 	Email     string `json:"email" binding:"required,email"`
 	Role      string `json:"role" binding:"required"`
 	TeamID    string `json:"teamId"`
+	Disabled  bool   `json:"disabled"`
 }
 
 type AuthRequest struct {
@@ -100,21 +91,6 @@ func (u *User) ToFetchDTO() *UserFetchDTO {
 		dto.DefaultProjectID = *u.DefaultProjectID
 	}
 	return &dto
-}
-
-func (u *UserCreateDTO) ToUser() *User {
-	var teamID *string
-	if u.TeamID != "" {
-		teamID = &u.TeamID
-	}
-	return &User{
-		FirstName: u.FirstName,
-		LastName:  u.LastName,
-		Username:  u.Username,
-		Email:     u.Email,
-		Role:      u.Role,
-		TeamID:    teamID,
-	}
 }
 
 func (u *UserUpdateDTO) ToUser() *User {
