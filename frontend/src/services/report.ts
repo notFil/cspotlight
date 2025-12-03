@@ -1,10 +1,9 @@
 import { apiClient } from './api';
-import type { CSPReport } from '@/types';
+import type { CSPReport, APIResponse } from '@/types';
 
 class ReportService {
-  public async getReports(projectId: string): Promise<CSPReport[]> {
-    const response = await apiClient.get<CSPReport[]>(`/api/v1/reports/${projectId}/csp`);
-    return response.data;
+  public async getReports(projectId: string, page: number = 1, pageSize: number = 10): Promise<APIResponse<CSPReport[]>> {
+    return await apiClient.get<CSPReport[]>(`/api/v1/reports/${projectId}/csp?page=${page}&page_size=${pageSize}`);
   }
 }
 
