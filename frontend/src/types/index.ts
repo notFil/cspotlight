@@ -3,7 +3,7 @@ export interface Team {
   id: string;
   name: string;
   description: string;
-  last_updated: string;
+  updatedAt: string;
 }
 
 export interface User {

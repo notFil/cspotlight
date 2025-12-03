@@ -14,6 +14,8 @@ import { UserModal } from "./user-modal";
 import { DeleteConfirmModal } from "./delete-confirmation-modal";
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/use-users";
 import { formatTimestamp } from "@/utils/date";
+import { LoadingPage } from "@/components/loading-page";
+import { ErrorPage } from "@/components/error-page";
 
 export const UserTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -69,11 +71,11 @@ export const UserTable = () => {
   };
 
   if (isLoading) {
-    return <div>Loading users...</div>;
+    return <LoadingPage />;
   }
 
   if (isError) {
-    return <div>Error loading users: {error instanceof Error ? error.message : 'Unknown error'}</div>;
+    return <ErrorPage error={error as Error} />;
   }
 
   return (

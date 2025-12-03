@@ -13,6 +13,9 @@ import type { Project } from "@/types";
 import { ProjectModal } from "./project-modal";
 import { DeleteConfirmModal } from "./delete-confirmation-modal";
 import { useProjects, useCreateProject, useUpdateProject, useDeleteProject } from "@/hooks/use-projects";
+import { LoadingPage } from "@/components/loading-page";
+import { ErrorPage } from "@/components/error-page";
+
 
 export const ProjectTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,11 +61,11 @@ export const ProjectTable = () => {
   };
 
   if (isLoading) {
-    return <div>Loading projects...</div>;
+    return <LoadingPage />;
   }
 
   if (isError) {
-    return <div>Error loading projects: {error instanceof Error ? error.message : 'Unknown error'}</div>;
+    return <ErrorPage error={error as Error} />;
   }
 
   return (

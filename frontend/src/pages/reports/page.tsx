@@ -2,6 +2,8 @@ import { useParams, useSearchParams } from "react-router-dom"
 import { columns } from "./columns"
 import { DataTable } from "./data-table"
 import { useReports } from "@/hooks/use-reports"
+import { LoadingPage } from "@/components/loading-page"
+import { ErrorPage } from "@/components/error-page"
 
 export default function ReportsPage() {
   const { projectId } = useParams()
@@ -23,11 +25,11 @@ export default function ReportsPage() {
   }
 
   if (isLoading) {
-    return <div className="container mx-auto py-10">Loading reports...</div>
+    return <LoadingPage />
   }
 
   if (error) {
-    return <div className="container mx-auto py-10 text-red-500">Error loading reports</div>
+    return <ErrorPage error={error} />
   }
 
   return (

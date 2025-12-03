@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { Activity, Loader2, Star } from "lucide-react";
+import { Activity, Star } from "lucide-react";
+import { LoadingPage } from "@/components/loading-page";
+import { ErrorPage } from "@/components/error-page";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,22 +28,11 @@ const Projects = () => {
   const setDefaultProject = useSetDefaultProject();
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
-        <div className="text-center text-red-500">
-          <p>Error loading projects</p>
-          <p className="text-sm">{(error as Error).message}</p>
-        </div>
-      </div>
-    );
+    return <ErrorPage error={error as Error} />;
   }
 
   const handleSetDefault = (projectId: string) => {

@@ -13,6 +13,8 @@ import type { Team } from "@/types";
 import { TeamModal } from "./team-modal";
 import { DeleteConfirmModal } from "./delete-confirmation-modal";
 import { useTeams, useCreateTeam, useUpdateTeam, useDeleteTeam } from "@/hooks/use-teams";
+import { LoadingPage } from "@/components/loading-page";
+import { ErrorPage } from "@/components/error-page";
 
 export const TeamTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,11 +60,11 @@ export const TeamTable = () => {
   };
 
   if (isLoading) {
-    return <div>Loading teams...</div>;
+    return <LoadingPage />;
   }
 
   if (isError) {
-    return <div>Error loading teams: {error instanceof Error ? error.message : 'Unknown error'}</div>;
+    return <ErrorPage error={error as Error} />;
   }
 
   return (
