@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -12,44 +13,44 @@ import (
 )
 
 type MockTeamService struct {
-	CreateTeamFunc  func(team *models.TeamUpsertDTO) error
-	GetTeamByIDFunc func(id string) (*models.TeamFetchDTO, error)
-	UpdateTeamFunc  func(id string, team *models.TeamUpsertDTO) (*models.TeamFetchDTO, error)
-	DeleteTeamFunc  func(id string) error
-	ListTeamsFunc   func() ([]*models.TeamFetchDTO, error)
+	CreateTeamFunc  func(ctx context.Context, team *models.TeamUpsertDTO) error
+	GetTeamByIDFunc func(ctx context.Context, id string) (*models.TeamFetchDTO, error)
+	UpdateTeamFunc  func(ctx context.Context, id string, team *models.TeamUpsertDTO) (*models.TeamFetchDTO, error)
+	DeleteTeamFunc  func(ctx context.Context, id string) error
+	ListTeamsFunc   func(ctx context.Context) ([]*models.TeamFetchDTO, error)
 }
 
-func (m *MockTeamService) CreateTeam(team *models.TeamUpsertDTO) error {
+func (m *MockTeamService) CreateTeam(ctx context.Context, team *models.TeamUpsertDTO) error {
 	if m.CreateTeamFunc != nil {
-		return m.CreateTeamFunc(team)
+		return m.CreateTeamFunc(ctx, team)
 	}
 	return nil
 }
 
-func (m *MockTeamService) GetTeamByID(id string) (*models.TeamFetchDTO, error) {
+func (m *MockTeamService) GetTeamByID(ctx context.Context, id string) (*models.TeamFetchDTO, error) {
 	if m.GetTeamByIDFunc != nil {
-		return m.GetTeamByIDFunc(id)
+		return m.GetTeamByIDFunc(ctx, id)
 	}
 	return nil, nil
 }
 
-func (m *MockTeamService) UpdateTeam(id string, team *models.TeamUpsertDTO) (*models.TeamFetchDTO, error) {
+func (m *MockTeamService) UpdateTeam(ctx context.Context, id string, team *models.TeamUpsertDTO) (*models.TeamFetchDTO, error) {
 	if m.UpdateTeamFunc != nil {
-		return m.UpdateTeamFunc(id, team)
+		return m.UpdateTeamFunc(ctx, id, team)
 	}
 	return nil, nil
 }
 
-func (m *MockTeamService) DeleteTeam(id string) error {
+func (m *MockTeamService) DeleteTeam(ctx context.Context, id string) error {
 	if m.DeleteTeamFunc != nil {
-		return m.DeleteTeamFunc(id)
+		return m.DeleteTeamFunc(ctx, id)
 	}
 	return nil
 }
 
-func (m *MockTeamService) ListTeams() ([]*models.TeamFetchDTO, error) {
+func (m *MockTeamService) ListTeams(ctx context.Context) ([]*models.TeamFetchDTO, error) {
 	if m.ListTeamsFunc != nil {
-		return m.ListTeamsFunc()
+		return m.ListTeamsFunc(ctx)
 	}
 	return nil, nil
 }
@@ -59,7 +60,7 @@ func TestTeamHandler_GetTeamByID(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockTeamService{
-			GetTeamByIDFunc: func(id string) (*models.TeamFetchDTO, error) {
+			GetTeamByIDFunc: func(ctx context.Context, id string) (*models.TeamFetchDTO, error) {
 				return &models.TeamFetchDTO{ID: id, Name: "Test Team"}, nil
 			},
 		}
@@ -68,6 +69,7 @@ func TestTeamHandler_GetTeamByID(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "id", Value: "team-1"}}
+		c.Request = httptest.NewRequest("GET", "/teams/team-1", nil)
 
 		handler.GetTeamByID(c)
 
@@ -78,7 +80,7 @@ func TestTeamHandler_GetTeamByID(t *testing.T) {
 
 	t.Run("Error", func(t *testing.T) {
 		mockService := &MockTeamService{
-			GetTeamByIDFunc: func(id string) (*models.TeamFetchDTO, error) {
+			GetTeamByIDFunc: func(ctx context.Context, id string) (*models.TeamFetchDTO, error) {
 				return nil, errors.New("team not found")
 			},
 		}
@@ -87,6 +89,7 @@ func TestTeamHandler_GetTeamByID(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "id", Value: "team-1"}}
+		c.Request = httptest.NewRequest("GET", "/teams/team-1", nil)
 
 		handler.GetTeamByID(c)
 
@@ -101,7 +104,7 @@ func TestTeamHandler_CreateTeam(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockTeamService{
-			CreateTeamFunc: func(team *models.TeamUpsertDTO) error {
+			CreateTeamFunc: func(ctx context.Context, team *models.TeamUpsertDTO) error {
 				return nil
 			},
 		}
@@ -138,7 +141,7 @@ func TestTeamHandler_UpdateTeam(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockTeamService{
-			UpdateTeamFunc: func(id string, team *models.TeamUpsertDTO) (*models.TeamFetchDTO, error) {
+			UpdateTeamFunc: func(ctx context.Context, id string, team *models.TeamUpsertDTO) (*models.TeamFetchDTO, error) {
 				return &models.TeamFetchDTO{ID: id, Name: team.Name}, nil
 			},
 		}
@@ -163,7 +166,7 @@ func TestTeamHandler_DeleteTeam(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockTeamService{
-			DeleteTeamFunc: func(id string) error {
+			DeleteTeamFunc: func(ctx context.Context, id string) error {
 				return nil
 			},
 		}
@@ -172,6 +175,7 @@ func TestTeamHandler_DeleteTeam(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "id", Value: "team-1"}}
+		c.Request = httptest.NewRequest("DELETE", "/teams/team-1", nil)
 
 		handler.DeleteTeam(c)
 
@@ -186,7 +190,7 @@ func TestTeamHandler_ListTeams(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockTeamService{
-			ListTeamsFunc: func() ([]*models.TeamFetchDTO, error) {
+			ListTeamsFunc: func(ctx context.Context) ([]*models.TeamFetchDTO, error) {
 				return []*models.TeamFetchDTO{{ID: "team-1"}}, nil
 			},
 		}
@@ -194,6 +198,8 @@ func TestTeamHandler_ListTeams(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
+
+		c.Request = httptest.NewRequest("GET", "/teams", nil)
 
 		handler.ListTeams(c)
 

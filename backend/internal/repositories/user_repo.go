@@ -1,18 +1,20 @@
 package repositories
 
 import (
+	"context"
+
 	"github.com/notFil/cspotlight/internal/models"
 	"gorm.io/gorm"
 )
 
 type UserRepository interface {
-	CreateUser(user *models.User) error
-	GetUserByID(id string) (*models.User, error)
-	GetUserByUsername(id string) (*models.User, error)
-	UpdateUser(user *models.User) error
-	DeleteUser(id string) error
-	ListUsers() ([]*models.User, error)
-	ListUsersByTeamID(teamID string) ([]*models.User, error)
+	CreateUser(ctx context.Context, user *models.User) error
+	GetUserByID(ctx context.Context, id string) (*models.User, error)
+	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
+	UpdateUser(ctx context.Context, user *models.User) error
+	DeleteUser(ctx context.Context, id string) error
+	ListUsers(ctx context.Context) ([]*models.User, error)
+	ListUsersByTeamID(ctx context.Context, teamID string) ([]*models.User, error)
 }
 
 type userRepository struct {
@@ -23,41 +25,41 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) CreateUser(user *models.User) error {
-	return r.db.Create(user).Error
+func (r *userRepository) CreateUser(ctx context.Context, user *models.User) error {
+	return r.db.WithContext(ctx).Create(user).Error
 }
 
-func (r *userRepository) GetUserByID(id string) (user *models.User, err error) {
-	if err = r.db.Preload("Team").First(&user, "id = ?", id).Error; err != nil {
+func (r *userRepository) GetUserByID(ctx context.Context, id string) (user *models.User, err error) {
+	if err = r.db.WithContext(ctx).Preload("Team").First(&user, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
-func (r *userRepository) GetUserByUsername(username string) (user *models.User, err error) {
-	if err = r.db.Preload("Team").First(&user, "username = ?", username).Error; err != nil {
+func (r *userRepository) GetUserByUsername(ctx context.Context, username string) (user *models.User, err error) {
+	if err = r.db.WithContext(ctx).Preload("Team").Where("email = ?", username).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
-func (r *userRepository) UpdateUser(user *models.User) error {
-	return r.db.Save(user).Error
+func (r *userRepository) UpdateUser(ctx context.Context, user *models.User) error {
+	return r.db.WithContext(ctx).Save(user).Error
 }
 
-func (r *userRepository) DeleteUser(id string) error {
-	return r.db.Delete(&models.User{}, "id = ?", id).Error
+func (r *userRepository) DeleteUser(ctx context.Context, id string) error {
+	return r.db.WithContext(ctx).Delete(&models.User{}, "id = ?", id).Error
 }
 
-func (r *userRepository) ListUsers() (users []*models.User, err error) {
-	if err = r.db.Preload("Team").Find(&users).Error; err != nil {
+func (r *userRepository) ListUsers(ctx context.Context) (users []*models.User, err error) {
+	if err = r.db.WithContext(ctx).Preload("Team").Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
 }
 
-func (r *userRepository) ListUsersByTeamID(teamID string) (users []*models.User, err error) {
-	if err = r.db.Preload("Team").Where("team_id = ?", teamID).Find(&users).Error; err != nil {
+func (r *userRepository) ListUsersByTeamID(ctx context.Context, teamID string) (users []*models.User, err error) {
+	if err = r.db.WithContext(ctx).Preload("Team").Where("team_id = ?", teamID).Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil

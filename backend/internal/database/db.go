@@ -2,7 +2,7 @@ package database
 
 import (
 	"github.com/notFil/cspotlight/config"
-	"github.com/notFil/cspotlight/pkg/logger"
+	"github.com/notFil/cspotlight/internal/logger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

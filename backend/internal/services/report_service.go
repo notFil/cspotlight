@@ -1,19 +1,20 @@
 package services
 
 import (
-	"errors"
+	"context"
+	"net/http"
 
+	"github.com/notFil/cspotlight/internal/auth"
+	apperrors "github.com/notFil/cspotlight/internal/errors"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/pagination"
 	"github.com/notFil/cspotlight/internal/repositories"
-	"github.com/notFil/cspotlight/pkg/auth"
-	"github.com/notFil/cspotlight/pkg/errs"
 )
 
 type ReportService interface {
-	ListReportsByProjectID(projectID string, p *pagination.Pagination, claims auth.Claims) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
-	BatchCreateReports(reports []*models.CSPReportCreateDTO, projectID string) error
-	GetReportGraphData(projectID string, claims auth.Claims) (*models.ReportGraphDataDTO, error)
+	ListReportsByProjectID(ctx context.Context, projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
+	BatchCreateReports(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID string) error
+	GetReportGraphData(ctx context.Context, projectID string) (*models.ReportGraphDataDTO, error)
 }
 
 type reportService struct {
@@ -28,25 +29,28 @@ func NewReportService(reportRepo repositories.ReportRepository, projectRepo repo
 	}
 }
 
-func (s *reportService) BatchCreateReports(reports []*models.CSPReportCreateDTO, projectID string) error {
+func (s *reportService) BatchCreateReports(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID string) error {
 	var cspReports []*models.CSPReport
 	for _, r := range reports {
 		cspReport := r.ToCSPReport()
 		cspReport.ProjectID = projectID
 		cspReports = append(cspReports, cspReport)
 	}
-	return s.reportRepo.BatchCreateReports(cspReports)
+
+	return s.reportRepo.BatchCreateReports(ctx, cspReports)
 }
-func (s *reportService) ListReportsByProjectID(projectID string, p *pagination.Pagination, claims auth.Claims) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
-	project, err := s.projectRepo.GetProjectByID(projectID)
+
+func (s *reportService) ListReportsByProjectID(ctx context.Context, projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+	claims := auth.GetUserClaims(ctx)
+	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
 	if err != nil {
 		return nil, p, err
 	}
-	if claims.Role != "superadmin" && project.TeamID != claims.TeamID {
-		return nil, p, errors.New("unauthorized access")
+	if claims.IsSuperadmin() && project.TeamID != claims.TeamID {
+		return nil, p, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
-	reports, p, err := s.reportRepo.ListReportsByProjectID(projectID, p)
+	reports, p, err := s.reportRepo.ListReportsByProjectID(ctx, projectID, p)
 	if err != nil {
 		return nil, p, err
 	}
@@ -54,13 +58,19 @@ func (s *reportService) ListReportsByProjectID(projectID string, p *pagination.P
 	return reports, p, nil
 }
 
-func (s *reportService) GetReportGraphData(projectID string, claims auth.Claims) (*models.ReportGraphDataDTO, error) {
-	project, err := s.projectRepo.GetProjectByID(projectID)
+func (s *reportService) GetReportGraphData(ctx context.Context, projectID string) (*models.ReportGraphDataDTO, error) {
+	g := &models.ReportGraphDataDTO{}
+	claims := auth.GetUserClaims(ctx)
+	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	if claims.Role != "superadmin" && project.TeamID != claims.TeamID {
-		return nil, errs.ErrUnauthorized
+	if !claims.IsSuperadmin() && project.TeamID != claims.TeamID {
+		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
-	return s.reportRepo.GetReportGraphData(projectID)
+
+	if g, err = s.reportRepo.GetReportGraphData(ctx, projectID); err != nil {
+		return nil, err
+	}
+	return g, nil
 }

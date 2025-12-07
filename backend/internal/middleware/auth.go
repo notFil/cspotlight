@@ -5,11 +5,11 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/notFil/cspotlight/pkg/constants"
+	"github.com/notFil/cspotlight/internal/constants"
 
-	"github.com/notFil/cspotlight/pkg/auth"
+	"github.com/notFil/cspotlight/internal/auth"
 
-	"github.com/notFil/cspotlight/pkg/response"
+	"github.com/notFil/cspotlight/internal/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,7 +37,9 @@ func JWTAuth(secretKey string) gin.HandlerFunc {
 			response.ErrorResponse(c, http.StatusUnauthorized, err.Error())
 		}
 
-		c.Set(constants.ClaimsContextKey, claims)
+		ctx := c.Request.Context()
+		ctx = auth.ContextWithClaims(ctx, claims)
+		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
 	}

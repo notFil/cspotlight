@@ -1,13 +1,15 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"testing"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/notFil/cspotlight/internal/auth"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/pagination"
-	"github.com/notFil/cspotlight/pkg/auth"
 	"gorm.io/datatypes"
 )
 
@@ -24,7 +26,7 @@ func NewMockReportRepository() *MockReportRepository {
 	}
 }
 
-func (m *MockReportRepository) CreateReport(report *models.CSPReport) error {
+func (m *MockReportRepository) CreateReport(ctx context.Context, report *models.CSPReport) error {
 	if report.ID == "" {
 		report.ID = uuid.New().String()
 	}
@@ -32,7 +34,7 @@ func (m *MockReportRepository) CreateReport(report *models.CSPReport) error {
 	return nil
 }
 
-func (m *MockReportRepository) BatchCreateReports(reports []*models.CSPReport) error {
+func (m *MockReportRepository) BatchCreateReports(ctx context.Context, reports []*models.CSPReport) error {
 	for _, report := range reports {
 		if report.ID == "" {
 			report.ID = uuid.New().String()
@@ -42,14 +44,14 @@ func (m *MockReportRepository) BatchCreateReports(reports []*models.CSPReport) e
 	return nil
 }
 
-func (m *MockReportRepository) GetReportByID(id string) (*models.CSPReport, error) {
+func (m *MockReportRepository) GetReportByID(ctx context.Context, id string) (*models.CSPReport, error) {
 	if report, exists := m.reports[id]; exists {
 		return report, nil
 	}
 	return nil, errors.New("report not found")
 }
 
-func (m *MockReportRepository) UpdateReport(report *models.CSPReport) error {
+func (m *MockReportRepository) UpdateReport(ctx context.Context, report *models.CSPReport) error {
 	if _, exists := m.reports[report.ID]; exists {
 		m.reports[report.ID] = report
 		return nil
@@ -57,7 +59,7 @@ func (m *MockReportRepository) UpdateReport(report *models.CSPReport) error {
 	return errors.New("report not found")
 }
 
-func (m *MockReportRepository) DeleteReport(id string) error {
+func (m *MockReportRepository) DeleteReport(ctx context.Context, id string) error {
 	if _, exists := m.reports[id]; exists {
 		delete(m.reports, id)
 		return nil
@@ -65,7 +67,7 @@ func (m *MockReportRepository) DeleteReport(id string) error {
 	return errors.New("report not found")
 }
 
-func (m *MockReportRepository) ListReportsByProjectID(projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+func (m *MockReportRepository) ListReportsByProjectID(ctx context.Context, projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
 	var reports []*models.CSPReportFetchDTO
 	for _, report := range m.reports {
 		if report.ProjectID == projectID {
@@ -95,6 +97,10 @@ func (m *MockReportRepository) ListReportsByProjectID(projectID string, p *pagin
 	return reports, p, nil
 }
 
+func (m *MockReportRepository) GetReportGraphData(ctx context.Context, projectID string) (*models.ReportGraphDataDTO, error) {
+	return &models.ReportGraphDataDTO{}, nil
+}
+
 func TestCreateReport(t *testing.T) {
 	mockRepo := NewMockReportRepository()
 	mockProjectRepo := NewMockProjectRepository()
@@ -111,7 +117,7 @@ func TestCreateReport(t *testing.T) {
 		},
 	}
 
-	err := service.CreateReport(reportDTO, projectID)
+	err := service.BatchCreateReports(context.Background(), []*models.CSPReportCreateDTO{reportDTO}, projectID)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -132,28 +138,6 @@ func TestCreateReport(t *testing.T) {
 	}
 	if createdReport.URL != reportDTO.URL {
 		t.Errorf("expected URL %s, got %s", reportDTO.URL, createdReport.URL)
-	}
-}
-
-func TestDeleteReport(t *testing.T) {
-	mockRepo := NewMockReportRepository()
-	mockProjectRepo := NewMockProjectRepository()
-	service := NewReportService(mockRepo, mockProjectRepo)
-
-	reportID := "rep-delete"
-	report := &models.CSPReport{
-		ID:        reportID,
-		ProjectID: "proj-1",
-	}
-	mockRepo.reports[reportID] = report
-
-	err := service.DeleteReport(reportID)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if _, exists := mockRepo.reports[reportID]; exists {
-		t.Fatal("expected report to be deleted")
 	}
 }
 
@@ -178,9 +162,10 @@ func TestListReportsByProjectID(t *testing.T) {
 	mockRepo.reports["r3"] = r3
 
 	p := &pagination.Pagination{Page: 1, PageSize: 10}
-	claims := auth.Claims{TeamID: teamID}
+	claims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user"}, Role: "user", TeamID: teamID}
+	ctx := auth.ContextWithClaims(context.Background(), &claims)
 
-	dtos, _, err := service.ListReportsByProjectID(projectID, p, claims)
+	dtos, _, err := service.ListReportsByProjectID(ctx, projectID, p)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

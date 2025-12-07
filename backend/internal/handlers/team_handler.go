@@ -3,12 +3,12 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/notFil/cspotlight/pkg/response"
+	"github.com/notFil/cspotlight/internal/response"
 
 	"github.com/gin-gonic/gin"
+	"github.com/notFil/cspotlight/internal/logger"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/services"
-	"github.com/notFil/cspotlight/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -33,15 +33,18 @@ func NewTeamHandler(teamService services.TeamService) *TeamHandler {
 // @Failure      500  {object}  map[string]interface{} "Internal server error"
 // @Router       /api/teams/{id} [get]
 func (h *TeamHandler) GetTeamByID(c *gin.Context) {
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
+
 	id := c.Param("id")
 
 	log.Info("fetching team", zap.String("team_id", id))
 
-	user, err := h.teamService.GetTeamByID(id)
+	user, err := h.teamService.GetTeamByID(ctx, id)
 	if err != nil {
 		log.Error("failed to fetch team", zap.String("team_id", id), zap.Error(err))
-		response.Error(c, err)
+		response.ErrorResponse(c, http.StatusInternalServerError, "failed to fetch team")
 		return
 	}
 	response.Success(c, http.StatusOK, "", user)
@@ -59,19 +62,22 @@ func (h *TeamHandler) GetTeamByID(c *gin.Context) {
 // @Failure      500   {object}  map[string]interface{} "Failed to create team"
 // @Router       /api/teams [post]
 func (h *TeamHandler) CreateTeam(c *gin.Context) {
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
+
 	team := &models.TeamUpsertDTO{}
 	if err := c.BindJSON(team); err != nil {
 		log.Warn("invalid team payload", zap.Error(err))
-		response.Error(c, err)
+		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	log.Info("creating team", zap.String("team_name", team.Name))
 
-	if err := h.teamService.CreateTeam(team); err != nil {
+	if err := h.teamService.CreateTeam(ctx, team); err != nil {
 		log.Error("failed to create team", zap.Error(err))
-		response.Error(c, err)
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to create team")
 		return
 	}
 
@@ -91,21 +97,24 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 // @Failure      500   {object}  map[string]interface{} "Failed to update team"
 // @Router       /api/teams/{id} [put]
 func (h *TeamHandler) UpdateTeam(c *gin.Context) {
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
+
 	id := c.Param("id")
 	team := &models.TeamUpsertDTO{}
 	if err := c.BindJSON(team); err != nil {
 		log.Warn("invalid team update payload", zap.Error(err))
-		response.Error(c, err)
+		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	log.Info("updating team", zap.String("team_id", id))
 
-	updatedTeam, err := h.teamService.UpdateTeam(id, team)
+	updatedTeam, err := h.teamService.UpdateTeam(ctx, id, team)
 	if err != nil {
 		log.Error("failed to update team", zap.String("team_id", id), zap.Error(err))
-		response.Error(c, err)
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to update team")
 		return
 	}
 
@@ -122,14 +131,17 @@ func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 // @Failure      500  {object}  map[string]interface{} "Failed to delete team"
 // @Router       /api/teams/{id} [delete]
 func (h *TeamHandler) DeleteTeam(c *gin.Context) {
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
+
 	id := c.Param("id")
 
 	log.Info("deleting team", zap.String("team_id", id))
 
-	if err := h.teamService.DeleteTeam(id); err != nil {
+	if err := h.teamService.DeleteTeam(ctx, id); err != nil {
 		log.Error("failed to delete team", zap.String("team_id", id), zap.Error(err))
-		response.Error(c, err)
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete team")
 		return
 	}
 
@@ -145,13 +157,16 @@ func (h *TeamHandler) DeleteTeam(c *gin.Context) {
 // @Failure      500  {object}  map[string]interface{} "Failed to list teams"
 // @Router       /api/teams [get]
 func (h *TeamHandler) ListTeams(c *gin.Context) {
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
+
 	log.Info("listing teams")
 
-	teams, err := h.teamService.ListTeams()
+	teams, err := h.teamService.ListTeams(ctx)
 	if err != nil {
 		log.Error("failed to list teams", zap.Error(err))
-		response.Error(c, err)
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to list teams")
 		return
 	}
 

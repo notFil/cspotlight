@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/notFil/cspotlight/config"
-	"github.com/notFil/cspotlight/pkg/database"
-	"github.com/notFil/cspotlight/pkg/logger"
+	"github.com/notFil/cspotlight/internal/database"
+	"github.com/notFil/cspotlight/internal/logger"
 	"go.uber.org/zap"
 
 	"github.com/notFil/cspotlight/internal/router"

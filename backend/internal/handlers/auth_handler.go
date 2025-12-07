@@ -3,15 +3,13 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/notFil/cspotlight/config"
-	"github.com/notFil/cspotlight/pkg/auth"
-	"github.com/notFil/cspotlight/pkg/errs"
-	"github.com/notFil/cspotlight/pkg/response"
-
 	"github.com/gin-gonic/gin"
+	"github.com/notFil/cspotlight/config"
+	"github.com/notFil/cspotlight/internal/auth"
+	"github.com/notFil/cspotlight/internal/logger"
 	"github.com/notFil/cspotlight/internal/models"
+	"github.com/notFil/cspotlight/internal/response"
 	"github.com/notFil/cspotlight/internal/services"
-	"github.com/notFil/cspotlight/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -39,7 +37,10 @@ func NewAuthHandler(userService services.UserService, jwtConfig config.JWTConfig
 // @Failure      500   {object}  map[string]interface{} "Internal server error"
 // @Router       /api/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
+
 	var authRequest models.AuthRequest
 	if err := c.BindJSON(&authRequest); err != nil {
 		log.Warn("invalid login payload", zap.Error(err))
@@ -49,7 +50,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	log.Info("attempting login", zap.String("username", authRequest.Username))
 
-	user, err := h.userService.AuthenticateUser(&authRequest)
+	user, err := h.userService.AuthenticateUser(ctx, &authRequest)
 	if err != nil {
 		log.Warn("authentication failed", zap.String("username", authRequest.Username), zap.Error(err))
 		response.ErrorResponse(c, http.StatusUnauthorized, "Authentication failed")
@@ -79,26 +80,23 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Failure      500   {object}  map[string]interface{} "Failed to register user"
 // @Router       /api/auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
+
 	var user models.UserRegisterDTO
 	if err := c.BindJSON(&user); err != nil {
 		log.Warn("invalid register payload", zap.Error(err))
-		response.Error(c, err)
-		return
-	}
-
-	if user.Password != user.ConfirmPassword {
-		log.Warn("passwords do not match")
-		response.Error(c, errs.ErrInvalidInput)
+		c.Error(err)
 		return
 	}
 
 	log.Info("registering user", zap.String("email", user.Email))
 
-	err := h.userService.RegisterUser(&user)
+	err := h.userService.RegisterUser(ctx, &user)
 	if err != nil {
 		log.Error("failed to register user", zap.String("email", user.Email), zap.Error(err))
-		response.Error(c, err)
+		response.ErrorResponse(c, http.StatusInternalServerError, "failed to register user")
 		return
 	}
 
@@ -118,35 +116,38 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // @Failure      500   {object}  map[string]interface{} "failed to refresh token"
 // @Router       /api/auth/refresh [post]
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
+
 	var req struct {
 		RefreshToken string `json:"refreshToken"`
 	}
 
 	if err := c.BindJSON(&req); err != nil {
 		log.Warn("invalid refresh token payload", zap.Error(err))
-		response.Error(c, err)
+		response.ErrorResponse(c, http.StatusBadRequest, "invalid request payload")
 		return
 	}
 
 	claims, err := auth.ValidateRefreshToken(req.RefreshToken, h.jwtConfig.RefreshSecretKey)
 	if err != nil {
 		log.Warn("invalid refresh token", zap.Error(err))
-		response.Error(c, err)
+		response.ErrorResponse(c, http.StatusUnauthorized, "invalid refresh token")
 		return
 	}
 
-	user, err := h.userService.GetUserByID(claims.Subject, *claims)
+	user, err := h.userService.GetUserByID(ctx, claims.Subject)
 	if err != nil {
 		log.Error("failed to get user for refresh token", zap.String("user_id", claims.Subject), zap.Error(err))
-		response.Error(c, err)
+		response.ErrorResponse(c, http.StatusInternalServerError, "failed to get user")
 		return
 	}
 
 	tokens, err := auth.GenerateJWT(user, h.jwtConfig)
 	if err != nil {
 		log.Error("failed to generate jwt for refresh", zap.String("user_id", user.ID), zap.Error(err))
-		response.Error(c, err)
+		response.ErrorResponse(c, http.StatusInternalServerError, "failed to generate jwt")
 		return
 	}
 

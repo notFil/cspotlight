@@ -1,15 +1,17 @@
 package repositories
 
 import (
+	"context"
+
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/pagination"
 	"gorm.io/gorm"
 )
 
 type ReportRepository interface {
-	ListReportsByProjectID(projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
-	BatchCreateReports(reports []*models.CSPReport) error
-	GetReportGraphData(projectID string) (*models.ReportGraphDataDTO, error)
+	ListReportsByProjectID(ctx context.Context, projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
+	BatchCreateReports(ctx context.Context, reports []*models.CSPReport) error
+	GetReportGraphData(ctx context.Context, projectID string) (*models.ReportGraphDataDTO, error)
 }
 
 type reportRepository struct {
@@ -20,16 +22,16 @@ func NewReportRepository(db *gorm.DB) ReportRepository {
 	return &reportRepository{db: db}
 }
 
-func (r *reportRepository) BatchCreateReports(reports []*models.CSPReport) error {
-	return r.db.CreateInBatches(reports, 100).Error
+func (r *reportRepository) BatchCreateReports(ctx context.Context, reports []*models.CSPReport) error {
+	return r.db.WithContext(ctx).CreateInBatches(reports, 100).Error
 }
 
-func (r *reportRepository) ListReportsByProjectID(projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+func (r *reportRepository) ListReportsByProjectID(ctx context.Context, projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
 	var reports []*models.CSPReportFetchDTO
 
 	// Count total unique groups for pagination
 	var totalRows int64
-	r.db.Raw(`
+	r.db.WithContext(ctx).Raw(`
 		SELECT COUNT(*) 
 		FROM (
 			SELECT 1 
@@ -43,7 +45,7 @@ func (r *reportRepository) ListReportsByProjectID(projectID string, p *paginatio
 	p.TotalPages = int((p.TotalRows + int64(p.GetLimit()) - 1) / int64(p.GetLimit()))
 
 	// Fetch paginated results
-	result := r.db.Raw(`
+	result := r.db.WithContext(ctx).Raw(`
     SELECT 
         url,
         directive,
@@ -68,10 +70,10 @@ func (r *reportRepository) ListReportsByProjectID(projectID string, p *paginatio
 	return reports, p, nil
 }
 
-func (r *reportRepository) GetReportGraphData(projectID string) (*models.ReportGraphDataDTO, error) {
+func (r *reportRepository) GetReportGraphData(ctx context.Context, projectID string) (*models.ReportGraphDataDTO, error) {
 	var dataMap models.ReportGraphDataDTO
 
-	rows, err := r.db.Raw(`
+	rows, err := r.db.WithContext(ctx).Raw(`
 		SELECT 
 			(CURRENT_DATE - DATE(created_at)) AS days_ago,
 			directive,

@@ -9,7 +9,7 @@ import (
 
 var Logger *zap.Logger
 
-const loggerKey = "logger"
+type loggerKey struct{}
 
 func InitializeLogger(env string) {
 	if env == "production" {
@@ -19,19 +19,23 @@ func InitializeLogger(env string) {
 	}
 }
 
+// WithLogger attaches a logger to the context
+func WithLogger(ctx context.Context, log *zap.Logger) context.Context {
+	return context.WithValue(ctx, loggerKey{}, log)
+}
+
 // FromContext returns the logger associated with the context.
 // If no logger is found, it returns the global logger.
 func FromContext(ctx context.Context) *zap.Logger {
 	if c, ok := ctx.(*gin.Context); ok {
-		if l, exists := c.Get(loggerKey); exists {
+		if l, exists := c.Get(loggerKey{}); exists {
 			if logger, ok := l.(*zap.Logger); ok {
 				return logger
 			}
 		}
 	}
 
-	// Fallback for standard context
-	if l, ok := ctx.Value(loggerKey).(*zap.Logger); ok {
+	if l, ok := ctx.Value(loggerKey{}).(*zap.Logger); ok {
 		return l
 	}
 

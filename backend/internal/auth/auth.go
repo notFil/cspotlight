@@ -1,17 +1,19 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/notFil/cspotlight/config"
-	"github.com/notFil/cspotlight/pkg/constants"
+	"github.com/notFil/cspotlight/internal/constants"
 
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/notFil/cspotlight/internal/models"
 )
+
+type contextKey struct{}
 
 type Claims struct {
 	jwt.RegisteredClaims
@@ -92,14 +94,21 @@ func (c *Claims) IsSuperadmin() bool {
 	return c.Role == "superadmin"
 }
 
-func GetUserClaims(c *gin.Context) *Claims {
-	claims, exists := c.Get(constants.ClaimsContextKey)
-	if !exists {
-		return nil
-	}
-	if claims, ok := claims.(*Claims); ok {
+func ContextWithClaims(ctx context.Context, claims *Claims) context.Context {
+	return context.WithValue(ctx, contextKey{}, claims)
+}
+
+func GetUserClaims(ctx context.Context) *Claims {
+	if claims, ok := ctx.Value(contextKey{}).(*Claims); ok {
 		return claims
 	}
+
+	if val := ctx.Value(constants.ClaimsContextKey); val != nil {
+		if claims, ok := val.(*Claims); ok {
+			return claims
+		}
+	}
+
 	return nil
 }
 

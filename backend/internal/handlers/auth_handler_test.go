@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"mime/multipart"
 	"net/http"
@@ -10,9 +11,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/notFil/cspotlight/config"
+	"github.com/notFil/cspotlight/internal/logger"
 	"github.com/notFil/cspotlight/internal/models"
-	"github.com/notFil/cspotlight/pkg/auth"
-	"github.com/notFil/cspotlight/pkg/logger"
 )
 
 func init() {
@@ -20,92 +20,92 @@ func init() {
 }
 
 type MockUserService struct {
-	RegisterUserFunc      func(user *models.UserRegisterDTO) error
-	GetUserByIDFunc       func(id string, claims auth.Claims) (*models.UserFetchDTO, error)
-	GetUserByUsernameFunc func(username string) (*models.UserFetchDTO, error)
-	AuthenticateUserFunc  func(authRequest *models.AuthRequest) (*models.UserFetchDTO, error)
-	UpdateUserFunc        func(id string, user *models.UserUpdateDTO, claims auth.Claims) (*models.UserFetchDTO, error)
-	SetDefaultProjectFunc func(id string, projectID string, claims auth.Claims) (*models.UserFetchDTO, error)
-	GetUsersFunc          func(claims auth.Claims) ([]*models.UserFetchDTO, error)
-	ListUsersByTeamIDFunc func(teamID string, claims auth.Claims) ([]*models.UserFetchDTO, error)
-	DeleteUserFunc        func(id string, claims auth.Claims) error
-	ChangePasswordFunc    func(id string, request *models.ChangePasswordRequest, claims auth.Claims) error
-	ChangeImageFunc       func(id string, image *multipart.FileHeader, claims auth.Claims) error
+	RegisterUserFunc      func(ctx context.Context, user *models.UserRegisterDTO) error
+	GetUserByIDFunc       func(ctx context.Context, id string) (*models.UserFetchDTO, error)
+	GetUserByUsernameFunc func(ctx context.Context, username string) (*models.UserFetchDTO, error)
+	AuthenticateUserFunc  func(ctx context.Context, authRequest *models.AuthRequest) (*models.UserFetchDTO, error)
+	UpdateUserFunc        func(ctx context.Context, id string, user *models.UserUpdateDTO) (*models.UserFetchDTO, error)
+	SetDefaultProjectFunc func(ctx context.Context, id string, projectID string) (*models.UserFetchDTO, error)
+	GetUsersFunc          func(ctx context.Context) ([]*models.UserFetchDTO, error)
+	ListUsersByTeamIDFunc func(ctx context.Context, teamID string) ([]*models.UserFetchDTO, error)
+	DeleteUserFunc        func(ctx context.Context, id string) error
+	ChangePasswordFunc    func(ctx context.Context, id string, request *models.ChangePasswordRequest) error
+	ChangeImageFunc       func(ctx context.Context, id string, image *multipart.FileHeader) error
 }
 
-func (m *MockUserService) RegisterUser(user *models.UserRegisterDTO) error {
+func (m *MockUserService) RegisterUser(ctx context.Context, user *models.UserRegisterDTO) error {
 	if m.RegisterUserFunc != nil {
-		return m.RegisterUserFunc(user)
+		return m.RegisterUserFunc(ctx, user)
 	}
 	return nil
 }
 
-func (m *MockUserService) GetUserByID(id string, claims auth.Claims) (*models.UserFetchDTO, error) {
+func (m *MockUserService) GetUserByID(ctx context.Context, id string) (*models.UserFetchDTO, error) {
 	if m.GetUserByIDFunc != nil {
-		return m.GetUserByIDFunc(id, claims)
+		return m.GetUserByIDFunc(ctx, id)
 	}
 	return nil, nil
 }
 
-func (m *MockUserService) GetUserByUsername(username string) (*models.UserFetchDTO, error) {
+func (m *MockUserService) GetUserByUsername(ctx context.Context, username string) (*models.UserFetchDTO, error) {
 	if m.GetUserByUsernameFunc != nil {
-		return m.GetUserByUsernameFunc(username)
+		return m.GetUserByUsernameFunc(ctx, username)
 	}
 	return nil, nil
 }
 
-func (m *MockUserService) AuthenticateUser(authRequest *models.AuthRequest) (*models.UserFetchDTO, error) {
+func (m *MockUserService) AuthenticateUser(ctx context.Context, authRequest *models.AuthRequest) (*models.UserFetchDTO, error) {
 	if m.AuthenticateUserFunc != nil {
-		return m.AuthenticateUserFunc(authRequest)
+		return m.AuthenticateUserFunc(ctx, authRequest)
 	}
 	return nil, nil
 }
 
-func (m *MockUserService) UpdateUser(id string, user *models.UserUpdateDTO, claims auth.Claims) (*models.UserFetchDTO, error) {
+func (m *MockUserService) UpdateUser(ctx context.Context, id string, user *models.UserUpdateDTO) (*models.UserFetchDTO, error) {
 	if m.UpdateUserFunc != nil {
-		return m.UpdateUserFunc(id, user, claims)
+		return m.UpdateUserFunc(ctx, id, user)
 	}
 	return nil, nil
 }
 
-func (m *MockUserService) SetDefaultProject(id string, projectID string, claims auth.Claims) (*models.UserFetchDTO, error) {
+func (m *MockUserService) SetDefaultProject(ctx context.Context, id string, projectID string) (*models.UserFetchDTO, error) {
 	if m.SetDefaultProjectFunc != nil {
-		return m.SetDefaultProjectFunc(id, projectID, claims)
+		return m.SetDefaultProjectFunc(ctx, id, projectID)
 	}
 	return nil, nil
 }
 
-func (m *MockUserService) GetUsers(claims auth.Claims) ([]*models.UserFetchDTO, error) {
+func (m *MockUserService) GetUsers(ctx context.Context) ([]*models.UserFetchDTO, error) {
 	if m.GetUsersFunc != nil {
-		return m.GetUsersFunc(claims)
+		return m.GetUsersFunc(ctx)
 	}
 	return nil, nil
 }
 
-func (m *MockUserService) ListUsersByTeamID(teamID string, claims auth.Claims) ([]*models.UserFetchDTO, error) {
+func (m *MockUserService) ListUsersByTeamID(ctx context.Context, teamID string) ([]*models.UserFetchDTO, error) {
 	if m.ListUsersByTeamIDFunc != nil {
-		return m.ListUsersByTeamIDFunc(teamID, claims)
+		return m.ListUsersByTeamIDFunc(ctx, teamID)
 	}
 	return nil, nil
 }
 
-func (m *MockUserService) DeleteUser(id string, claims auth.Claims) error {
+func (m *MockUserService) DeleteUser(ctx context.Context, id string) error {
 	if m.DeleteUserFunc != nil {
-		return m.DeleteUserFunc(id, claims)
+		return m.DeleteUserFunc(ctx, id)
 	}
 	return nil
 }
 
-func (m *MockUserService) ChangePassword(id string, request *models.ChangePasswordRequest, claims auth.Claims) error {
+func (m *MockUserService) ChangePassword(ctx context.Context, id string, request *models.ChangePasswordRequest) error {
 	if m.ChangePasswordFunc != nil {
-		return m.ChangePasswordFunc(id, request, claims)
+		return m.ChangePasswordFunc(ctx, id, request)
 	}
 	return nil
 }
 
-func (m *MockUserService) ChangeImage(id string, image *multipart.FileHeader, claims auth.Claims) error {
+func (m *MockUserService) ChangeImage(ctx context.Context, id string, image *multipart.FileHeader) error {
 	if m.ChangeImageFunc != nil {
-		return m.ChangeImageFunc(id, image, claims)
+		return m.ChangeImageFunc(ctx, id, image)
 	}
 	return nil
 }
@@ -115,7 +115,7 @@ func TestAuthHandler_Login(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockUserService{
-			AuthenticateUserFunc: func(authRequest *models.AuthRequest) (*models.UserFetchDTO, error) {
+			AuthenticateUserFunc: func(ctx context.Context, authRequest *models.AuthRequest) (*models.UserFetchDTO, error) {
 				return &models.UserFetchDTO{ID: "user-1", Username: "testuser"}, nil
 			},
 		}
@@ -148,7 +148,7 @@ func TestAuthHandler_Login(t *testing.T) {
 
 	t.Run("AuthenticationFailed", func(t *testing.T) {
 		mockService := &MockUserService{
-			AuthenticateUserFunc: func(authRequest *models.AuthRequest) (*models.UserFetchDTO, error) {
+			AuthenticateUserFunc: func(ctx context.Context, authRequest *models.AuthRequest) (*models.UserFetchDTO, error) {
 				return nil, errors.New("invalid credentials")
 			},
 		}
@@ -172,7 +172,7 @@ func TestAuthHandler_Register(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockUserService{
-			RegisterUserFunc: func(user *models.UserRegisterDTO) error {
+			RegisterUserFunc: func(ctx context.Context, user *models.UserRegisterDTO) error {
 				return nil
 			},
 		}
@@ -192,7 +192,7 @@ func TestAuthHandler_Register(t *testing.T) {
 
 	t.Run("Failure", func(t *testing.T) {
 		mockService := &MockUserService{
-			RegisterUserFunc: func(user *models.UserRegisterDTO) error {
+			RegisterUserFunc: func(ctx context.Context, user *models.UserRegisterDTO) error {
 				return errors.New("email exists")
 			},
 		}

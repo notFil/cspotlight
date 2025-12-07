@@ -3,14 +3,13 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/notFil/cspotlight/pkg/auth"
-	"github.com/notFil/cspotlight/pkg/errs"
-	"github.com/notFil/cspotlight/pkg/response"
+	"github.com/notFil/cspotlight/internal/auth"
+	"github.com/notFil/cspotlight/internal/response"
 
 	"github.com/gin-gonic/gin"
+	"github.com/notFil/cspotlight/internal/logger"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/services"
-	"github.com/notFil/cspotlight/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -34,14 +33,17 @@ func NewUserHandler(s services.UserService) *UserHandler {
 // @Failure      500  {object}  map[string]interface{} "Internal server error"
 // @Router       /api/users/me [get]
 func (h *UserHandler) GetCurrentUser(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
+
 	claims := auth.GetUserClaims(c)
-	log := logger.FromContext(c)
 	log.Info("fetching current user", zap.String("user_id", claims.Subject))
 
-	user, err := h.userService.GetUserByID(claims.Subject, *claims)
+	user, err := h.userService.GetUserByID(ctx, claims.Subject)
 	if err != nil {
 		log.Error("failed to fetch current user", zap.String("user_id", claims.Subject), zap.Error(err))
-		response.Error(c, err)
+		c.Error(err)
 		return
 	}
 	response.Success(c, http.StatusOK, "", user)
@@ -57,17 +59,18 @@ func (h *UserHandler) GetCurrentUser(c *gin.Context) {
 // @Failure      500  {object}  map[string]interface{} "internal server error"
 // @Router       /api/users/{id} [get]
 func (h *UserHandler) GetUserByID(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
+
 	id := c.Param("id")
 
-	claims := auth.GetUserClaims(c)
-	log := logger.FromContext(c)
+	log.Info("fetching user", zap.String("user_id", id))
 
-	log.Info("fetching user", zap.String("target_user_id", id), zap.String("user_id", claims.Subject))
-
-	user, err := h.userService.GetUserByID(id, *claims)
+	user, err := h.userService.GetUserByID(ctx, id)
 	if err != nil {
-		log.Error("failed to fetch user", zap.String("target_user_id", id), zap.Error(err))
-		response.Error(c, err)
+		log.Error("failed to fetch user", zap.String("user_id", id), zap.Error(err))
+		c.Error(err)
 		return
 	}
 	response.Success(c, http.StatusOK, "", user)
@@ -86,21 +89,24 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 // @Failure      500   {object}  map[string]interface{} "failed to update user"
 // @Router       /api/users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
+
 	id := c.Param("id")
-	log := logger.FromContext(c)
 	var user models.UserUpdateDTO
 	if err := c.BindJSON(&user); err != nil {
 		log.Warn("invalid user update payload", zap.Error(err))
-		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		c.Error(err)
 		return
 	}
 
-	log.Info("updating user", zap.String("target_user_id", id), zap.String("user_id", id))
+	log.Info("updating user", zap.String("user_id", id))
 
-	updatedUser, err := h.userService.UpdateUser(id, &user)
+	updatedUser, err := h.userService.UpdateUser(ctx, id, &user)
 	if err != nil {
-		log.Error("failed to update user", zap.String("target_user_id", id), zap.Error(err))
-		response.Error(c, err)
+		log.Error("failed to update user", zap.String("user_id", id), zap.Error(err))
+		c.Error(err)
 		return
 	}
 
@@ -117,16 +123,18 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 // @Failure      500  {object}  map[string]interface{} "failed to delete user"
 // @Router       /api/users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
+
 	id := c.Param("id")
 
-	log := logger.FromContext(c)
+	log.Info("deleting user", zap.String("user_id", id))
 
-	log.Info("deleting user", zap.String("target_user_id", id), zap.String("user_id", id))
-
-	err := h.userService.DeleteUser(id)
+	err := h.userService.DeleteUser(ctx, id)
 	if err != nil {
-		log.Error("failed to delete user", zap.String("target_user_id", id), zap.Error(err))
-		response.Error(c, err)
+		log.Error("failed to delete user", zap.String("user_id", id), zap.Error(err))
+		c.Error(err)
 		return
 	}
 
@@ -142,16 +150,16 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 // @Failure      500  {object}  map[string]interface{} "Failed to list users"
 // @Router       /api/users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
-	claims := auth.GetUserClaims(c)
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
 
-	log.Info("listing users", zap.String("user_id", claims.Subject))
+	log := logger.FromContext(ctx)
 
-	users, err := h.userService.GetUsers(*claims)
+	log.Info("listing users")
+	users, err := h.userService.GetUsers(ctx)
 
 	if err != nil {
 		log.Error("failed to list users", zap.Error(err))
-		response.Error(c, err)
+		c.Error(err)
 		return
 	}
 
@@ -170,15 +178,15 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 func (h *UserHandler) ListUsersByTeamID(c *gin.Context) {
 	teamID := c.Param("teamID")
 
-	claims := auth.GetUserClaims(c)
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
 
-	log.Info("listing users by team", zap.String("team_id", teamID), zap.String("user_id", claims.Subject))
+	log := logger.FromContext(ctx)
 
-	users, err := h.userService.ListUsersByTeamID(teamID, *claims)
+	log.Info("listing users by team", zap.String("team_id", teamID))
+	users, err := h.userService.ListUsersByTeamID(ctx, teamID)
 	if err != nil {
 		log.Error("failed to list users by team", zap.String("team_id", teamID), zap.Error(err))
-		response.Error(c, err)
+		c.Error(err)
 		return
 	}
 
@@ -200,24 +208,23 @@ func (h *UserHandler) ListUsersByTeamID(c *gin.Context) {
 func (h *UserHandler) SetDefaultProject(c *gin.Context) {
 	id := c.Param("id")
 
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
 	var req struct {
 		ProjectID string `json:"projectID"`
 	}
 	if err := c.BindJSON(&req); err != nil {
 		log.Warn("invalid set default project payload", zap.Error(err))
-		response.ErrorResponse(c, http.StatusBadRequest, "invalid request payload")
+		c.Error(err)
 		return
 	}
 
-	claims := auth.GetUserClaims(c)
-
-	log.Info("setting default project", zap.String("project_id", req.ProjectID), zap.String("user_id", claims.Subject))
-
-	updatedUser, err := h.userService.SetDefaultProject(id, req.ProjectID, *claims)
+	log.Info("setting default project", zap.String("project_id", req.ProjectID), zap.String("user_id", id))
+	updatedUser, err := h.userService.SetDefaultProject(ctx, id, req.ProjectID)
 	if err != nil {
 		log.Error("failed to set default project", zap.Error(err))
-		response.Error(c, err)
+		c.Error(err)
 		return
 	}
 
@@ -238,30 +245,27 @@ func (h *UserHandler) SetDefaultProject(c *gin.Context) {
 // @Failure      400   {object}  map[string]interface{} "failed to change password"
 // @Router       /api/users/{id}/password [patch]
 func (h *UserHandler) ChangePassword(c *gin.Context) {
-	id := c.Param("id")
-	claims := auth.GetUserClaims(c)
+	ctx := c.Request.Context()
 
-	log := logger.FromContext(c)
+	log := logger.FromContext(ctx)
+
+	id := c.Param("id")
+
 	var req models.ChangePasswordRequest
 	if err := c.BindJSON(&req); err != nil {
 		log.Warn("invalid change password payload", zap.Error(err))
-		response.Error(c, err)
-		return
-	}
-	if req.NewPassword != req.ConfirmNewPassword {
-		log.Warn("new password and confirm new password do not match")
-		response.Error(c, errs.ErrNoMatchOnNewPasswords)
+		c.Error(err)
 		return
 	}
 
-	err := h.userService.ChangePassword(id, &req, *claims)
+	err := h.userService.ChangePassword(ctx, id, &req)
 	if err != nil {
 		log.Error("failed to change password", zap.Error(err))
-		response.Error(c, err)
+		c.Error(err)
 		return
 	}
 
-	log.Info("user changed password", zap.String("user_id", claims.Subject))
+	log.Info("user changed password", zap.String("user_id", id))
 
 	response.Success(c, http.StatusOK, "password changed successfully", nil)
 }
@@ -280,25 +284,26 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 // @Router       /api/users/{id}/image [patch]
 func (h *UserHandler) ChangeImage(c *gin.Context) {
 	id := c.Param("id")
-	claims := auth.GetUserClaims(c)
 
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
 
 	file, err := c.FormFile("image")
 	if err != nil {
 		log.Warn("invalid change image payload", zap.Error(err))
-		response.Error(c, errs.ErrMissingImage)
+		c.Error(err)
 		return
 	}
 
-	err = h.userService.ChangeImage(id, file, *claims)
+	err = h.userService.ChangeImage(ctx, id, file)
 	if err != nil {
 		log.Error("failed to change image", zap.Error(err))
-		response.Error(c, err)
+		c.Error(err)
 		return
 	}
 
-	log.Info("user changed image", zap.String("user_id", claims.Subject))
+	log.Info("user changed image", zap.String("user_id", id))
 
 	response.Success(c, http.StatusOK, "image changed successfully", nil)
 }

@@ -1,17 +1,17 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/notFil/cspotlight/internal/logger"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/pagination"
+	"github.com/notFil/cspotlight/internal/response"
 	"github.com/notFil/cspotlight/internal/services"
-	"github.com/notFil/cspotlight/pkg/auth"
-	"github.com/notFil/cspotlight/pkg/logger"
-	"github.com/notFil/cspotlight/pkg/response"
 	"go.uber.org/zap"
 )
 
@@ -36,13 +36,16 @@ func NewReportHandler(reportService services.ReportService) *ReportHandler {
 }
 
 func (h *ReportHandler) CreateReport(c *gin.Context) {
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
+
 	projectID := c.Param("projectID")
 
 	report := models.CSPReportCreateDTO{}
 	if err := c.BindJSON(&report); err != nil {
 		log.Warn("invalid report payload", zap.Error(err))
-		response.Error(c, err)
+		c.Error(err)
 		return
 	}
 
@@ -58,11 +61,11 @@ func (h *ReportHandler) CreateReport(c *gin.Context) {
 }
 
 func (h *ReportHandler) ListReportsByProjectID(c *gin.Context) {
-	claims := auth.GetUserClaims(c)
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
+
+	log := logger.FromContext(ctx)
 
 	projectID := c.Param("projectID")
-
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
 
@@ -71,12 +74,12 @@ func (h *ReportHandler) ListReportsByProjectID(c *gin.Context) {
 		PageSize: pageSize,
 	}
 
-	log.Info("listing reports", zap.String("project_id", projectID), zap.String("user_id", claims.Subject))
+	log.Info("listing reports", zap.String("project_id", projectID))
 
-	reports, meta, err := h.reportService.ListReportsByProjectID(projectID, p, *claims)
+	reports, meta, err := h.reportService.ListReportsByProjectID(ctx, projectID, p)
 	if err != nil {
 		log.Error("failed to list reports", zap.String("project_id", projectID), zap.Error(err))
-		response.Error(c, err)
+		c.Error(err)
 		return
 	}
 	response.SuccessPagedResponse(c, http.StatusOK, "reports fetched successfully", reports, meta)
@@ -109,10 +112,7 @@ func (h *ReportHandler) startWorker() {
 }
 
 func (h *ReportHandler) processBatch(batch []reportJob) {
-	// Group reports by project ID to optimize DB calls if needed,
-	// but for now we'll just iterate or send them all if the service supports mixed projects (it doesn't seem to).
-	// The service BatchCreateReports takes a projectID.
-	// So we need to group by projectID.
+	// Group reports by project ID to optimize DB calls
 
 	grouped := make(map[string][]*models.CSPReportCreateDTO)
 	for _, job := range batch {
@@ -120,7 +120,7 @@ func (h *ReportHandler) processBatch(batch []reportJob) {
 	}
 
 	for projectID, reports := range grouped {
-		if err := h.reportService.BatchCreateReports(reports, projectID); err != nil {
+		if err := h.reportService.BatchCreateReports(context.Background(), reports, projectID); err != nil { // Passing nil context as c and claims are unavailable
 			logger.Logger.Error("failed to create batch reports", zap.String("project_id", projectID), zap.Error(err))
 		}
 	}

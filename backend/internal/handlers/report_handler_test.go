@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,37 +12,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/pagination"
-	"github.com/notFil/cspotlight/pkg/auth"
 )
 
 type MockReportService struct {
-	BatchCreateReportsFunc func(reports []*models.CSPReportCreateDTO, projectID string) error
+	BatchCreateReportsFunc func(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID string) error
 	mu                     sync.Mutex
 	batchCalls             int
 	receivedReports        []*models.CSPReportCreateDTO
 }
 
-func (m *MockReportService) CreateReport(report *models.CSPReportCreateDTO, projectID string) error {
-	return nil
-}
-
-func (m *MockReportService) GetReportByID(id string) (*models.CSPReport, error) {
-	return nil, nil
-}
-
-func (m *MockReportService) UpdateReport(report *models.CSPReport) error {
-	return nil
-}
-
-func (m *MockReportService) DeleteReport(id string) error {
-	return nil
-}
-
-func (m *MockReportService) ListReportsByProjectID(projectID string, p *pagination.Pagination, claims auth.Claims) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+func (m *MockReportService) ListReportsByProjectID(ctx context.Context, projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
 	return nil, nil, nil
 }
 
-func (m *MockReportService) BatchCreateReports(reports []*models.CSPReportCreateDTO, projectID string) error {
+func (m *MockReportService) BatchCreateReports(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.batchCalls++
@@ -51,16 +35,18 @@ func (m *MockReportService) BatchCreateReports(reports []*models.CSPReportCreate
 
 	for _, r := range reports {
 		if r.SourceIP != "1.2.3.4" {
-			// We can't easily fail the test from here without passing *testing.T
-			// But we can panic or log. For now let's just print.
-			// Better: store it and check in test function.
+			// logging or panic?
 		}
 	}
 
 	if m.BatchCreateReportsFunc != nil {
-		return m.BatchCreateReportsFunc(reports, projectID)
+		return m.BatchCreateReportsFunc(ctx, reports, projectID)
 	}
 	return nil
+}
+
+func (m *MockReportService) GetReportGraphData(ctx context.Context, projectID string) (*models.ReportGraphDataDTO, error) {
+	return nil, nil
 }
 
 func TestReportHandler_CreateReport_Batching(t *testing.T) {

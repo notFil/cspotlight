@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"mime/multipart"
 	"net/http"
@@ -10,9 +11,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/notFil/cspotlight/internal/auth"
+	"github.com/notFil/cspotlight/internal/constants"
 	"github.com/notFil/cspotlight/internal/models"
-	"github.com/notFil/cspotlight/pkg/auth"
-	"github.com/notFil/cspotlight/pkg/constants"
 )
 
 func TestUserHandler_GetUserByID(t *testing.T) {
@@ -20,7 +21,7 @@ func TestUserHandler_GetUserByID(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockUserService{
-			GetUserByIDFunc: func(id string, claims auth.Claims) (*models.UserFetchDTO, error) {
+			GetUserByIDFunc: func(ctx context.Context, id string) (*models.UserFetchDTO, error) {
 				return &models.UserFetchDTO{ID: id, Username: "testuser"}, nil
 			},
 		}
@@ -30,6 +31,7 @@ func TestUserHandler_GetUserByID(t *testing.T) {
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "id", Value: "user-1"}}
 		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
+		c.Request = httptest.NewRequest("GET", "/users/user-1", nil)
 
 		handler.GetUserByID(c)
 
@@ -44,7 +46,7 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockUserService{
-			UpdateUserFunc: func(id string, user *models.UserUpdateDTO, claims auth.Claims) (*models.UserFetchDTO, error) {
+			UpdateUserFunc: func(ctx context.Context, id string, user *models.UserUpdateDTO) (*models.UserFetchDTO, error) {
 				return &models.UserFetchDTO{ID: id, Username: user.Username}, nil
 			},
 		}
@@ -70,7 +72,7 @@ func TestUserHandler_DeleteUser(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockUserService{
-			DeleteUserFunc: func(id string, claims auth.Claims) error {
+			DeleteUserFunc: func(ctx context.Context, id string) error {
 				return nil
 			},
 		}
@@ -80,6 +82,7 @@ func TestUserHandler_DeleteUser(t *testing.T) {
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "id", Value: "user-1"}}
 		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
+		c.Request = httptest.NewRequest("DELETE", "/users/user-1", nil)
 
 		handler.DeleteUser(c)
 
@@ -94,7 +97,7 @@ func TestUserHandler_ListUsers(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockUserService{
-			GetUsersFunc: func(claims auth.Claims) ([]*models.UserFetchDTO, error) {
+			GetUsersFunc: func(ctx context.Context) ([]*models.UserFetchDTO, error) {
 				return []*models.UserFetchDTO{{ID: "user-1"}}, nil
 			},
 		}
@@ -103,6 +106,7 @@ func TestUserHandler_ListUsers(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
+		c.Request = httptest.NewRequest("GET", "/users", nil)
 
 		handler.ListUsers(c)
 
@@ -117,7 +121,7 @@ func TestUserHandler_ListUsersByTeamID(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockUserService{
-			ListUsersByTeamIDFunc: func(teamID string, claims auth.Claims) ([]*models.UserFetchDTO, error) {
+			ListUsersByTeamIDFunc: func(ctx context.Context, teamID string) ([]*models.UserFetchDTO, error) {
 				return []*models.UserFetchDTO{{ID: "user-1"}}, nil
 			},
 		}
@@ -127,6 +131,7 @@ func TestUserHandler_ListUsersByTeamID(t *testing.T) {
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "teamID", Value: "team-1"}}
 		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
+		c.Request = httptest.NewRequest("GET", "/teams/team-1/users", nil)
 
 		handler.ListUsersByTeamID(c)
 
@@ -141,7 +146,7 @@ func TestUserHandler_SetDefaultProject(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockUserService{
-			SetDefaultProjectFunc: func(id string, projectID string, claims auth.Claims) (*models.UserFetchDTO, error) {
+			SetDefaultProjectFunc: func(ctx context.Context, id string, projectID string) (*models.UserFetchDTO, error) {
 				return &models.UserFetchDTO{ID: id, DefaultProjectID: projectID}, nil
 			},
 		}
@@ -162,7 +167,7 @@ func TestUserHandler_SetDefaultProject(t *testing.T) {
 
 	t.Run("Error", func(t *testing.T) {
 		mockService := &MockUserService{
-			SetDefaultProjectFunc: func(id string, projectID string, claims auth.Claims) (*models.UserFetchDTO, error) {
+			SetDefaultProjectFunc: func(ctx context.Context, id string, projectID string) (*models.UserFetchDTO, error) {
 				return nil, errors.New("failed")
 			},
 		}
@@ -187,7 +192,7 @@ func TestUserHandler_ChangeImage(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockUserService{
-			ChangeImageFunc: func(id string, image *multipart.FileHeader, claims auth.Claims) error {
+			ChangeImageFunc: func(ctx context.Context, id string, image *multipart.FileHeader) error {
 				return nil
 			},
 		}

@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/notFil/cspotlight/internal/logger"
+	"github.com/notFil/cspotlight/internal/response"
 	"github.com/notFil/cspotlight/internal/services"
-	"github.com/notFil/cspotlight/pkg/auth"
-	"github.com/notFil/cspotlight/pkg/logger"
-	"github.com/notFil/cspotlight/pkg/response"
+	"go.uber.org/zap"
 )
 
 type AnalyticsHandler struct {
@@ -21,16 +21,15 @@ func NewAnalyticsHandler(s services.ReportService) *AnalyticsHandler {
 }
 
 func (h *AnalyticsHandler) GetReportGraphData(c *gin.Context) {
-	claims := auth.GetUserClaims(c)
-
-	log := logger.FromContext(c)
+	ctx := c.Request.Context()
+	log := logger.FromContext(ctx)
 
 	projectID := c.Param("projectID")
 
-	data, err := h.reportService.GetReportGraphData(projectID, *claims)
+	data, err := h.reportService.GetReportGraphData(ctx, projectID)
 	if err != nil {
-		log.Error("failed to get report graph data")
-		response.Error(c, err)
+		log.Error("failed to get report graph data", zap.Error(err))
+		c.Error(err)
 		return
 	}
 	response.Success(c, http.StatusOK, "", data)

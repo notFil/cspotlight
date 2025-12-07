@@ -1,12 +1,8 @@
 package response
 
 import (
-	"errors"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/notFil/cspotlight/internal/pagination"
-	"github.com/notFil/cspotlight/pkg/errs"
 )
 
 type Response struct {
@@ -41,25 +37,4 @@ func ErrorResponse(c *gin.Context, httpStatus int, details string) {
 			Details: details,
 		},
 	})
-}
-func Error(c *gin.Context, err error) {
-	statusCode := http.StatusInternalServerError
-	message := "internal server error"
-
-	switch {
-	case errors.Is(err, errs.ErrUnauthorized):
-		statusCode = http.StatusForbidden
-		message = "unauthorized"
-	case errors.Is(err, errs.ErrNotFound):
-		statusCode = http.StatusNotFound
-		message = "resource not found"
-	case errors.Is(err, errs.ErrNoMatchOnNewPasswords):
-		statusCode = http.StatusBadRequest
-		message = "new password and confirm new password do not match"
-	case errors.Is(err, errs.ErrInvalidInput):
-		statusCode = http.StatusBadRequest
-		message = "invalid input"
-	}
-
-	ErrorResponse(c, statusCode, message)
 }
