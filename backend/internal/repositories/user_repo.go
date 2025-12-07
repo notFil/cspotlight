@@ -37,7 +37,7 @@ func (r *userRepository) GetUserByID(ctx context.Context, id string) (user *mode
 }
 
 func (r *userRepository) GetUserByUsername(ctx context.Context, username string) (user *models.User, err error) {
-	if err = r.db.WithContext(ctx).Preload("Team").Where("email = ?", username).First(&user).Error; err != nil {
+	if err = r.db.WithContext(ctx).Preload("Team").Where("username = ?", username).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil

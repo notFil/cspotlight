@@ -37,7 +37,7 @@ func (h *UserHandler) GetCurrentUser(c *gin.Context) {
 
 	log := logger.FromContext(ctx)
 
-	claims := auth.GetUserClaims(c)
+	claims := auth.GetUserClaims(ctx)
 	log.Info("fetching current user", zap.String("user_id", claims.Subject))
 
 	user, err := h.userService.GetUserByID(ctx, claims.Subject)

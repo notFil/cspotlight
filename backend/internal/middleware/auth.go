@@ -35,6 +35,8 @@ func JWTAuth(secretKey string) gin.HandlerFunc {
 		claims, err := auth.ValidateAccessToken(tokenString, secretKey)
 		if err != nil {
 			response.ErrorResponse(c, http.StatusUnauthorized, err.Error())
+			c.Abort()
+			return
 		}
 
 		ctx := c.Request.Context()
