@@ -19,15 +19,9 @@ import {
     ResponsiveContainer
 } from 'recharts';
 
-// Color palette for directives
-const DIRECTIVE_COLORS = {
-    'script-src': '#21808d',
-    'script-src-elem': '#21808d',
-    'img-src': '#a84b2f',
-    'style-src': '#518a91ff',
-    'connect-src': '#e68161',
-    'frame-src': '#c0152f'
-} as const;
+import { CSP_DIRECTIVE_COLORS } from '@/constants';
+
+const DIRECTIVE_COLORS = CSP_DIRECTIVE_COLORS;
 
 type DirectiveKey = keyof typeof DIRECTIVE_COLORS;
 
@@ -41,7 +35,6 @@ const ReportsGraph = ({ projectId }: { projectId: string }) => {
 
     const { data: graphData, isLoading, error } = useReportGraphData(projectId);
 
-    // Filter data based on duration
     const chartData = useMemo(() => {
         console.log('ReportsGraph: graphData', graphData);
         if (isLoading) return [];
