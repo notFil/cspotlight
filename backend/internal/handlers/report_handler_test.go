@@ -49,18 +49,16 @@ func (m *MockReportService) GetReportGraphData(ctx context.Context, projectID st
 	return nil, nil
 }
 
+func (m *MockReportService) GetReportSummaryStats(ctx context.Context, projectID string) (*models.ReportMetricsDTO, error) {
+	return nil, nil
+}
+
 func TestReportHandler_CreateReport_Batching(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mockService := &MockReportService{}
 	handler := NewReportHandler(mockService)
 
-	// Send 105 reports. Batch size is 100.
-	// We expect 1 batch call immediately after 100, and another one after timeout for the remaining 5.
-	// Or just 1 batch call if we check quickly.
-
-	// Actually, the worker runs in background.
-	// Let's send 150 reports.
 	totalReports := 150
 
 	for i := 0; i < totalReports; i++ {

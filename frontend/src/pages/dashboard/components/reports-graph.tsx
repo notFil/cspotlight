@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -18,6 +18,8 @@ import {
     Legend,
     ResponsiveContainer
 } from 'recharts';
+import { LoadingPage } from '@/components/loading-page';
+import { ErrorPage } from '@/components/error-page';
 
 import { CSP_DIRECTIVE_COLORS } from '@/constants';
 
@@ -36,15 +38,13 @@ const ReportsGraph = ({ projectId }: { projectId: string }) => {
     const { data: graphData, isLoading, error } = useReportGraphData(projectId);
 
     const chartData = useMemo(() => {
-        console.log('ReportsGraph: graphData', graphData);
         if (isLoading) return [];
         if (error) {
             console.error('ReportsGraph: error', error);
             return [];
         }
 
-        // Handle both wrapped and unwrapped data just in case
-        const rawData = Array.isArray(graphData) ? graphData : graphData?.data;
+        const rawData = graphData?.data;
 
         if (!rawData || !Array.isArray(rawData)) {
             console.warn('ReportsGraph: rawData is not an array', rawData);
@@ -52,16 +52,10 @@ const ReportsGraph = ({ projectId }: { projectId: string }) => {
         }
 
         // Transform API data to Recharts format
-        // API returns [{ daysAgo: 0, violations: [...] }, { daysAgo: 1, violations: [...] }]
-        // We want [{ day: 'Date', 'script-src': 10, ... }]
         return rawData
-            .map((point) => {
-                const date = new Date();
-                date.setDate(date.getDate() - point.daysAgo);
-
+            .map((point: any) => {
                 const dataPoint: any = {
-                    day: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-                    originalDate: date // for sorting if needed
+                    day: point.day,
                 };
 
                 if (point.violations) {
@@ -71,7 +65,6 @@ const ReportsGraph = ({ projectId }: { projectId: string }) => {
                 }
                 return dataPoint;
             })
-            .sort((a, b) => a.originalDate.getTime() - b.originalDate.getTime())
             .slice(-duration);
     }, [graphData, duration, isLoading, error]);
 
@@ -81,7 +74,6 @@ const ReportsGraph = ({ projectId }: { projectId: string }) => {
                 <CardTitle className="text-lg font-semibold">Reports Graph</CardTitle>
             </CardHeader>
             <CardContent>
-                {/* Select and Directive toggles on same line */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4 pb-4 border-b border-border">
                     <div className="shrink-0">
                         <Select value={duration.toString()} onValueChange={(value) => setDuration(parseInt(value))}>
@@ -123,50 +115,56 @@ const ReportsGraph = ({ projectId }: { projectId: string }) => {
 
                 {/* Recharts Line Chart */}
                 <div className="w-full" style={{ height: '350px' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                            data={chartData}
-                            margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                            <XAxis
-                                dataKey="day"
-                                label={{ value: 'Day', position: 'insideBottom', offset: -5 }}
-                                className="text-xs"
-                                tick={{ fill: 'hsl(var(--foreground))' }}
-                            />
-                            <YAxis
-                                label={{ value: 'Violations', angle: -90, position: 'insideLeft' }}
-                                className="text-xs"
-                                tick={{ fill: 'hsl(var(--foreground))' }}
-                            />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: 'hsl(var(--background))',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: '6px',
-                                    color: 'hsl(var(--foreground))'
-                                }}
-                            />
-                            <Legend />
-                            {(Object.keys(DIRECTIVE_COLORS) as DirectiveKey[]).map((directive) => (
-                                enabledDirectives.has(directive) && (
-                                    <Line
-                                        key={directive}
-                                        type="monotone"
-                                        dataKey={directive}
-                                        stroke={DIRECTIVE_COLORS[directive]}
-                                        strokeWidth={2.5}
-                                        dot={{ r: 3 }}
-                                        activeDot={{ r: 5 }}
-                                    />
-                                )
-                            ))}
-                        </LineChart>
-                    </ResponsiveContainer>
+                    {isLoading ? (
+                        <LoadingPage className="h-full" />
+                    ) : error ? (
+                        <ErrorPage error={error} />
+                    ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart
+                                data={chartData}
+                                margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                                <XAxis
+                                    dataKey="day"
+                                    label={{ value: 'Day', position: 'insideBottom', offset: -5 }}
+                                    className="text-xs"
+                                    tick={{ fill: 'hsl(var(--foreground))' }}
+                                />
+                                <YAxis
+                                    label={{ value: 'Violations', angle: -90, position: 'insideLeft' }}
+                                    className="text-xs"
+                                    tick={{ fill: 'hsl(var(--foreground))' }}
+                                />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: 'hsl(var(--background))',
+                                        border: '1px solid hsl(var(--border))',
+                                        borderRadius: '6px',
+                                        color: 'hsl(var(--foreground))'
+                                    }}
+                                />
+                                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                {(Object.keys(DIRECTIVE_COLORS) as DirectiveKey[]).map((directive) => (
+                                    enabledDirectives.has(directive) && (
+                                        <Line
+                                            key={directive}
+                                            type="monotone"
+                                            dataKey={directive}
+                                            stroke={DIRECTIVE_COLORS[directive]}
+                                            strokeWidth={3.0}
+                                            dot={{ r: 3 }}
+                                            activeDot={{ r: 5 }}
+                                        />
+                                    )
+                                ))}
+                            </LineChart>
+                        </ResponsiveContainer>
+                    )}
                 </div>
             </CardContent>
-        </Card>
+        </Card >
     );
 };
 

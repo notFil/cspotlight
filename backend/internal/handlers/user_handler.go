@@ -155,7 +155,7 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	log := logger.FromContext(ctx)
 
 	log.Info("listing users")
-	users, err := h.userService.GetUsers(ctx)
+	users, err := h.userService.ListUsers(ctx)
 
 	if err != nil {
 		log.Error("failed to list users", zap.Error(err))

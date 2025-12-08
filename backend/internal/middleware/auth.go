@@ -5,9 +5,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/notFil/cspotlight/internal/constants"
-
 	"github.com/notFil/cspotlight/internal/auth"
+
+	"github.com/notFil/cspotlight/internal/logger"
 
 	"github.com/notFil/cspotlight/internal/response"
 
@@ -49,21 +49,20 @@ func JWTAuth(secretKey string) gin.HandlerFunc {
 
 func RequiredRole(allowedRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ac, exists := c.Get(constants.ClaimsContextKey)
-		if !exists {
-			response.ErrorResponse(c, http.StatusForbidden, "insufficient permissions")
-			c.Abort()
-			return
-		}
+		logger := logger.FromContext(c)
 
-		claims, ok := ac.(*auth.Claims)
-		if !ok {
+		ctx := c.Request.Context()
+
+		claims := auth.GetUserClaims(ctx)
+		if claims == nil {
+			logger.Error("claims not found in context")
 			response.ErrorResponse(c, http.StatusForbidden, "insufficient permissions")
 			c.Abort()
 			return
 		}
 
 		if isAuthorized := slices.Contains(allowedRoles, claims.Role); !isAuthorized {
+			logger.Error("insufficient permissions")
 			response.ErrorResponse(c, http.StatusForbidden, "insufficient permissions")
 			c.Abort()
 			return

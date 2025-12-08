@@ -97,6 +97,10 @@ func (m *MockReportRepository) ListReportsByProjectID(ctx context.Context, proje
 	return reports, p, nil
 }
 
+func (m *MockReportRepository) GetReportSummaryStats(ctx context.Context, projectID string) (*models.ReportMetricsDTO, error) {
+	return &models.ReportMetricsDTO{}, nil
+}
+
 func (m *MockReportRepository) GetReportGraphData(ctx context.Context, projectID string) (*models.ReportGraphDataDTO, error) {
 	return &models.ReportGraphDataDTO{}, nil
 }

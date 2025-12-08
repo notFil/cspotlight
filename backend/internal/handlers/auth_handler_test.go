@@ -75,7 +75,7 @@ func (m *MockUserService) SetDefaultProject(ctx context.Context, id string, proj
 	return nil, nil
 }
 
-func (m *MockUserService) GetUsers(ctx context.Context) ([]*models.UserFetchDTO, error) {
+func (m *MockUserService) ListUsers(ctx context.Context) ([]*models.UserFetchDTO, error) {
 	if m.GetUsersFunc != nil {
 		return m.GetUsersFunc(ctx)
 	}

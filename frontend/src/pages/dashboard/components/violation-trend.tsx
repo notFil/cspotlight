@@ -8,58 +8,9 @@ import {
     Tooltip as RechartsTooltip,
     ResponsiveContainer,
 } from "recharts";
-
-const data = [
-    {
-        day: "Mon",
-        total: 156,
-        critical: 12,
-        high: 45,
-        medium: 99,
-    },
-    {
-        day: "Tue",
-        total: 192,
-        critical: 18,
-        high: 56,
-        medium: 118,
-    },
-    {
-        day: "Wed",
-        total: 132,
-        critical: 9,
-        high: 38,
-        medium: 85,
-    },
-    {
-        day: "Thu",
-        total: 216,
-        critical: 21,
-        high: 67,
-        medium: 128,
-    },
-    {
-        day: "Fri",
-        total: 168,
-        critical: 14,
-        high: 49,
-        medium: 105,
-    },
-    {
-        day: "Sat",
-        total: 108,
-        critical: 7,
-        high: 31,
-        medium: 70,
-    },
-    {
-        day: "Sun",
-        total: 96,
-        critical: 5,
-        high: 27,
-        medium: 64,
-    },
-];
+import { LoadingPage } from "@/components/loading-page";
+import { ErrorPage } from "@/components/error-page";
+import { useReportViolationTrend } from "@/hooks/use-reports";
 
 const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -89,7 +40,19 @@ const CustomTooltip = ({ active, payload }: any) => {
     return null;
 };
 
-const ViolationTrend = () => {
+const ViolationTrend = ({ projectId }: { projectId: string }) => {
+    const { data: violationTrendData, isLoading, error } = useReportViolationTrend(projectId);
+
+    if (isLoading) {
+        return <LoadingPage className="h-48" />;
+    }
+
+    if (error || !violationTrendData?.data) {
+        return <ErrorPage error={error as Error} className="h-48" />;
+    }
+
+    const violationTrend = violationTrendData.data;
+
     return (
         <Card>
             <CardHeader>
@@ -97,7 +60,7 @@ const ViolationTrend = () => {
             </CardHeader>
             <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <BarChart data={violationTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.3} />
                         <XAxis
                             dataKey="day"

@@ -21,9 +21,6 @@ func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 	router.Use(gin.Recovery())
 	router.Use(middleware.RequestLogger())
 
-	// ------------------------------------------------------
-	// MUST BE BEFORE REGISTERING ANY ROUTES
-	// ------------------------------------------------------
 	router.RedirectTrailingSlash = false
 	router.RedirectFixedPath = false
 
@@ -86,7 +83,7 @@ func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 	// ---------- Projects ----------
 	projects := protected.Group("/projects")
 	{
-		projects.GET("", projectHandler.ListProjects) // no trailing slash
+		projects.GET("", projectHandler.ListProjects)
 		projects.GET("/:id", projectHandler.GetProjectByID)
 
 		admin := projects.Group("")
@@ -128,7 +125,6 @@ func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 	}
 
 	// ---------- Reports ----------
-
 	reports := protected.Group("/reports")
 	{
 		reports.GET("/:projectID/csp", reportHandler.ListReportsByProjectID)
@@ -139,6 +135,8 @@ func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 	analytics := protected.Group("/analytics")
 	{
 		analytics.GET("/:projectID/graph-data", analyticsHandler.GetReportGraphData)
+		analytics.GET("/:projectID/summary-stats", analyticsHandler.GetReportSummaryStats)
+		analytics.GET("/:projectID/violation-trend", analyticsHandler.GetReportViolationTrend)
 	}
 
 	// ---------- Signout ----------

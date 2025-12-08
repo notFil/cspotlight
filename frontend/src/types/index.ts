@@ -1,4 +1,11 @@
 // src/types/index.ts
+export interface AppState {
+  isLoading: boolean;
+  user?: User | null;
+  theme: 'light' | 'dark';
+  error?: string | null;
+}
+
 export interface User {
   id?: string;
   firstName: string;
@@ -92,7 +99,7 @@ export interface APIResponse<T> {
 }
 
 export interface ReportGraphDataDTO {
-  daysAgo: number;
+  day: string;
   violations: Violation[];
 }
 
@@ -101,9 +108,23 @@ export interface Violation {
   count: number;
 }
 
-export interface AppState {
-  isLoading: boolean;
-  user?: User | null;
-  theme: 'light' | 'dark';
-  error?: string | null;
+export interface ReportMetricsDTO {
+  totalViolations: MetricSummary;
+  totalCriticalViolations: MetricSummary;
+  affectedDomains: MetricSummary;
+  policyEnforcement: MetricSummary;
+}
+
+export interface MetricSummary {
+  value: number;
+  change: number;
+}
+
+export interface ReportViolationTrendDTO extends Array<ViolationTrend> {}
+
+export interface ViolationTrend {
+  day: string;
+  critical: number;
+  high: number;
+  medium: number;
 }

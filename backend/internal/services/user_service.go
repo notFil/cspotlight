@@ -28,7 +28,7 @@ type UserService interface {
 	AuthenticateUser(ctx context.Context, authRequest *models.AuthRequest) (*models.UserFetchDTO, error)
 	UpdateUser(ctx context.Context, id string, user *models.UserUpdateDTO) (*models.UserFetchDTO, error)
 	SetDefaultProject(ctx context.Context, id string, projectID string) (*models.UserFetchDTO, error)
-	GetUsers(ctx context.Context) ([]*models.UserFetchDTO, error)
+	ListUsers(ctx context.Context) ([]*models.UserFetchDTO, error)
 	ListUsersByTeamID(ctx context.Context, teamID string) ([]*models.UserFetchDTO, error)
 	DeleteUser(ctx context.Context, id string) error
 	ChangePassword(ctx context.Context, id string, request *models.ChangePasswordRequest) error
@@ -110,7 +110,7 @@ func (s *userService) AuthenticateUser(ctx context.Context, authRequest *models.
 	return u.ToFetchDTO(), nil
 }
 
-func (s *userService) GetUsers(ctx context.Context) ([]*models.UserFetchDTO, error) {
+func (s *userService) ListUsers(ctx context.Context) ([]*models.UserFetchDTO, error) {
 	claims := auth.GetUserClaims(ctx)
 	var users []*models.User
 	var err error

@@ -3,8 +3,8 @@ import DashboardFallback from '@/pages/dashboard/components/dashboard-fallback';
 import Stats from '@/pages/dashboard/components/stats';
 import ViolationTrend from '@/pages/dashboard/components/violation-trend';
 import TopViolatedDirectives from '@/pages/dashboard/components/top-violated-directives';
-import RecentCriticalViolations from '@/pages/dashboard/components/recent-critical-violations';
-import PolicyEnforcementStatus from '@/pages/dashboard/components/policy-enforcement-status';
+import TopViolatedDocumentUris from '@/pages/dashboard/components/top-violated-document-uris';
+import ViolationByBrowserOS from '@/pages/dashboard/components/violation-by-browser-os';
 import ViolationSources from '@/pages/dashboard/components/violation-sources';
 import ReportsGraph from '@/pages/dashboard/components/reports-graph';
 
@@ -25,25 +25,24 @@ const Dashboard = () => {
         </div>
 
         {/* Top Stats Row */}
-        <Stats />
+        <Stats projectId={user.defaultProjectId} />
 
         {/* Reports Graph */}
         <ReportsGraph projectId={user.defaultProjectId} />
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <ViolationTrend />
-          <TopViolatedDirectives />
+          <ViolationTrend projectId={user.defaultProjectId}/>
+          <TopViolatedDirectives/>
         </div>
 
-        {/* Violation Sources by Domain */}
-        <ViolationSources />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <TopViolatedDocumentUris />
+          <ViolationByBrowserOS />
+        </div>
 
         {/* Bottom Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <PolicyEnforcementStatus />
-          <RecentCriticalViolations />
-        </div>
+        <ViolationSources />
       </div>
     </div>
   );

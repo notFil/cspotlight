@@ -20,6 +20,21 @@ func NewAnalyticsHandler(s services.ReportService) *AnalyticsHandler {
 	}
 }
 
+func (h *AnalyticsHandler) GetReportSummaryStats(c *gin.Context) {
+	ctx := c.Request.Context()
+	log := logger.FromContext(ctx)
+
+	projectID := c.Param("projectID")
+
+	data, err := h.reportService.GetReportSummaryStats(ctx, projectID)
+	if err != nil {
+		log.Error("failed to get report summary stats", zap.Error(err))
+		c.Error(err)
+		return
+	}
+	response.Success(c, http.StatusOK, "", data)
+}
+
 func (h *AnalyticsHandler) GetReportGraphData(c *gin.Context) {
 	ctx := c.Request.Context()
 	log := logger.FromContext(ctx)
@@ -29,6 +44,21 @@ func (h *AnalyticsHandler) GetReportGraphData(c *gin.Context) {
 	data, err := h.reportService.GetReportGraphData(ctx, projectID)
 	if err != nil {
 		log.Error("failed to get report graph data", zap.Error(err))
+		c.Error(err)
+		return
+	}
+	response.Success(c, http.StatusOK, "", data)
+}
+
+func (h *AnalyticsHandler) GetReportViolationTrend(c *gin.Context) {
+	ctx := c.Request.Context()
+	log := logger.FromContext(ctx)
+
+	projectID := c.Param("projectID")
+
+	data, err := h.reportService.GetReportViolationTrend(ctx, projectID)
+	if err != nil {
+		log.Error("failed to get report violation trend", zap.Error(err))
 		c.Error(err)
 		return
 	}

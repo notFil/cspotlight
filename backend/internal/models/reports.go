@@ -64,13 +64,35 @@ type CSPReportFetchDTO struct {
 type ReportGraphDataDTO []DataPoint
 
 type DataPoint struct {
-	DaysAgo    int         `json:"daysAgo"`
+	Day        string      `json:"day"`
 	Violations []Violation `json:"violations"`
 }
 
 type Violation struct {
 	Directive string `json:"directive"`
 	Count     int    `json:"count"`
+}
+
+type ReportMetricsDTO struct {
+	TotalViolations         MetricSummary `json:"totalViolations"`
+	TotalCriticalViolations MetricSummary `json:"totalCriticalViolations"`
+	AffectedDomains         MetricSummary `json:"affectedDomains"`
+	PolicyEnforcement       MetricSummary `json:"policyEnforcement"`
+}
+
+type MetricSummary struct {
+	Value  int     `json:"value"`
+	Change float64 `json:"change"`
+}
+
+type ReportViolationTrendDTO []ViolationTrend
+
+type ViolationTrend struct {
+	Day      string `json:"day"`
+	Total    int    `json:"total"`
+	Critical int    `json:"critical"`
+	High     int    `json:"high"`
+	Medium   int    `json:"medium"`
 }
 
 func (r *CSPReportCreateDTO) ToCSPReport() *CSPReport {

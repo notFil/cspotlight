@@ -1,8 +1,13 @@
 import { Spinner } from "@/components/ui/spinner"
+import { cn } from "@/lib/utils"
 
-export function LoadingPage() {
+interface LoadingPageProps {
+  className?: string
+}
+
+export function LoadingPage({ className }: LoadingPageProps) {
   return (
-    <div className="flex h-[50vh] w-full items-center justify-center">
+    <div className={cn("flex h-[50vh] w-full items-center justify-center", className)}>
       <Spinner className="size-10 text-primary" />
     </div>
   )
