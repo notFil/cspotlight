@@ -11,15 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GO111MODULE: on
-    steps:
-      - name: Checkout Source
-        uses: actions/checkout@v3
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.25'
-      - name: Run Gosec Security Scanner
+    defaults:
+      run:
         working-directory: ./backend
-        run: |
-          go install github.com/securego/gosec/v2/cmd/gosec@latest
-          gosec ./...
+    steps:
+    - name: Checkout Source
+      uses: actions/checkout@v3
+    - name: Run gosec
+      uses: securego/gosec-action@v2
+      with:
+        args: ./...
