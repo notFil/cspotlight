@@ -28,11 +28,15 @@ export const CSP_DIRECTIVE_COLORS: Record<string, string> = {
 export const directives = Object.keys(CSP_DIRECTIVE_COLORS);
 
 export const BROWSER_COLORS: Record<string, string> = {
-  Chrome: '#3b82f6', // blue-500
-  Firefox: '#f97316', // orange-500
-  Safari: '#10b981', // emerald-500
-  Edge: '#8b5cf6',   // violet-500
-  Other: '#94a3b8',  // slate-400
+  Chrome: '#3b82f6',
+  Firefox: '#f97316',
+  Safari: '#10b981',
+  Edge: '#8b5cf6',
+  Opera: '#e41511ff',
+  IE: '#6bb4e8ff',
+  Samsung: '#7430e2ff',
+  UCBrowser: '#d1702aff',
+  Others: '#94a3b8',
 };
 
 export const OS_COLORS: Record<string, string> = {
@@ -40,5 +44,5 @@ export const OS_COLORS: Record<string, string> = {
   MacOS: 'bg-zinc-500',
   Linux: 'bg-orange-500',
   Android: 'bg-green-500',
-  Other: 'bg-slate-400',
+  Others: 'bg-slate-400',
 };

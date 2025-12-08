@@ -1,22 +1,24 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { BROWSER_COLORS, OS_COLORS } from "@/constants";
+import { useReportBrowserOSViolation } from "@/hooks/use-reports";
+import { LoadingPage } from "@/components/loading-page";
+import { ErrorPage } from "@/components/error-page";
 
-const ViolationByBrowserOS = () => {
-  // Mock Data (Values will come from API)
-  const browserData = [
-    { name: 'Chrome', value: 45 },
-    { name: 'Firefox', value: 30 },
-    { name: 'Safari', value: 15 },
-    { name: 'Edge', value: 10 },
-  ];
 
-  const osData = [
-    { name: 'Windows', value: 60 },
-    { name: 'MacOS', value: 25 },
-    { name: 'Linux', value: 10 },
-    { name: 'Android', value: 5 },
-  ];
+const ViolationByBrowserOS = ({ projectId }: { projectId: string }) => {
+  const { data: reportBrowserOSViolation, isLoading, error } = useReportBrowserOSViolation(projectId);
+
+  if (isLoading) {
+    return <LoadingPage className="h-48" />;
+  }
+
+  if (error || !reportBrowserOSViolation?.data) {
+    return <ErrorPage error={error as Error} className="h-48" />;
+  }
+
+  const browserData = reportBrowserOSViolation.data.browser;
+  const osData = reportBrowserOSViolation.data.os;
 
   return (
     <Card>

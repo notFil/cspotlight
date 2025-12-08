@@ -33,4 +33,13 @@ export function useReportViolationTrend(projectId: string) {
   });
 }
 
+export function useReportBrowserOSViolation(projectId: string) {
+  return useQuery({
+    queryKey: ['report-browser-os-violation', projectId],
+    queryFn: () => reportService.getReportBrowserOSViolation(projectId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+
 

@@ -32,6 +32,21 @@ const Stats = ({ projectId }: { projectId: string }) => {
         );
     };
 
+    const renderPolicyEnforcementChange = (change: number) => {
+        const isPositive = change > 0;
+        const isNeutral = change === 0;
+        const colorClass = !isPositive ? "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400" :
+            (isNeutral ? "text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-400" : "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-400");
+        const Icon = isPositive ? ArrowUp : ArrowDown;
+
+        return (
+            <div className={`mt-2 flex items-center text-xs font-medium w-fit px-2 py-0.5 rounded-full ${colorClass}`}>
+                {!isNeutral && <Icon className="w-3 h-3 mr-1" />}
+                <span>{Math.abs(change).toFixed(2)}%</span>
+            </div>
+        );
+    };
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             <Card>
@@ -59,7 +74,7 @@ const Stats = ({ projectId }: { projectId: string }) => {
                 <CardContent className="p-6">
                     <div className="text-2xl font-bold">{stats.policyEnforcement.value}%</div>
                     <div className="text-sm font-medium text-muted-foreground mt-1">Policy Enforcement Status</div>
-                    {renderChange(stats.policyEnforcement.change)}
+                    {renderPolicyEnforcementChange(stats.policyEnforcement.change)}
                 </CardContent>
             </Card>
         </div>

@@ -95,6 +95,16 @@ type ViolationTrend struct {
 	Medium   int    `json:"medium"`
 }
 
+type ReportSoftwareStatsDTO struct {
+	Browser []StatItem `json:"browser"`
+	OS      []StatItem `json:"os"`
+}
+
+type StatItem struct {
+	Name  string `json:"name"`
+	Value int    `json:"value"`
+}
+
 func (r *CSPReportCreateDTO) ToCSPReport() *CSPReport {
 	c := &CSPReport{
 		Age:       r.Age,

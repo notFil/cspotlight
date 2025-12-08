@@ -6,6 +6,7 @@ import (
 	"github.com/notFil/cspotlight/internal/constants"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/pagination"
+	"github.com/notFil/cspotlight/internal/util"
 	"gorm.io/gorm"
 )
 
@@ -15,6 +16,7 @@ type ReportRepository interface {
 	GetReportSummaryStats(ctx context.Context, projectID string) (*models.ReportMetricsDTO, error)
 	GetReportGraphData(ctx context.Context, projectID string) (*models.ReportGraphDataDTO, error)
 	GetReportViolationTrend(ctx context.Context, projectID string) (*models.ReportViolationTrendDTO, error)
+	GetReportSoftwareStats(ctx context.Context, projectID string) (*models.ReportSoftwareStatsDTO, error)
 }
 
 type reportRepository struct {
@@ -122,7 +124,7 @@ func (r *reportRepository) GetReportSummaryStats(ctx context.Context, projectID 
 			TotalViolations:         models.MetricSummary{Value: totalViolations, Change: getPercentageChange(totalViolations24h, totalViolations)},
 			TotalCriticalViolations: models.MetricSummary{Value: totalCriticalViolations, Change: getPercentageChange(totalCriticalViolations24h, totalCriticalViolations)},
 			AffectedDomains:         models.MetricSummary{Value: affectedDomains, Change: getPercentageChange(affectedDomains24h, affectedDomains)},
-			PolicyEnforcement:       models.MetricSummary{Value: enforcePercentage, Change: getPercentageChange(enforcePercentage24h, enforcePercentage)},
+			PolicyEnforcement:       models.MetricSummary{Value: enforcePercentage, Change: float64(enforcePercentage24h - enforcePercentage)},
 		}
 	}
 
@@ -201,6 +203,62 @@ func (r *reportRepository) GetReportViolationTrend(ctx context.Context, projectI
 
 		dto = append(dto, models.ViolationTrend{Day: day, Total: total, Critical: critical, High: high, Medium: medium})
 
+	}
+
+	return &dto, nil
+}
+
+func (r *reportRepository) GetReportSoftwareStats(ctx context.Context, projectID string) (*models.ReportSoftwareStatsDTO, error) {
+	var dto models.ReportSoftwareStatsDTO
+
+	rows, err := r.db.WithContext(ctx).Raw(`
+		SELECT 
+			user_agent,
+			COUNT(*) AS count
+		FROM csp_reports
+		WHERE project_id = ?
+		AND created_at >= CURRENT_DATE - INTERVAL '30 days'
+		GROUP BY user_agent
+		ORDER BY user_agent ASC
+	`, projectID).Rows()
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var userAgent string
+		var count int
+		if err := rows.Scan(&userAgent, &count); err != nil {
+			return nil, err
+		}
+		browserOS := util.ParseUserAgent(userAgent)
+		// Update Browser stats
+		browserFound := false
+		for i, item := range dto.Browser {
+			if item.Name == browserOS.Browser {
+				dto.Browser[i].Value += count
+				browserFound = true
+				break
+			}
+		}
+		if !browserFound {
+			dto.Browser = append(dto.Browser, models.StatItem{Name: browserOS.Browser, Value: count})
+		}
+
+		// Update OS stats
+		osFound := false
+		for i, item := range dto.OS {
+			if item.Name == browserOS.OS {
+				dto.OS[i].Value += count
+				osFound = true
+				break
+			}
+		}
+		if !osFound {
+			dto.OS = append(dto.OS, models.StatItem{Name: browserOS.OS, Value: count})
+		}
 	}
 
 	return &dto, nil

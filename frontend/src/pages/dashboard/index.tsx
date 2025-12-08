@@ -32,13 +32,13 @@ const Dashboard = () => {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <ViolationTrend projectId={user.defaultProjectId}/>
-          <TopViolatedDirectives/>
+          <ViolationTrend projectId={user.defaultProjectId} />
+          <TopViolatedDirectives />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <TopViolatedDocumentUris />
-          <ViolationByBrowserOS />
+          <ViolationByBrowserOS projectId={user.defaultProjectId} />
         </div>
 
         {/* Bottom Row */}

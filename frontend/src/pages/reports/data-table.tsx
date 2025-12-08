@@ -213,7 +213,6 @@ export function DataTable<TData, TValue>({
               </PaginationItem>
 
               {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => {
-                // Show first page, last page, current page, and pages around current page
                 if (
                   page === 1 ||
                   page === pagination.totalPages ||
@@ -232,7 +231,6 @@ export function DataTable<TData, TValue>({
                   )
                 }
 
-                // Show ellipsis
                 if (
                   page === pagination.page - 2 ||
                   page === pagination.page + 2

@@ -17,6 +17,7 @@ type ReportService interface {
 	GetReportSummaryStats(ctx context.Context, projectID string) (*models.ReportMetricsDTO, error)
 	GetReportGraphData(ctx context.Context, projectID string) (*models.ReportGraphDataDTO, error)
 	GetReportViolationTrend(ctx context.Context, projectID string) (*models.ReportViolationTrendDTO, error)
+	GetReportSoftwareStats(ctx context.Context, projectID string) (*models.ReportSoftwareStatsDTO, error)
 }
 
 type reportService struct {
@@ -128,4 +129,27 @@ func (s *reportService) GetReportViolationTrend(ctx context.Context, projectID s
 		return nil, apperrors.New(http.StatusNotFound, "report not found")
 	}
 	return t, nil
+}
+
+func (s *reportService) GetReportSoftwareStats(ctx context.Context, projectID string) (*models.ReportSoftwareStatsDTO, error) {
+	stats := &models.ReportSoftwareStatsDTO{}
+
+	claims := auth.GetUserClaims(ctx)
+
+	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	if !claims.IsSuperadmin() && project.TeamID != claims.TeamID {
+		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
+	}
+
+	if stats, err = s.reportRepo.GetReportSoftwareStats(ctx, projectID); err != nil {
+		return nil, err
+	}
+
+	if stats == nil {
+		return nil, apperrors.New(http.StatusNotFound, "report software stats not found")
+	}
+	return stats, nil
 }

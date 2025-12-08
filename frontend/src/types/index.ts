@@ -120,7 +120,7 @@ export interface MetricSummary {
   change: number;
 }
 
-export interface ReportViolationTrendDTO extends Array<ViolationTrend> {}
+export interface ReportViolationTrendDTO extends Array<ViolationTrend> { }
 
 export interface ViolationTrend {
   day: string;
@@ -128,3 +128,14 @@ export interface ViolationTrend {
   high: number;
   medium: number;
 }
+
+export interface ReportBrowserOSViolationDTO {
+  browser: StatsItem;
+  os: StatsItem;
+}
+
+export interface StatsItem {
+  name: string;
+  value: number;
+}
+

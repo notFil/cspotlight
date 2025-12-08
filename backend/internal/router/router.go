@@ -137,6 +137,7 @@ func SetUpRouter(db *gorm.DB, jwtConfig config.JWTConfig) *gin.Engine {
 		analytics.GET("/:projectID/graph-data", analyticsHandler.GetReportGraphData)
 		analytics.GET("/:projectID/summary-stats", analyticsHandler.GetReportSummaryStats)
 		analytics.GET("/:projectID/violation-trend", analyticsHandler.GetReportViolationTrend)
+		analytics.GET("/:projectID/software-stats", analyticsHandler.GetReportSoftwareStats)
 	}
 
 	// ---------- Signout ----------

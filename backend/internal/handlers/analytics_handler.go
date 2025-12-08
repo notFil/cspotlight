@@ -64,3 +64,18 @@ func (h *AnalyticsHandler) GetReportViolationTrend(c *gin.Context) {
 	}
 	response.Success(c, http.StatusOK, "", data)
 }
+
+func (h *AnalyticsHandler) GetReportSoftwareStats(c *gin.Context) {
+	ctx := c.Request.Context()
+	log := logger.FromContext(ctx)
+
+	projectID := c.Param("projectID")
+
+	data, err := h.reportService.GetReportSoftwareStats(ctx, projectID)
+	if err != nil {
+		log.Error("failed to get report software stats", zap.Error(err))
+		c.Error(err)
+		return
+	}
+	response.Success(c, http.StatusOK, "", data)
+}

@@ -15,8 +15,8 @@ import { Badge } from "@/components/ui/badge"
 const getBrowserIcon = (userAgent: string) => {
   const ua = userAgent.toLowerCase()
   if (ua.includes("chrome")) return <Chrome className="h-4 w-4" />
-  if (ua.includes("safari") && !ua.includes("chrome")) return <Globe className="h-4 w-4" /> // Lucide doesn't have Safari, using Globe
-  if (ua.includes("firefox")) return <Globe className="h-4 w-4" /> // Lucide doesn't have Firefox
+  if (ua.includes("safari") && !ua.includes("chrome")) return <Globe className="h-4 w-4" />
+  if (ua.includes("firefox")) return <Globe className="h-4 w-4" />
   if (ua.includes("mobile")) return <Smartphone className="h-4 w-4" />
   return <Globe className="h-4 w-4" />
 }

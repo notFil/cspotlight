@@ -1,5 +1,5 @@
 import { apiClient } from './api';
-import type { CSPReport, APIResponse, ReportGraphDataDTO, ReportMetricsDTO, ReportViolationTrendDTO } from '@/types';
+import type { CSPReport, APIResponse, ReportGraphDataDTO, ReportMetricsDTO, ReportViolationTrendDTO, ReportBrowserOSViolationDTO } from '@/types';
 
 class ReportService {
   public async getReports(projectId: string, page: number = 1, pageSize: number = 10): Promise<APIResponse<CSPReport[]>> {
@@ -16,6 +16,10 @@ class ReportService {
 
   public async getReportViolationTrend(projectId: string): Promise<APIResponse<ReportViolationTrendDTO>> {
     return await apiClient.get<ReportViolationTrendDTO>(`/api/v1/analytics/${projectId}/violation-trend`);
+  }
+
+  public async getReportBrowserOSViolation(projectId: string): Promise<APIResponse<ReportBrowserOSViolationDTO>> {
+    return await apiClient.get<ReportBrowserOSViolationDTO>(`/api/v1/analytics/${projectId}/software-stats`);
   }
 }
 
