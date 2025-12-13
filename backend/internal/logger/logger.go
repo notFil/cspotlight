@@ -11,8 +11,8 @@ var Logger *zap.Logger
 
 type loggerKey struct{}
 
-func InitializeLogger(env string) {
-	if env == "production" {
+func InitializeLogger(isProduction bool) {
+	if isProduction {
 		Logger, _ = zap.NewProduction()
 	} else {
 		Logger, _ = zap.NewDevelopment()

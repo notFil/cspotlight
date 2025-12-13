@@ -7,6 +7,7 @@ import (
 )
 
 type Config struct {
+	CORS    CORS
 	Server  Server
 	Session Session
 	Store   Store
@@ -18,8 +19,15 @@ type Server struct {
 	BaseURL     string
 }
 
+type CORS struct {
+	Origins       []string
+	AllowMethods  []string
+	AllowHeaders  []string
+	ExposeHeaders []string
+}
+
 type Session struct {
-	ExpiryInMinutes int
+	ExpiryInSeconds int
 	SecretKey       []byte
 	UseCookieStore  bool
 }
@@ -57,7 +65,7 @@ func LoadConfig() Config {
 	}
 
 	session := Session{
-		ExpiryInMinutes: viper.GetInt("SESSION_EXPIRY_IN_MINUTES"),
+		ExpiryInSeconds: viper.GetInt("SESSION_EXPIRY_IN_SECONDS"),
 		SecretKey:       []byte(viper.GetString("SESSION_SECRET_KEY")),
 		UseCookieStore:  viper.GetBool("SESSION_USE_COOKIE_STORE"),
 	}
@@ -71,10 +79,24 @@ func LoadConfig() Config {
 			IdleConns: viper.GetInt("REDIS_IDLE_CONNS"),
 		},
 	}
+
+	cors := CORS{
+		Origins:       viper.GetStringSlice("CORS_ORIGINS"),
+		AllowMethods:  viper.GetStringSlice("CORS_ALLOW_METHODS"),
+		AllowHeaders:  viper.GetStringSlice("CORS_ALLOW_HEADERS"),
+		ExposeHeaders: viper.GetStringSlice("CORS_EXPOSE_HEADERS"),
+	}
+
 	cfg := Config{
 		Server:  server,
 		Session: session,
 		Store:   store,
+		CORS:    cors,
 	}
 	return cfg
+}
+
+// IsProduction returns true if the environment is production
+func (cfg *Config) IsProduction() bool {
+	return cfg.Server.Environment == "production"
 }

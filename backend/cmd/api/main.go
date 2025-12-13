@@ -15,7 +15,10 @@ import (
 
 func main() {
 	cfg := config.LoadConfig()
-	logger.InitializeLogger(cfg.Server.Environment)
+
+	isProduction := cfg.IsProduction()
+
+	logger.InitializeLogger(isProduction)
 
 	port := cfg.Server.Port
 
@@ -23,7 +26,7 @@ func main() {
 
 	db := store.ConnectDB(cfg.Store.DSN)
 
-	router := router.SetUpRouter(db, cfg.Server.BaseURL, cfg.Session, cfg.Store.Redis)
+	router := router.SetUpRouter(db, cfg.Server.BaseURL, cfg.Session, cfg.CORS, cfg.Store.Redis, isProduction)
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),

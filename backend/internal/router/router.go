@@ -20,7 +20,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func SetUpRouter(db *gorm.DB, baseURL string, sessionCfg config.Session, redisCfg config.Redis) *gin.Engine {
+func SetUpRouter(db *gorm.DB, baseURL string, sessionCfg config.Session, corsCfg config.CORS, redisCfg config.Redis, isProduction bool) *gin.Engine {
 	var store sessions.Store
 	var err error
 
@@ -35,10 +35,10 @@ func SetUpRouter(db *gorm.DB, baseURL string, sessionCfg config.Session, redisCf
 	}
 	store.Options(sessions.Options{
 		Path:     "/",
-		MaxAge:   sessionCfg.ExpiryInMinutes * 60,
+		MaxAge:   sessionCfg.ExpiryInSeconds,
 		HttpOnly: true,
-		Secure:   false,
-		SameSite: http.SameSiteLaxMode,
+		Secure:   isProduction,
+		SameSite: http.SameSiteStrictMode,
 	})
 	router.Use(sessions.Sessions("session", store))
 	router.Use(gin.Recovery())
@@ -49,12 +49,12 @@ func SetUpRouter(db *gorm.DB, baseURL string, sessionCfg config.Session, redisCf
 	router.RedirectFixedPath = false
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
+		AllowOrigins:     corsCfg.Origins,
+		AllowMethods:     corsCfg.AllowMethods,
+		AllowHeaders:     corsCfg.AllowHeaders,
+		ExposeHeaders:    corsCfg.ExposeHeaders,
 		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
+		MaxAge:           1 * time.Hour,
 	}))
 
 	// ------------------------------------------------------
@@ -98,7 +98,7 @@ func SetUpRouter(db *gorm.DB, baseURL string, sessionCfg config.Session, redisCf
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// -------------------------
-	// Protected (JWT required)
+	// Protected (Authentication required)
 	// -------------------------
 	protected := api.Group("")
 	protected.Use(middleware.AuthMiddleware)

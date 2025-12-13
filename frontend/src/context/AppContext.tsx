@@ -30,7 +30,7 @@ const getInitialTheme = (): 'light' | 'dark' => {
             return 'dark';
         }
     }
-    return 'light'; // Default fallback
+    return 'light';
 };
 
 const initialState: AppState = {
@@ -110,6 +110,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             console.error('Logout failed', error);
         } finally {
             localStorage.clear();
+            document.cookie = 'session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
             dispatch({ type: 'SET_USER', payload: null });
             navigate('/login');
         }
