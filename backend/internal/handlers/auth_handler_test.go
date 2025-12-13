@@ -21,7 +21,7 @@ import (
 )
 
 func init() {
-	logger.InitializeLogger("test")
+	logger.InitializeLogger(false)
 }
 
 type MockUserService struct {
