@@ -34,7 +34,7 @@ const getInitialTheme = (): 'light' | 'dark' => {
 };
 
 const initialState: AppState = {
-    isLoading: false,
+    isLoading: true,
     user: null,
     theme: getInitialTheme(),
     error: null
@@ -72,16 +72,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // Effect to restore session
     React.useEffect(() => {
         const restoreSession = async () => {
-            const token = localStorage.getItem('authToken');
-            if (token && !state.user) {
-                try {
-                    const user = await userService.getCurrentUser();
-                    dispatch({ type: 'SET_USER', payload: user });
-                } catch (error) {
-                    console.error('Failed to restore session', error);
-                    localStorage.removeItem('authToken');
-                    localStorage.removeItem('refreshToken');
-                }
+            try {
+                const user = await userService.getCurrentUser();
+                dispatch({ type: 'SET_USER', payload: user });
+            } catch (error) {
+                // Not logged in or session expired
+                console.log('No active session');
+            } finally {
+                dispatch({ type: 'SET_LOADING', payload: false });
             }
         };
 
@@ -91,11 +89,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const login = async (credentials: UserLogin) => {
         dispatch({ type: 'SET_LOADING', payload: true });
         try {
-            const { accessToken, refreshToken } = await authService.login(credentials);
-            localStorage.setItem('authToken', accessToken);
-            localStorage.setItem('refreshToken', refreshToken);
-
-            const user = await userService.getCurrentUser();
+            // Login now works via cookies. The response contains user data.
+            const user = await authService.login(credentials);
             dispatch({ type: 'SET_USER', payload: user });
             navigate('/');
         } catch (error: any) {

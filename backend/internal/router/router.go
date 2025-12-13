@@ -1,9 +1,13 @@
 package router
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/notFil/cspotlight/config"
 	docs "github.com/notFil/cspotlight/docs"
@@ -11,14 +15,32 @@ import (
 	"github.com/notFil/cspotlight/internal/middleware"
 	"github.com/notFil/cspotlight/internal/repositories"
 	"github.com/notFil/cspotlight/internal/services"
-	"github.com/notFil/cspotlight/internal/store"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
 )
 
-func SetUpRouter(db *gorm.DB, cache store.Cache, baseURL string, tokenCfg config.Token) *gin.Engine {
+func SetUpRouter(db *gorm.DB, baseURL string, sessionCfg config.Session, redisCfg config.Redis) *gin.Engine {
+	var store sessions.Store
+	var err error
+
 	router := gin.New()
+	if sessionCfg.UseCookieStore {
+		store = cookie.NewStore(sessionCfg.SecretKey)
+	} else {
+		store, err = redis.NewStore(redisCfg.IdleConns, "tcp", redisCfg.Addr, redisCfg.Username, redisCfg.Password, sessionCfg.SecretKey)
+		if err != nil {
+			panic("Failed to create redis store: " + err.Error())
+		}
+	}
+	store.Options(sessions.Options{
+		Path:     "/",
+		MaxAge:   sessionCfg.ExpiryInMinutes * 60,
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+	router.Use(sessions.Sessions("session", store))
 	router.Use(gin.Recovery())
 	router.Use(middleware.RequestLogger())
 	router.Use(middleware.ErrorHandler())
@@ -27,7 +49,7 @@ func SetUpRouter(db *gorm.DB, cache store.Cache, baseURL string, tokenCfg config
 	router.RedirectFixedPath = false
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
+		AllowOrigins:     []string{"http://localhost:5173"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -48,7 +70,7 @@ func SetUpRouter(db *gorm.DB, cache store.Cache, baseURL string, tokenCfg config
 	userService := services.NewUserService(userRepo, projectRepo)
 	reportService := services.NewReportService(reportRepo, projectRepo)
 
-	authHandler := handlers.NewAuthHandler(userService, cache, tokenCfg)
+	authHandler := handlers.NewAuthHandler(userService)
 	projectHandler := handlers.NewProjectHandler(projectService)
 	teamHandler := handlers.NewTeamHandler(teamService)
 	userHandler := handlers.NewUserHandler(userService)
@@ -72,7 +94,6 @@ func SetUpRouter(db *gorm.DB, cache store.Cache, baseURL string, tokenCfg config
 	{
 		auth.POST("/login", authHandler.Login)
 		auth.POST("/register", authHandler.Register)
-		auth.POST("/refresh", authHandler.RefreshToken)
 	}
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
@@ -80,7 +101,7 @@ func SetUpRouter(db *gorm.DB, cache store.Cache, baseURL string, tokenCfg config
 	// Protected (JWT required)
 	// -------------------------
 	protected := api.Group("")
-	protected.Use(middleware.JWTAuth(cache, tokenCfg.SecretKey))
+	protected.Use(middleware.AuthMiddleware)
 
 	// ---------- Projects ----------
 	projects := protected.Group("/projects")

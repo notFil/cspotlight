@@ -1,7 +1,7 @@
 package constants
 
 const (
-	ClaimsContextKey = "authClaims"
+	UserContextKey = "userContext"
 )
 
 var CriticalDirectives = []string{"script-src", "script-src-elem", "script-src-attr", "default-src", "object-src", "worker-src", "trusted-types", "require-trusted-types-for"}

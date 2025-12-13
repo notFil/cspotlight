@@ -23,9 +23,7 @@ func main() {
 
 	db := store.ConnectDB(cfg.Store.DSN)
 
-	cache := store.NewRedis(cfg.Store.Redis)
-
-	router := router.SetUpRouter(db, cache, cfg.Server.BaseURL, cfg.Token)
+	router := router.SetUpRouter(db, cfg.Server.BaseURL, cfg.Session, cfg.Store.Redis)
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),

@@ -40,12 +40,12 @@ func (h *UserHandler) GetCurrentUser(c *gin.Context) {
 
 	log := logger.FromContext(ctx)
 
-	uc := auth.GetUserContext(ctx)
-	log.Info("fetching current user", zap.String("user_id", uc.Subject.String()))
+	userContext := auth.GetUserContext(ctx)
+	log.Info("fetching current user", zap.String("user_id", userContext.ID.String()))
 
-	user, err := h.userService.GetUserByID(ctx, uc.Subject)
+	user, err := h.userService.GetUserByID(ctx, userContext.ID)
 	if err != nil {
-		log.Error("failed to fetch current user", zap.String("user_id", uc.Subject.String()), zap.Error(err))
+		log.Error("failed to fetch current user", zap.String("user_id", userContext.ID.String()), zap.Error(err))
 		c.Error(err)
 		return
 	}

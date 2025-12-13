@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/notFil/cspotlight/internal/middleware"
 	"github.com/notFil/cspotlight/internal/models"
 )
 
@@ -70,7 +71,7 @@ func TestTeamHandler_GetTeamByID(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: teamID.String()}}
+		c.Params = gin.Params{{Key: "teamID", Value: teamID.String()}}
 		c.Request = httptest.NewRequest("GET", "/teams/"+teamID.String(), nil)
 
 		handler.GetTeamByID(c)
@@ -90,10 +91,11 @@ func TestTeamHandler_GetTeamByID(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: teamID.String()}}
+		c.Params = gin.Params{{Key: "teamID", Value: teamID.String()}}
 		c.Request = httptest.NewRequest("GET", "/teams/"+teamID.String(), nil)
 
 		handler.GetTeamByID(c)
+		middleware.ErrorHandler()(c)
 
 		if w.Code != http.StatusInternalServerError {
 			t.Errorf("expected status 500, got %d", w.Code)
@@ -152,7 +154,7 @@ func TestTeamHandler_UpdateTeam(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: teamID.String()}}
+		c.Params = gin.Params{{Key: "teamID", Value: teamID.String()}}
 		body := `{"name": "Updated Team"}`
 		c.Request = httptest.NewRequest("PUT", "/teams/"+teamID.String(), bytes.NewBufferString(body))
 
@@ -178,7 +180,7 @@ func TestTeamHandler_DeleteTeam(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: teamID.String()}}
+		c.Params = gin.Params{{Key: "teamID", Value: teamID.String()}}
 		c.Request = httptest.NewRequest("DELETE", "/teams/"+teamID.String(), nil)
 
 		handler.DeleteTeam(c)

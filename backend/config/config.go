@@ -7,9 +7,9 @@ import (
 )
 
 type Config struct {
-	Server Server
-	Store  Store
-	Token  Token
+	Server  Server
+	Session Session
+	Store   Store
 }
 
 type Server struct {
@@ -18,16 +18,22 @@ type Server struct {
 	BaseURL     string
 }
 
-type Token struct {
-	SecretKey              string
-	RefreshSecretKey       string
-	ExpiryInMinutes        int
-	RefreshExpiryInMinutes int
+type Session struct {
+	ExpiryInMinutes int
+	SecretKey       []byte
+	UseCookieStore  bool
 }
 
 type Store struct {
 	DSN   string
-	Redis string
+	Redis Redis
+}
+
+type Redis struct {
+	Addr      string
+	Username  string
+	Password  string
+	IdleConns int
 }
 
 // init sets Viper to read .env and environment variables
@@ -50,21 +56,25 @@ func LoadConfig() Config {
 		BaseURL:     viper.GetString("APP_BASE_URL"),
 	}
 
-	token := Token{
-		SecretKey:              viper.GetString("JWT_SECRET_KEY"),
-		ExpiryInMinutes:        viper.GetInt("JWT_ACCESS_TOKEN_EXPIRY_MINUTES"),
-		RefreshSecretKey:       viper.GetString("JWT_REFRESH_SECRET_KEY"),
-		RefreshExpiryInMinutes: viper.GetInt("JWT_REFRESH_TOKEN_EXPIRY_MINUTES"),
+	session := Session{
+		ExpiryInMinutes: viper.GetInt("SESSION_EXPIRY_IN_MINUTES"),
+		SecretKey:       []byte(viper.GetString("SESSION_SECRET_KEY")),
+		UseCookieStore:  viper.GetBool("SESSION_USE_COOKIE_STORE"),
 	}
 
 	store := Store{
-		DSN:   viper.GetString("DB_ADDR"),
-		Redis: viper.GetString("REDIS_ADDR"),
+		DSN: viper.GetString("DB_ADDR"),
+		Redis: Redis{
+			Addr:      viper.GetString("REDIS_ADDR"),
+			Username:  viper.GetString("REDIS_USERNAME"),
+			Password:  viper.GetString("REDIS_PASSWORD"),
+			IdleConns: viper.GetInt("REDIS_IDLE_CONNS"),
+		},
 	}
 	cfg := Config{
-		Server: server,
-		Token:  token,
-		Store:  store,
+		Server:  server,
+		Session: session,
+		Store:   store,
 	}
 	return cfg
 }

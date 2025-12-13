@@ -83,7 +83,7 @@ func (m *MockProjectRepository) CreateProjectWithID(ctx context.Context, project
 
 func TestCreateProject(t *testing.T) {
 	mockRepo := NewMockProjectRepository()
-	service := NewProjectService(mockRepo)
+	service := NewProjectService(mockRepo, "http://localhost:8080")
 
 	projectDTO := &models.ProjectUpsertDTO{
 		Name:        "Test Project",
@@ -92,7 +92,7 @@ func TestCreateProject(t *testing.T) {
 	}
 
 	// Test as superadmin
-	adminData := auth.AuthContext{Subject: uuid.New(), Role: "superadmin"}
+	adminData := auth.UserContext{ID: uuid.New(), Role: "superadmin"}
 	ctx := auth.ContextWithUser(context.Background(), &adminData)
 	err := service.CreateProject(ctx, projectDTO)
 	if err != nil {
@@ -101,7 +101,7 @@ func TestCreateProject(t *testing.T) {
 
 	// Test as user (should force team ID)
 	userTeamID := uuid.New()
-	userData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: userTeamID}
+	userData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: userTeamID}
 	projectDTOUser := &models.ProjectUpsertDTO{
 		Name:        "User Project",
 		Description: "A user project",
@@ -130,7 +130,7 @@ func TestCreateProject(t *testing.T) {
 
 func TestGetProjectByID(t *testing.T) {
 	mockRepo := NewMockProjectRepository()
-	service := NewProjectService(mockRepo)
+	service := NewProjectService(mockRepo, "http://localhost:8080")
 
 	projectID := uuid.New()
 	teamID := uuid.New()
@@ -142,7 +142,7 @@ func TestGetProjectByID(t *testing.T) {
 	mockRepo.projects[projectID] = project
 
 	// Test authorized access (same team)
-	userData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: teamID}
+	userData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: teamID}
 	ctx := auth.ContextWithUser(context.Background(), &userData)
 	fetchedProject, err := service.GetProjectByID(ctx, projectID)
 	if err != nil {
@@ -154,7 +154,7 @@ func TestGetProjectByID(t *testing.T) {
 
 	// Test unauthorized access (different team)
 	otherTeamID := uuid.New()
-	otherData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: otherTeamID}
+	otherData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: otherTeamID}
 	ctx = auth.ContextWithUser(context.Background(), &otherData)
 	_, err = service.GetProjectByID(ctx, projectID)
 	if err == nil {
@@ -162,7 +162,7 @@ func TestGetProjectByID(t *testing.T) {
 	}
 
 	// Test superadmin access
-	adminData := auth.AuthContext{Subject: uuid.New(), Role: "superadmin"}
+	adminData := auth.UserContext{ID: uuid.New(), Role: "superadmin"}
 	ctx = auth.ContextWithUser(context.Background(), &adminData)
 	fetchedProjectAdmin, err := service.GetProjectByID(ctx, projectID)
 	if err != nil {
@@ -175,7 +175,7 @@ func TestGetProjectByID(t *testing.T) {
 
 func TestUpdateProject(t *testing.T) {
 	mockRepo := NewMockProjectRepository()
-	service := NewProjectService(mockRepo)
+	service := NewProjectService(mockRepo, "http://localhost:8080")
 
 	projectID := uuid.New()
 	teamID := uuid.New()
@@ -191,7 +191,7 @@ func TestUpdateProject(t *testing.T) {
 	}
 
 	// Test authorized update
-	userData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: teamID}
+	userData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: teamID}
 	ctx := auth.ContextWithUser(context.Background(), &userData)
 	updatedProject, err := service.UpdateProject(ctx, projectID, updateDTO)
 	if err != nil {
@@ -203,7 +203,7 @@ func TestUpdateProject(t *testing.T) {
 
 	// Test unauthorized update
 	otherTeamID := uuid.New()
-	otherData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: otherTeamID}
+	otherData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: otherTeamID}
 	ctx = auth.ContextWithUser(context.Background(), &otherData)
 	_, err = service.UpdateProject(ctx, projectID, updateDTO)
 	if err == nil {
@@ -213,7 +213,7 @@ func TestUpdateProject(t *testing.T) {
 
 func TestDeleteProject(t *testing.T) {
 	mockRepo := NewMockProjectRepository()
-	service := NewProjectService(mockRepo)
+	service := NewProjectService(mockRepo, "http://localhost:8080")
 
 	projectID := uuid.New()
 	teamID := uuid.New()
@@ -226,7 +226,7 @@ func TestDeleteProject(t *testing.T) {
 
 	// Test unauthorized delete
 	otherTeamID := uuid.New()
-	otherData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: otherTeamID}
+	otherData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: otherTeamID}
 	ctx := auth.ContextWithUser(context.Background(), &otherData)
 	err := service.DeleteProject(ctx, projectID)
 	if err == nil {
@@ -234,7 +234,7 @@ func TestDeleteProject(t *testing.T) {
 	}
 
 	// Test authorized delete
-	userData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: teamID}
+	userData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: teamID}
 	ctx = auth.ContextWithUser(context.Background(), &userData)
 	err = service.DeleteProject(ctx, projectID)
 	if err != nil {

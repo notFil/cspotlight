@@ -185,7 +185,7 @@ func TestListReportsByProjectID(t *testing.T) {
 	mockRepo.reports[r3.ID] = r3
 
 	p := &pagination.Pagination{Page: 1, PageSize: 10}
-	userData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: teamID}
+	userData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: teamID}
 	ctx := auth.ContextWithUser(context.Background(), &userData)
 
 	dtos, _, err := service.ListReportsByProjectID(ctx, projectID, p)

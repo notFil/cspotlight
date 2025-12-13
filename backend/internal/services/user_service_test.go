@@ -127,7 +127,7 @@ func TestGetUserByID(t *testing.T) {
 	mockRepo.CreateUser(context.Background(), user)
 
 	// Test authorized access (same user)
-	userData := auth.AuthContext{Subject: userID, Role: "user"}
+	userData := auth.UserContext{ID: userID, Role: "user"}
 	ctx := auth.ContextWithUser(context.Background(), &userData)
 	fetchedUser, err := service.GetUserByID(ctx, userID)
 	if err != nil {
@@ -139,7 +139,7 @@ func TestGetUserByID(t *testing.T) {
 
 	// Test unauthorized access
 	otherID := uuid.New()
-	otherData := auth.AuthContext{Subject: otherID, Role: "user"}
+	otherData := auth.UserContext{ID: otherID, Role: "user"}
 	ctx = auth.ContextWithUser(context.Background(), &otherData)
 	_, err = service.GetUserByID(ctx, userID)
 	if err == nil {
@@ -151,7 +151,7 @@ func TestGetUserByID(t *testing.T) {
 
 	// Test admin access (should be allowed)
 	adminID := uuid.New()
-	adminData := auth.AuthContext{Subject: adminID, Role: "superadmin"}
+	adminData := auth.UserContext{ID: adminID, Role: "superadmin"}
 	ctx = auth.ContextWithUser(context.Background(), &adminData)
 	fetchedUserAdmin, err := service.GetUserByID(ctx, userID)
 	if err != nil {

@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/notFil/cspotlight/internal/auth"
-	"github.com/notFil/cspotlight/internal/constants"
+	"github.com/notFil/cspotlight/internal/middleware"
 	"github.com/notFil/cspotlight/internal/models"
 )
 
@@ -30,9 +30,10 @@ func TestUserHandler_GetUserByID(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: userID.String()}}
-		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: userID})
+		c.Params = gin.Params{{Key: "userID", Value: userID.String()}}
 		c.Request = httptest.NewRequest("GET", "/users/"+userID.String(), nil)
+		userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.GetUserByID(c)
 
@@ -56,10 +57,11 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: userID.String()}}
-		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: userID})
+		c.Params = gin.Params{{Key: "userID", Value: userID.String()}}
 		body := `{"username": "updateduser", "firstName": "Updated", "lastName": "User", "email": "updated@example.com", "role": "user"}`
 		c.Request = httptest.NewRequest("PUT", "/users/"+userID.String(), bytes.NewBufferString(body))
+		userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.UpdateUser(c)
 
@@ -83,9 +85,10 @@ func TestUserHandler_DeleteUser(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: userID.String()}}
-		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: userID})
+		c.Params = gin.Params{{Key: "userID", Value: userID.String()}}
 		c.Request = httptest.NewRequest("DELETE", "/users/"+userID.String(), nil)
+		userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.DeleteUser(c)
 
@@ -108,8 +111,9 @@ func TestUserHandler_ListUsers(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: uuid.New()})
 		c.Request = httptest.NewRequest("GET", "/users", nil)
+		userCtx := auth.NewUserContext(uuid.New().String(), uuid.New().String(), "user")
+		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.ListUsers(c)
 
@@ -134,8 +138,9 @@ func TestUserHandler_ListUsersByTeamID(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "teamID", Value: teamID.String()}}
-		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: uuid.New()})
 		c.Request = httptest.NewRequest("GET", "/teams/"+teamID.String()+"/users", nil)
+		userCtx := auth.NewUserContext(uuid.NewString(), uuid.NewString(), "user")
+		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.ListUsersByTeamID(c)
 
@@ -160,10 +165,11 @@ func TestUserHandler_SetDefaultProject(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: userID})
-		c.Params = gin.Params{{Key: "id", Value: userID.String()}}
+		c.Params = gin.Params{{Key: "userID", Value: userID.String()}}
 		body := `{"projectID": "` + projectID.String() + `"}`
 		c.Request = httptest.NewRequest("PATCH", "/users/"+userID.String()+"/default-project", bytes.NewBufferString(body))
+		userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.SetDefaultProject(c)
 
@@ -182,12 +188,14 @@ func TestUserHandler_SetDefaultProject(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: userID})
-		c.Params = gin.Params{{Key: "id", Value: userID.String()}}
+		c.Params = gin.Params{{Key: "userID", Value: userID.String()}}
 		body := `{"projectID": "` + projectID.String() + `"}`
 		c.Request = httptest.NewRequest("PATCH", "/users/default-project", bytes.NewBufferString(body))
+		userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.SetDefaultProject(c)
+		middleware.ErrorHandler()(c)
 
 		if w.Code != http.StatusInternalServerError {
 			t.Errorf("expected status 500, got %d", w.Code)
@@ -209,9 +217,7 @@ func TestUserHandler_ChangeImage(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: userID.String()}}
-		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: userID})
-
+		c.Params = gin.Params{{Key: "userID", Value: userID.String()}}
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
 		part, _ := writer.CreateFormFile("image", "test.jpg")
@@ -219,6 +225,8 @@ func TestUserHandler_ChangeImage(t *testing.T) {
 		writer.Close()
 
 		c.Request = httptest.NewRequest("PATCH", "/users/"+userID.String()+"/image", body)
+		userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 		c.Request.Header.Set("Content-Type", writer.FormDataContentType())
 
 		handler.ChangeImage(c)

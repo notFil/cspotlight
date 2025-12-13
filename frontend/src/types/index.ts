@@ -65,13 +65,7 @@ export interface CSPReport {
   lastSeen: string;
 }
 
-export interface AuthTokenData {
-  accessToken: string;
-  refreshToken: string;
-  createdAt: string;
-  expiresIn: string;
-  refreshExpiresIn: string;
-}
+
 
 export interface AuthRequest {
   username: string;

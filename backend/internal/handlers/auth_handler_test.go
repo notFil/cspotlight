@@ -11,10 +11,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/notFil/cspotlight/config"
 	"github.com/notFil/cspotlight/internal/logger"
+	"github.com/notFil/cspotlight/internal/middleware"
 	"github.com/notFil/cspotlight/internal/models"
 )
 
@@ -152,22 +154,28 @@ func TestAuthHandler_Login(t *testing.T) {
 				return &models.UserFetchDTO{ID: uuid.New(), Username: "testuser"}, nil
 			},
 		}
-		handler := NewAuthHandler(mockService, &MockCache{}, config.Token{SecretKey: "secret", ExpiryInMinutes: 15, RefreshExpiryInMinutes: 10080})
+		handler := NewAuthHandler(mockService)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		body := `{"username": "testuser", "password": "password"}`
 		c.Request = httptest.NewRequest("POST", "/login", bytes.NewBufferString(body))
+		store := cookie.NewStore([]byte("secret"))
+		sessions.Sessions("session", store)(c)
 
 		handler.Login(c)
 
 		if w.Code != http.StatusOK {
 			t.Errorf("expected status 200, got %d", w.Code)
 		}
+
+		if !bytes.Contains(w.Body.Bytes(), []byte("testuser")) {
+			t.Errorf("expected response to contain 'testuser', got %s", w.Body.String())
+		}
 	})
 
 	t.Run("InvalidPayload", func(t *testing.T) {
-		handler := NewAuthHandler(&MockUserService{}, &MockCache{}, config.Token{})
+		handler := NewAuthHandler(&MockUserService{})
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("POST", "/login", bytes.NewBufferString("invalid"))
@@ -185,7 +193,7 @@ func TestAuthHandler_Login(t *testing.T) {
 				return nil, errors.New("invalid credentials")
 			},
 		}
-		handler := NewAuthHandler(mockService, &MockCache{}, config.Token{})
+		handler := NewAuthHandler(mockService)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -193,6 +201,7 @@ func TestAuthHandler_Login(t *testing.T) {
 		c.Request = httptest.NewRequest("POST", "/login", bytes.NewBufferString(body))
 
 		handler.Login(c)
+		middleware.ErrorHandler()(c)
 
 		if w.Code != http.StatusUnauthorized {
 			t.Errorf("expected status 401, got %d. Body: %s", w.Code, w.Body.String())
@@ -209,7 +218,7 @@ func TestAuthHandler_Register(t *testing.T) {
 				return nil
 			},
 		}
-		handler := NewAuthHandler(mockService, &MockCache{}, config.Token{})
+		handler := NewAuthHandler(mockService)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -229,7 +238,7 @@ func TestAuthHandler_Register(t *testing.T) {
 				return errors.New("email exists")
 			},
 		}
-		handler := NewAuthHandler(mockService, &MockCache{}, config.Token{})
+		handler := NewAuthHandler(mockService)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -237,6 +246,7 @@ func TestAuthHandler_Register(t *testing.T) {
 		c.Request = httptest.NewRequest("POST", "/register", bytes.NewBufferString(body))
 
 		handler.Register(c)
+		middleware.ErrorHandler()(c)
 
 		if w.Code != http.StatusInternalServerError {
 			t.Errorf("expected status 500, got %d. Body: %s", w.Code, w.Body.String())
@@ -246,12 +256,14 @@ func TestAuthHandler_Register(t *testing.T) {
 
 func TestAuthHandler_SignOut(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := NewAuthHandler(&MockUserService{}, &MockCache{}, config.Token{})
+	handler := NewAuthHandler(&MockUserService{})
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	body := `{"refreshToken": "refresh_token"}`
 	c.Request = httptest.NewRequest("POST", "/signout", bytes.NewBufferString(body))
+	store := cookie.NewStore([]byte("secret"))
+	sessions.Sessions("session", store)(c)
 	c.Request.Header.Set("Authorization", "Bearer access_token")
 
 	handler.SignOut(c)
