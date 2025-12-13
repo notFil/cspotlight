@@ -16,7 +16,7 @@ export function timeAgo(dateInput: string | Date): string {
   for (const unit of units) {
     const interval = Math.floor(seconds / unit.seconds);
     if (interval >= 1) {
-      return `Last ${interval} ${unit.label}${interval > 1 ? 's' : ''} ago`;
+      return `${interval} ${unit.label}${interval > 1 ? 's' : ''} ago`;
     }
   }
   return 'Never';

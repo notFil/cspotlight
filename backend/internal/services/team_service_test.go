@@ -11,18 +11,18 @@ import (
 
 // MockTeamRepository is a manual mock for TeamRepository
 type MockTeamRepository struct {
-	teams map[string]*models.Team
+	teams map[uuid.UUID]*models.Team
 }
 
 func NewMockTeamRepository() *MockTeamRepository {
 	return &MockTeamRepository{
-		teams: make(map[string]*models.Team),
+		teams: make(map[uuid.UUID]*models.Team),
 	}
 }
 
 func (m *MockTeamRepository) CreateTeam(ctx context.Context, team *models.Team) error {
-	if team.ID == "" {
-		team.ID = uuid.New().String()
+	if team.ID == uuid.Nil {
+		team.ID = uuid.New()
 	}
 	if _, exists := m.teams[team.ID]; exists {
 		return errors.New("team already exists")
@@ -31,7 +31,7 @@ func (m *MockTeamRepository) CreateTeam(ctx context.Context, team *models.Team) 
 	return nil
 }
 
-func (m *MockTeamRepository) GetTeamByID(ctx context.Context, id string) (*models.Team, error) {
+func (m *MockTeamRepository) GetTeamByID(ctx context.Context, id uuid.UUID) (*models.Team, error) {
 	if team, exists := m.teams[id]; exists {
 		return team, nil
 	}
@@ -46,7 +46,7 @@ func (m *MockTeamRepository) UpdateTeam(ctx context.Context, team *models.Team) 
 	return errors.New("team not found")
 }
 
-func (m *MockTeamRepository) DeleteTeam(ctx context.Context, id string) error {
+func (m *MockTeamRepository) DeleteTeam(ctx context.Context, id uuid.UUID) error {
 	if _, exists := m.teams[id]; exists {
 		delete(m.teams, id)
 		return nil
@@ -93,7 +93,7 @@ func TestGetTeamByID(t *testing.T) {
 	mockRepo := NewMockTeamRepository()
 	service := NewTeamService(mockRepo)
 
-	teamID := "team-1"
+	teamID := uuid.New()
 	team := &models.Team{
 		ID:   teamID,
 		Name: "Test Team",
@@ -108,7 +108,7 @@ func TestGetTeamByID(t *testing.T) {
 		t.Errorf("expected team ID %s, got %s", teamID, fetchedTeam.ID)
 	}
 
-	_, err = service.GetTeamByID(context.Background(), "non-existent")
+	_, err = service.GetTeamByID(context.Background(), uuid.New())
 	if err == nil {
 		t.Fatal("expected error for non-existent team, got nil")
 	}
@@ -118,7 +118,7 @@ func TestUpdateTeam(t *testing.T) {
 	mockRepo := NewMockTeamRepository()
 	service := NewTeamService(mockRepo)
 
-	teamID := "team-update"
+	teamID := uuid.New()
 	team := &models.Team{
 		ID:   teamID,
 		Name: "Original Name",
@@ -142,7 +142,7 @@ func TestDeleteTeam(t *testing.T) {
 	mockRepo := NewMockTeamRepository()
 	service := NewTeamService(mockRepo)
 
-	teamID := "team-delete"
+	teamID := uuid.New()
 	team := &models.Team{
 		ID:   teamID,
 		Name: "To Delete",

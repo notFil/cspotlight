@@ -3,15 +3,16 @@ package models
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Project struct {
-	ID          string `gorm:"primaryKey;default:uuid_generate_v4()"`
-	Name        string `gorm:"type:varchar(20)"`
-	Description string `gorm:"type:varchar(500)"`
-	TeamID      string `gorm:"type:uuid"`
-	Team        Team   `gorm:"foreignKey:TeamID"`
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
+	Name        string    `gorm:"type:varchar(20)"`
+	Description string    `gorm:"type:varchar(500)"`
+	TeamID      uuid.UUID `gorm:"type:uuid"`
+	Team        Team      `gorm:"foreignKey:TeamID"`
 	Disabled    bool
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
@@ -19,19 +20,20 @@ type Project struct {
 }
 
 type ProjectFetchDTO struct {
-	ID          string     `json:"id"`
-	Name        string     `json:"name"`
-	Description string     `json:"description"`
-	Disabled    bool       `json:"disabled"`
-	TeamID      string     `json:"teamId"`
-	TeamName    string     `json:"teamName"`
-	LastActive  *time.Time `json:"lastActive"`
+	ID           uuid.UUID  `json:"id"`
+	Name         string     `json:"name"`
+	Description  string     `json:"description"`
+	Disabled     bool       `json:"disabled"`
+	TeamID       uuid.UUID  `json:"teamId"`
+	TeamName     string     `json:"teamName"`
+	ReportingURL string     `json:"reportingUrl"`
+	LastActive   *time.Time `json:"lastActive"`
 }
 type ProjectUpsertDTO struct {
-	Name        string `json:"name" binding:"required"`
-	Description string `json:"description"`
-	TeamID      string `json:"teamId" binding:"required"`
-	Disabled    bool   `json:"disabled"`
+	Name        string    `json:"name" binding:"required"`
+	Description string    `json:"description"`
+	TeamID      uuid.UUID `json:"teamId" binding:"required"`
+	Disabled    bool      `json:"disabled"`
 }
 
 func (p *Project) ToFetchDTO() *ProjectFetchDTO {
@@ -43,6 +45,10 @@ func (p *Project) ToFetchDTO() *ProjectFetchDTO {
 		TeamName:    p.Team.Name,
 		Disabled:    p.Disabled,
 	}
+}
+
+func (p *Project) BelongsToTeam(teamID uuid.UUID) bool {
+	return p.TeamID == teamID
 }
 
 func (p *ProjectUpsertDTO) ToProject() *Project {

@@ -11,6 +11,7 @@ import (
 	"slices"
 
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/google/uuid"
 	"github.com/notFil/cspotlight/internal/auth"
 	apperrors "github.com/notFil/cspotlight/internal/errors"
 	"github.com/notFil/cspotlight/internal/models"
@@ -24,15 +25,15 @@ var ImageAllowedExts = []string{"image/jpeg", "image/png", "image/gif"}
 
 type UserService interface {
 	RegisterUser(ctx context.Context, user *models.UserRegisterDTO) error
-	GetUserByID(ctx context.Context, id string) (*models.UserFetchDTO, error)
+	GetUserByID(ctx context.Context, id uuid.UUID) (*models.UserFetchDTO, error)
 	AuthenticateUser(ctx context.Context, authRequest *models.AuthRequest) (*models.UserFetchDTO, error)
-	UpdateUser(ctx context.Context, id string, user *models.UserUpdateDTO) (*models.UserFetchDTO, error)
-	SetDefaultProject(ctx context.Context, id string, projectID string) (*models.UserFetchDTO, error)
+	UpdateUser(ctx context.Context, id uuid.UUID, user *models.UserUpdateDTO) (*models.UserFetchDTO, error)
+	SetDefaultProject(ctx context.Context, id uuid.UUID, projectID uuid.UUID) (*models.UserFetchDTO, error)
 	ListUsers(ctx context.Context) ([]*models.UserFetchDTO, error)
-	ListUsersByTeamID(ctx context.Context, teamID string) ([]*models.UserFetchDTO, error)
-	DeleteUser(ctx context.Context, id string) error
-	ChangePassword(ctx context.Context, id string, request *models.ChangePasswordRequest) error
-	ChangeImage(ctx context.Context, id string, image *multipart.FileHeader) error
+	ListUsersByTeamID(ctx context.Context, teamID uuid.UUID) ([]*models.UserFetchDTO, error)
+	DeleteUser(ctx context.Context, id uuid.UUID) error
+	ChangePassword(ctx context.Context, id uuid.UUID, request *models.ChangePasswordRequest) error
+	ChangeImage(ctx context.Context, id uuid.UUID, image *multipart.FileHeader) error
 }
 
 type userService struct {
@@ -47,14 +48,15 @@ func NewUserService(userRepo repositories.UserRepository, projectRepo repositori
 	}
 }
 
-func (s *userService) GetUserByID(ctx context.Context, id string) (*models.UserFetchDTO, error) {
-	claims := auth.GetUserClaims(ctx)
+func (s *userService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.UserFetchDTO, error) {
+	userContext := auth.GetUserContext(ctx)
+
 	u, err := s.userRepo.GetUserByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	if !(claims.IsSuperadmin() || (claims.IsAdmin() && u.TeamID != nil && claims.TeamID == *u.TeamID) || (claims.Subject == id)) {
+	if !(userContext.IsSuperadmin() || (userContext.IsAdmin() && u.TeamID != nil && userContext.SameTeam(*u.TeamID)) || userContext.SameUser(id)) {
 		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -75,20 +77,27 @@ func (s *userService) RegisterUser(ctx context.Context, user *models.UserRegiste
 		return err
 	}
 	u.PasswordHash = string(hashedPassword)
+	count, err := s.userRepo.GetUserCount(ctx)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		u.Role = "superadmin"
+	}
 	if err := s.userRepo.CreateUser(ctx, u); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *userService) UpdateUser(ctx context.Context, id string, user *models.UserUpdateDTO) (*models.UserFetchDTO, error) {
+func (s *userService) UpdateUser(ctx context.Context, id uuid.UUID, user *models.UserUpdateDTO) (*models.UserFetchDTO, error) {
 	u, err := s.userRepo.GetUserByID(ctx, id)
 	if err != nil {
 		return nil, apperrors.New(http.StatusNotFound, "user not found")
 	}
 	u.Role = user.Role
 	u.Disabled = user.Disabled
-	if user.TeamID != "" {
+	if user.TeamID != uuid.Nil {
 		u.TeamID = &user.TeamID
 	} else {
 		u.TeamID = nil
@@ -111,20 +120,18 @@ func (s *userService) AuthenticateUser(ctx context.Context, authRequest *models.
 }
 
 func (s *userService) ListUsers(ctx context.Context) ([]*models.UserFetchDTO, error) {
-	claims := auth.GetUserClaims(ctx)
+	userContext := auth.GetUserContext(ctx)
 	var users []*models.User
 	var err error
 
-	if !claims.IsSuperadmin() {
-		users, err = s.userRepo.ListUsersByTeamID(ctx, claims.TeamID)
-		if err != nil {
-			return nil, apperrors.New(http.StatusInternalServerError, "failed to list users")
-		}
+	if !userContext.IsSuperadmin() {
+		users, err = s.userRepo.ListUsersByTeamID(ctx, userContext.TeamID)
 	} else {
 		users, err = s.userRepo.ListUsers(ctx)
-		if err != nil {
-			return nil, apperrors.New(http.StatusInternalServerError, "failed to list users")
-		}
+	}
+
+	if err != nil {
+		return nil, apperrors.New(http.StatusInternalServerError, "failed to list users")
 	}
 
 	var userDTOs []*models.UserFetchDTO
@@ -134,7 +141,7 @@ func (s *userService) ListUsers(ctx context.Context) ([]*models.UserFetchDTO, er
 	return userDTOs, nil
 }
 
-func (s *userService) ListUsersByTeamID(ctx context.Context, teamID string) ([]*models.UserFetchDTO, error) {
+func (s *userService) ListUsersByTeamID(ctx context.Context, teamID uuid.UUID) ([]*models.UserFetchDTO, error) {
 	users, err := s.userRepo.ListUsersByTeamID(ctx, teamID)
 	if err != nil {
 		return nil, apperrors.New(http.StatusInternalServerError, "failed to list users")
@@ -147,22 +154,22 @@ func (s *userService) ListUsersByTeamID(ctx context.Context, teamID string) ([]*
 	return userDTOs, nil
 }
 
-func (s *userService) DeleteUser(ctx context.Context, id string) error {
+func (s *userService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	return s.userRepo.DeleteUser(ctx, id)
 }
 
-func (s *userService) SetDefaultProject(ctx context.Context, id string, projectID string) (*models.UserFetchDTO, error) {
-	claims := auth.GetUserClaims(ctx)
-	if claims.Subject != id {
+func (s *userService) SetDefaultProject(ctx context.Context, id uuid.UUID, projectID uuid.UUID) (*models.UserFetchDTO, error) {
+	userContext := auth.GetUserContext(ctx)
+	if !userContext.SameUser(id) {
 		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
-	p, err := s.projectRepo.GetProjectByID(ctx, projectID)
-	if p == nil || err != nil {
+	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
+	if project == nil || err != nil {
 		return nil, apperrors.New(http.StatusNotFound, "project not found")
 	}
 
-	if !claims.IsSuperadmin() && p.TeamID != claims.TeamID {
+	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
 		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 	u, err := s.userRepo.GetUserByID(ctx, id)
@@ -176,9 +183,9 @@ func (s *userService) SetDefaultProject(ctx context.Context, id string, projectI
 	return u.ToFetchDTO(), nil
 }
 
-func (s *userService) ChangePassword(ctx context.Context, id string, request *models.ChangePasswordRequest) error {
-	claims := auth.GetUserClaims(ctx)
-	if claims.Subject != id {
+func (s *userService) ChangePassword(ctx context.Context, id uuid.UUID, request *models.ChangePasswordRequest) error {
+	userContext := auth.GetUserContext(ctx)
+	if !userContext.SameUser(id) {
 		return apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -206,9 +213,9 @@ func (s *userService) ChangePassword(ctx context.Context, id string, request *mo
 	return nil
 }
 
-func (s *userService) ChangeImage(ctx context.Context, id string, image *multipart.FileHeader) error {
-	claims := auth.GetUserClaims(ctx)
-	if claims.Subject != id {
+func (s *userService) ChangeImage(ctx context.Context, id uuid.UUID, image *multipart.FileHeader) error {
+	userContext := auth.GetUserContext(ctx)
+	if !userContext.SameUser(id) {
 		return apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 

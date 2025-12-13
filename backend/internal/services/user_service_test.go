@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/notFil/cspotlight/internal/auth"
 	"github.com/notFil/cspotlight/internal/models"
 	"golang.org/x/crypto/bcrypt"
@@ -13,12 +13,12 @@ import (
 
 // MockUserRepository is a manual mock for UserRepository
 type MockUserRepository struct {
-	users map[string]*models.User
+	users map[uuid.UUID]*models.User
 }
 
 func NewMockUserRepository() *MockUserRepository {
 	return &MockUserRepository{
-		users: make(map[string]*models.User),
+		users: make(map[uuid.UUID]*models.User),
 	}
 }
 
@@ -30,7 +30,7 @@ func (m *MockUserRepository) CreateUser(ctx context.Context, user *models.User) 
 	return nil
 }
 
-func (m *MockUserRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
+func (m *MockUserRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	if user, exists := m.users[id]; exists {
 		return user, nil
 	}
@@ -46,6 +46,10 @@ func (m *MockUserRepository) GetUserByUsername(ctx context.Context, username str
 	return nil, errors.New("user not found")
 }
 
+func (m *MockUserRepository) GetUserCount(ctx context.Context) (int64, error) {
+	return int64(len(m.users)), nil
+}
+
 func (m *MockUserRepository) UpdateUser(ctx context.Context, user *models.User) error {
 	if _, exists := m.users[user.ID]; exists {
 		m.users[user.ID] = user
@@ -54,7 +58,7 @@ func (m *MockUserRepository) UpdateUser(ctx context.Context, user *models.User) 
 	return errors.New("user not found")
 }
 
-func (m *MockUserRepository) DeleteUser(ctx context.Context, id string) error {
+func (m *MockUserRepository) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	if _, exists := m.users[id]; exists {
 		delete(m.users, id)
 		return nil
@@ -70,7 +74,7 @@ func (m *MockUserRepository) ListUsers(ctx context.Context) ([]*models.User, err
 	return users, nil
 }
 
-func (m *MockUserRepository) ListUsersByTeamID(ctx context.Context, teamID string) ([]*models.User, error) {
+func (m *MockUserRepository) ListUsersByTeamID(ctx context.Context, teamID uuid.UUID) ([]*models.User, error) {
 	var users []*models.User
 	for _, user := range m.users {
 		if user.TeamID != nil && *user.TeamID == teamID {
@@ -114,7 +118,7 @@ func TestGetUserByID(t *testing.T) {
 	mockProjectRepo := NewMockProjectRepository()
 	service := NewUserService(mockRepo, mockProjectRepo)
 
-	userID := "test-id"
+	userID := uuid.New()
 	user := &models.User{
 		ID:       userID,
 		Username: "testuser",
@@ -123,8 +127,8 @@ func TestGetUserByID(t *testing.T) {
 	mockRepo.CreateUser(context.Background(), user)
 
 	// Test authorized access (same user)
-	claims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: userID}, Role: "user"}
-	ctx := auth.ContextWithClaims(context.Background(), &claims)
+	userData := auth.AuthContext{Subject: userID, Role: "user"}
+	ctx := auth.ContextWithUser(context.Background(), &userData)
 	fetchedUser, err := service.GetUserByID(ctx, userID)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -134,8 +138,9 @@ func TestGetUserByID(t *testing.T) {
 	}
 
 	// Test unauthorized access
-	otherClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "other-id"}, Role: "user"}
-	ctx = auth.ContextWithClaims(context.Background(), &otherClaims)
+	otherID := uuid.New()
+	otherData := auth.AuthContext{Subject: otherID, Role: "user"}
+	ctx = auth.ContextWithUser(context.Background(), &otherData)
 	_, err = service.GetUserByID(ctx, userID)
 	if err == nil {
 		t.Fatal("expected unauthorized error, got nil")
@@ -145,8 +150,9 @@ func TestGetUserByID(t *testing.T) {
 	}
 
 	// Test admin access (should be allowed)
-	adminClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "admin-id"}, Role: "superadmin"}
-	ctx = auth.ContextWithClaims(context.Background(), &adminClaims)
+	adminID := uuid.New()
+	adminData := auth.AuthContext{Subject: adminID, Role: "superadmin"}
+	ctx = auth.ContextWithUser(context.Background(), &adminData)
 	fetchedUserAdmin, err := service.GetUserByID(ctx, userID)
 	if err != nil {
 		t.Fatalf("expected no error for admin, got %v", err)
@@ -165,7 +171,7 @@ func TestAuthenticateUser(t *testing.T) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	user := &models.User{
-		ID:           "test-id",
+		ID:           uuid.New(),
 		Username:     "testuser",
 		PasswordHash: string(hashedPassword),
 	}

@@ -9,10 +9,38 @@ definitions:
     - password
     - username
     type: object
+  models.CSPReportCreateDTO:
+    properties:
+      age:
+        type: integer
+      body:
+        $ref: '#/definitions/models.ReportBody'
+      type:
+        type: string
+      url:
+        type: string
+      user_agent:
+        type: string
+    type: object
+  models.ChangePasswordRequest:
+    properties:
+      confirmNewPassword:
+        type: string
+      currentPassword:
+        type: string
+      newPassword:
+        type: string
+    required:
+    - confirmNewPassword
+    - currentPassword
+    - newPassword
+    type: object
   models.ProjectUpsertDTO:
     properties:
       description:
         type: string
+      disabled:
+        type: boolean
       name:
         type: string
       teamId:
@@ -20,6 +48,45 @@ definitions:
     required:
     - name
     - teamId
+    type: object
+  models.RefreshTokenRequest:
+    properties:
+      refreshToken:
+        type: string
+    required:
+    - refreshToken
+    type: object
+  models.ReportBody:
+    properties:
+      blockedURL:
+        type: string
+      columnNumber:
+        type: integer
+      disposition:
+        type: string
+      documentURL:
+        type: string
+      effectiveDirective:
+        type: string
+      lineNumber:
+        type: integer
+      originalPolicy:
+        type: string
+      referrer:
+        type: string
+      sample:
+        type: string
+      scriptSample:
+        type: string
+      sourceFile:
+        type: string
+    type: object
+  models.SetDefaultProjectRequest:
+    properties:
+      projectID:
+        type: string
+    required:
+    - projectID
     type: object
   models.TeamUpsertDTO:
     properties:
@@ -30,8 +97,10 @@ definitions:
     required:
     - name
     type: object
-  models.UserCreateDTO:
+  models.UserRegisterDTO:
     properties:
+      confirmPassword:
+        type: string
       email:
         type: string
       firstName:
@@ -40,22 +109,20 @@ definitions:
         type: string
       password:
         type: string
-      role:
-        type: string
-      teamId:
-        type: string
       username:
         type: string
     required:
+    - confirmPassword
     - email
     - firstName
     - lastName
     - password
-    - role
     - username
     type: object
   models.UserUpdateDTO:
     properties:
+      disabled:
+        type: boolean
       email:
         type: string
       firstName:
@@ -78,6 +145,216 @@ definitions:
 info:
   contact: {}
 paths:
+  /api/analytics/{projectID}/graph-data:
+    get:
+      description: Get graph data for reports of a project
+      parameters:
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Graph data
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to get report graph data
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get report graph data
+      tags:
+      - analytics
+  /api/analytics/{projectID}/software-stats:
+    get:
+      description: Get software statistics (browser/OS) for reports of a project
+      parameters:
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Software stats
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to get report software stats
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get report software stats
+      tags:
+      - analytics
+  /api/analytics/{projectID}/summary-stats:
+    get:
+      description: Get summary statistics for reports of a project
+      parameters:
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Summary stats
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to get report summary stats
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get report summary stats
+      tags:
+      - analytics
+  /api/analytics/{projectID}/violated-directives:
+    get:
+      description: Get top violated directives for a project
+      parameters:
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Top violated directives
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to get top violated directives
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get top violated directives
+      tags:
+      - analytics
+  /api/analytics/{projectID}/violated-document-urls:
+    get:
+      description: Get top violated document URLs for a project
+      parameters:
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Top violated document URLs
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to get top violated document URLs
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get top violated document URLs
+      tags:
+      - analytics
+  /api/analytics/{projectID}/violation-sources:
+    get:
+      description: Get top violation sources for a project
+      parameters:
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Top violation sources
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to get top violation sources
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get top violation sources
+      tags:
+      - analytics
+  /api/analytics/{projectID}/violation-trend:
+    get:
+      description: Get violation trend for a project
+      parameters:
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Violation trend
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to get report violation trend
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get report violation trend
+      tags:
+      - analytics
   /api/auth/login:
     post:
       consumes:
@@ -111,6 +388,39 @@ paths:
       summary: User login
       tags:
       - auth
+  /api/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refreshes the JWT token
+      parameters:
+      - description: Refresh token request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: token refreshed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: invalid refresh token
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to refresh token
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Refresh token
+      tags:
+      - auth
   /api/auth/register:
     post:
       consumes:
@@ -122,7 +432,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/models.UserCreateDTO'
+          $ref: '#/definitions/models.UserRegisterDTO'
       produces:
       - application/json
       responses:
@@ -144,6 +454,27 @@ paths:
       summary: Register user
       tags:
       - auth
+  /api/auth/signout:
+    post:
+      consumes:
+      - application/json
+      description: Signs out the user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: signed out successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to sign out
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Sign out
+      tags:
+      - auth
   /api/projects:
     get:
       description: Get a list of all projects
@@ -155,8 +486,8 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "500":
-          description: Failed to list projects
+        "403":
+          description: failed to list projects
           schema:
             additionalProperties: true
             type: object
@@ -168,7 +499,7 @@ paths:
       - application/json
       description: Create a new project
       parameters:
-      - description: Project info
+      - description: project info
         in: body
         name: body
         required: true
@@ -178,17 +509,17 @@ paths:
       - application/json
       responses:
         "201":
-          description: Project created successfully
+          description: project created successfully
           schema:
             additionalProperties: true
             type: object
         "400":
-          description: Invalid request payload
+          description: invalid request payload
           schema:
             additionalProperties: true
             type: object
         "500":
-          description: Failed to create project
+          description: failed to create project
           schema:
             additionalProperties: true
             type: object
@@ -196,30 +527,6 @@ paths:
       tags:
       - projects
   /api/projects/{id}:
-    delete:
-      description: Delete a project by its ID
-      parameters:
-      - description: Project ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Project deleted successfully
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Failed to delete project
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Delete project
-      tags:
-      - projects
     get:
       description: Get details of a project by its ID
       parameters:
@@ -244,17 +551,42 @@ paths:
       summary: Get project by ID
       tags:
       - projects
+  /api/projects/{projectID}:
+    delete:
+      description: Delete a project by its ID
+      parameters:
+      - description: project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: project deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: failed to delete project
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete project
+      tags:
+      - projects
     put:
       consumes:
       - application/json
       description: Update an existing project
       parameters:
-      - description: Project ID
+      - description: project ID
         in: path
-        name: id
+        name: projectID
         required: true
         type: string
-      - description: Project info
+      - description: project info
         in: body
         name: body
         required: true
@@ -264,23 +596,96 @@ paths:
       - application/json
       responses:
         "200":
-          description: Project updated successfully
+          description: project updated successfully
           schema:
             additionalProperties: true
             type: object
         "400":
-          description: Invalid request payload
+          description: invalid request payload
           schema:
             additionalProperties: true
             type: object
         "500":
-          description: Failed to update project
+          description: failed to update project
           schema:
             additionalProperties: true
             type: object
       summary: Update project
       tags:
       - projects
+  /api/reports/{projectID}:
+    get:
+      description: Get a list of reports for a project
+      parameters:
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of reports
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to list reports
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List reports by project ID
+      tags:
+      - reports
+  /api/reports/{projectID}/endpoint:
+    post:
+      consumes:
+      - application/json
+      description: Create a new CSP report
+      parameters:
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Report info
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.CSPReportCreateDTO'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid request payload
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to create report
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create report
+      tags:
+      - reports
   /api/teams:
     get:
       description: Get a list of all teams
@@ -305,7 +710,7 @@ paths:
       - application/json
       description: Create a new team
       parameters:
-      - description: Team info
+      - description: team info
         in: body
         name: body
         required: true
@@ -315,30 +720,30 @@ paths:
       - application/json
       responses:
         "201":
-          description: Team created successfully
+          description: team created successfully
           schema:
             additionalProperties: true
             type: object
         "400":
-          description: Invalid request payload
+          description: invalid request payload
           schema:
             additionalProperties: true
             type: object
         "500":
-          description: Failed to create team
+          description: failed to create team
           schema:
             additionalProperties: true
             type: object
       summary: Create team
       tags:
       - teams
-  /api/teams/{id}:
+  /api/teams/{teamID}:
     delete:
       description: Delete a team by its ID
       parameters:
       - description: Team ID
         in: path
-        name: id
+        name: teamID
         required: true
         type: string
       produces:
@@ -362,7 +767,7 @@ paths:
       parameters:
       - description: Team ID
         in: path
-        name: id
+        name: teamID
         required: true
         type: string
       produces:
@@ -388,7 +793,7 @@ paths:
       parameters:
       - description: Team ID
         in: path
-        name: id
+        name: teamID
         required: true
         type: string
       - description: Team info
@@ -431,12 +836,12 @@ paths:
       - application/json
       responses:
         "200":
-          description: List of users by team
+          description: list of users by team
           schema:
             additionalProperties: true
             type: object
         "500":
-          description: Failed to list users by team ID
+          description: failed to list users by team ID
           schema:
             additionalProperties: true
             type: object
@@ -462,39 +867,7 @@ paths:
       summary: List users
       tags:
       - users
-    post:
-      consumes:
-      - application/json
-      description: Create a new user
-      parameters:
-      - description: User info
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/models.UserCreateDTO'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: User created successfully
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Invalid request payload
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Failed to create user
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Create user
-      tags:
-      - users
-  /api/users/{id}:
+  /api/users/{userID}:
     delete:
       description: Delete a user by their ID
       parameters:
@@ -507,12 +880,12 @@ paths:
       - application/json
       responses:
         "200":
-          description: User deleted successfully
+          description: user deleted successfully
           schema:
             additionalProperties: true
             type: object
         "500":
-          description: Failed to delete user
+          description: failed to delete user
           schema:
             additionalProperties: true
             type: object
@@ -524,19 +897,19 @@ paths:
       parameters:
       - description: User ID
         in: path
-        name: id
+        name: userID
         required: true
         type: string
       produces:
       - application/json
       responses:
         "200":
-          description: User details
+          description: user details
           schema:
             additionalProperties: true
             type: object
         "500":
-          description: Internal server error
+          description: internal server error
           schema:
             additionalProperties: true
             type: object
@@ -563,21 +936,143 @@ paths:
       - application/json
       responses:
         "200":
-          description: User updated successfully
+          description: user updated successfully
           schema:
             additionalProperties: true
             type: object
         "400":
-          description: Invalid request payload
+          description: invalid request payload
           schema:
             additionalProperties: true
             type: object
         "500":
-          description: Failed to update user
+          description: failed to update user
           schema:
             additionalProperties: true
             type: object
       summary: Update user
+      tags:
+      - users
+  /api/users/{userID}/image:
+    patch:
+      consumes:
+      - multipart/form-data
+      description: Changes the image of a user
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Image file
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: image changed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to change image
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Change image
+      tags:
+      - users
+  /api/users/{userID}/password:
+    patch:
+      consumes:
+      - application/json
+      description: Changes the password of a user
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Change password request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: password changed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to change password
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Change password
+      tags:
+      - users
+  /api/users/{userID}/project:
+    patch:
+      consumes:
+      - application/json
+      description: Sets the default project for a user
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Set default project request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.SetDefaultProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: default project set successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid request payload
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to set default project
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Set default project
+      tags:
+      - users
+  /api/users/me:
+    get:
+      description: Get details of the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User details
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get current user
       tags:
       - users
 swagger: "2.0"

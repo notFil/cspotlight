@@ -1,7 +1,7 @@
 APP_EXECUTABLE=app
 
 include .env
-export GOOSE_DBSTRING=$(subst ",,$(DB_URL))
+export GOOSE_DBSTRING=$(subst ",,$(DB_ADDR))
 
 .PHONY: serve build run clean up down test
 

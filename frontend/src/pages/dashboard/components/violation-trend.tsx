@@ -8,8 +8,8 @@ import {
     Tooltip as RechartsTooltip,
     ResponsiveContainer,
 } from "recharts";
-import { LoadingPage } from "@/components/loading-page";
-import { ErrorPage } from "@/components/error-page";
+import { LoadingPage } from "@/components/common/loading-page";
+import { ErrorPage } from "@/components/common/error-page";
 import { useReportViolationTrend } from "@/hooks/use-reports";
 
 const CustomTooltip = ({ active, payload }: any) => {

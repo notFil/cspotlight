@@ -9,21 +9,21 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/notFil/cspotlight/internal/auth"
 	"github.com/notFil/cspotlight/internal/constants"
 	"github.com/notFil/cspotlight/internal/models"
 )
 
 type MockProjectService struct {
-	GetProjectByIDFunc func(ctx context.Context, id string) (*models.ProjectFetchDTO, error)
+	GetProjectByIDFunc func(ctx context.Context, id uuid.UUID) (*models.ProjectFetchDTO, error)
 	CreateProjectFunc  func(ctx context.Context, project *models.ProjectUpsertDTO) error
-	UpdateProjectFunc  func(ctx context.Context, id string, project *models.ProjectUpsertDTO) (*models.ProjectFetchDTO, error)
-	DeleteProjectFunc  func(ctx context.Context, id string) error
+	UpdateProjectFunc  func(ctx context.Context, id uuid.UUID, project *models.ProjectUpsertDTO) (*models.ProjectFetchDTO, error)
+	DeleteProjectFunc  func(ctx context.Context, id uuid.UUID) error
 	ListProjectsFunc   func(ctx context.Context) ([]*models.ProjectFetchDTO, error)
 }
 
-func (m *MockProjectService) GetProjectByID(ctx context.Context, id string) (*models.ProjectFetchDTO, error) {
+func (m *MockProjectService) GetProjectByID(ctx context.Context, id uuid.UUID) (*models.ProjectFetchDTO, error) {
 	if m.GetProjectByIDFunc != nil {
 		return m.GetProjectByIDFunc(ctx, id)
 	}
@@ -37,14 +37,14 @@ func (m *MockProjectService) CreateProject(ctx context.Context, project *models.
 	return nil
 }
 
-func (m *MockProjectService) UpdateProject(ctx context.Context, id string, project *models.ProjectUpsertDTO) (*models.ProjectFetchDTO, error) {
+func (m *MockProjectService) UpdateProject(ctx context.Context, id uuid.UUID, project *models.ProjectUpsertDTO) (*models.ProjectFetchDTO, error) {
 	if m.UpdateProjectFunc != nil {
 		return m.UpdateProjectFunc(ctx, id, project)
 	}
 	return nil, nil
 }
 
-func (m *MockProjectService) DeleteProject(ctx context.Context, id string) error {
+func (m *MockProjectService) DeleteProject(ctx context.Context, id uuid.UUID) error {
 	if m.DeleteProjectFunc != nil {
 		return m.DeleteProjectFunc(ctx, id)
 	}
@@ -61,9 +61,10 @@ func (m *MockProjectService) ListProjects(ctx context.Context) ([]*models.Projec
 func TestProjectHandler_GetProjectByID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
+	projectID := uuid.New()
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockProjectService{
-			GetProjectByIDFunc: func(ctx context.Context, id string) (*models.ProjectFetchDTO, error) {
+			GetProjectByIDFunc: func(ctx context.Context, id uuid.UUID) (*models.ProjectFetchDTO, error) {
 				return &models.ProjectFetchDTO{ID: id, Name: "Test Project"}, nil
 			},
 		}
@@ -71,9 +72,9 @@ func TestProjectHandler_GetProjectByID(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: "proj-1"}}
-		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
-		c.Request = httptest.NewRequest("GET", "/projects/proj-1", nil)
+		c.Params = gin.Params{{Key: "id", Value: projectID.String()}}
+		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: uuid.New()})
+		c.Request = httptest.NewRequest("GET", "/projects/"+projectID.String(), nil)
 
 		handler.GetProjectByID(c)
 
@@ -84,7 +85,7 @@ func TestProjectHandler_GetProjectByID(t *testing.T) {
 
 	t.Run("NotFound", func(t *testing.T) {
 		mockService := &MockProjectService{
-			GetProjectByIDFunc: func(ctx context.Context, id string) (*models.ProjectFetchDTO, error) {
+			GetProjectByIDFunc: func(ctx context.Context, id uuid.UUID) (*models.ProjectFetchDTO, error) {
 				return nil, nil
 			},
 		}
@@ -92,9 +93,9 @@ func TestProjectHandler_GetProjectByID(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: "proj-1"}}
-		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
-		c.Request = httptest.NewRequest("GET", "/projects/proj-1", nil)
+		c.Params = gin.Params{{Key: "id", Value: projectID.String()}}
+		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: uuid.New()})
+		c.Request = httptest.NewRequest("GET", "/projects/"+projectID.String(), nil)
 
 		handler.GetProjectByID(c)
 
@@ -117,8 +118,8 @@ func TestProjectHandler_CreateProject(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
-		body := `{"name": "New Project", "teamId": "team-1"}`
+		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: uuid.New()})
+		body := `{"name": "New Project", "teamId": "` + uuid.New().String() + `"}`
 		c.Request = httptest.NewRequest("POST", "/projects", bytes.NewBufferString(body))
 
 		handler.CreateProject(c)
@@ -132,7 +133,7 @@ func TestProjectHandler_CreateProject(t *testing.T) {
 		handler := NewProjectHandler(&MockProjectService{})
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
+		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: uuid.New()})
 		c.Request = httptest.NewRequest("POST", "/projects", bytes.NewBufferString("invalid"))
 
 		handler.CreateProject(c)
@@ -145,10 +146,11 @@ func TestProjectHandler_CreateProject(t *testing.T) {
 
 func TestProjectHandler_UpdateProject(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+	projectID := uuid.New()
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockProjectService{
-			UpdateProjectFunc: func(ctx context.Context, id string, project *models.ProjectUpsertDTO) (*models.ProjectFetchDTO, error) {
+			UpdateProjectFunc: func(ctx context.Context, id uuid.UUID, project *models.ProjectUpsertDTO) (*models.ProjectFetchDTO, error) {
 				return &models.ProjectFetchDTO{ID: id, Name: project.Name}, nil
 			},
 		}
@@ -156,10 +158,10 @@ func TestProjectHandler_UpdateProject(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: "proj-1"}}
-		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
-		body := `{"name": "Updated Project", "teamId": "team-1"}`
-		c.Request = httptest.NewRequest("PUT", "/projects/proj-1", bytes.NewBufferString(body))
+		c.Params = gin.Params{{Key: "id", Value: projectID.String()}}
+		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: uuid.New()})
+		body := `{"name": "Updated Project", "teamId": "` + uuid.New().String() + `"}`
+		c.Request = httptest.NewRequest("PUT", "/projects/"+projectID.String(), bytes.NewBufferString(body))
 
 		handler.UpdateProject(c)
 
@@ -171,10 +173,11 @@ func TestProjectHandler_UpdateProject(t *testing.T) {
 
 func TestProjectHandler_DeleteProject(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+	projectID := uuid.New()
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockProjectService{
-			DeleteProjectFunc: func(ctx context.Context, id string) error {
+			DeleteProjectFunc: func(ctx context.Context, id uuid.UUID) error {
 				return nil
 			},
 		}
@@ -182,9 +185,9 @@ func TestProjectHandler_DeleteProject(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: "proj-1"}}
-		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
-		c.Request = httptest.NewRequest("DELETE", "/projects/proj-1", nil)
+		c.Params = gin.Params{{Key: "id", Value: projectID.String()}}
+		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: uuid.New()})
+		c.Request = httptest.NewRequest("DELETE", "/projects/"+projectID.String(), nil)
 
 		handler.DeleteProject(c)
 
@@ -195,7 +198,7 @@ func TestProjectHandler_DeleteProject(t *testing.T) {
 
 	t.Run("Forbidden", func(t *testing.T) {
 		mockService := &MockProjectService{
-			DeleteProjectFunc: func(ctx context.Context, id string) error {
+			DeleteProjectFunc: func(ctx context.Context, id uuid.UUID) error {
 				return errors.New("unauthorized")
 			},
 		}
@@ -203,9 +206,9 @@ func TestProjectHandler_DeleteProject(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "id", Value: "proj-1"}}
-		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
-		c.Request = httptest.NewRequest("DELETE", "/projects/proj-1", nil)
+		c.Params = gin.Params{{Key: "id", Value: projectID.String()}}
+		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: uuid.New()})
+		c.Request = httptest.NewRequest("DELETE", "/projects/"+projectID.String(), nil)
 
 		handler.DeleteProject(c)
 
@@ -221,14 +224,14 @@ func TestProjectHandler_ListProjects(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockProjectService{
 			ListProjectsFunc: func(ctx context.Context) ([]*models.ProjectFetchDTO, error) {
-				return []*models.ProjectFetchDTO{{ID: "proj-1"}}, nil
+				return []*models.ProjectFetchDTO{{ID: uuid.New()}}, nil
 			},
 		}
 		handler := NewProjectHandler(mockService)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Set(constants.ClaimsContextKey, &auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"}})
+		c.Set(constants.ClaimsContextKey, &auth.AuthContext{Subject: uuid.New()})
 		c.Request = httptest.NewRequest("GET", "/projects", nil)
 
 		handler.ListProjects(c)

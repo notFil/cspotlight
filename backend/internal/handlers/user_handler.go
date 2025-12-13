@@ -4,9 +4,12 @@ import (
 	"net/http"
 
 	"github.com/notFil/cspotlight/internal/auth"
+	apperrors "github.com/notFil/cspotlight/internal/errors"
 	"github.com/notFil/cspotlight/internal/response"
+	"github.com/notFil/cspotlight/internal/util"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/notFil/cspotlight/internal/logger"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/services"
@@ -37,12 +40,12 @@ func (h *UserHandler) GetCurrentUser(c *gin.Context) {
 
 	log := logger.FromContext(ctx)
 
-	claims := auth.GetUserClaims(ctx)
-	log.Info("fetching current user", zap.String("user_id", claims.Subject))
+	uc := auth.GetUserContext(ctx)
+	log.Info("fetching current user", zap.String("user_id", uc.Subject.String()))
 
-	user, err := h.userService.GetUserByID(ctx, claims.Subject)
+	user, err := h.userService.GetUserByID(ctx, uc.Subject)
 	if err != nil {
-		log.Error("failed to fetch current user", zap.String("user_id", claims.Subject), zap.Error(err))
+		log.Error("failed to fetch current user", zap.String("user_id", uc.Subject.String()), zap.Error(err))
 		c.Error(err)
 		return
 	}
@@ -54,22 +57,34 @@ func (h *UserHandler) GetCurrentUser(c *gin.Context) {
 // @Description  Get details of a user by their ID
 // @Tags         users
 // @Produce      json
-// @Param        id   path      string  true  "User ID"
+// @Param        userID   path      string  true  "User ID"
 // @Success      200  {object}  map[string]interface{} "user details"
 // @Failure      500  {object}  map[string]interface{} "internal server error"
-// @Router       /api/users/{id} [get]
+// @Router       /api/users/{userID} [get]
 func (h *UserHandler) GetUserByID(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	log := logger.FromContext(ctx)
 
-	id := c.Param("id")
+	var params util.UserParams
 
-	log.Info("fetching user", zap.String("user_id", id))
+	if err := c.ShouldBindUri(&params); err != nil {
+		log.Error("failed to bind uri", zap.Error(err))
+		c.Error(err)
+		return
+	}
 
-	user, err := h.userService.GetUserByID(ctx, id)
+	userID := uuid.MustParse(params.UserID)
+
+	log.Info("fetching user", zap.String("user_id", userID.String()))
+
+	user, err := h.userService.GetUserByID(ctx, userID)
 	if err != nil {
-		log.Error("failed to fetch user", zap.String("user_id", id), zap.Error(err))
+		log.Error("failed to fetch user", zap.String("user_id", userID.String()), zap.Error(err))
+		if err.Error() == "user not found" {
+			c.Error(apperrors.New(http.StatusNotFound, "user not found"))
+			return
+		}
 		c.Error(err)
 		return
 	}
@@ -87,25 +102,35 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 // @Success      200   {object}  map[string]interface{} "user updated successfully"
 // @Failure      400   {object}  map[string]interface{} "invalid request payload"
 // @Failure      500   {object}  map[string]interface{} "failed to update user"
-// @Router       /api/users/{id} [put]
+// @Router       /api/users/{userID} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	log := logger.FromContext(ctx)
 
-	id := c.Param("id")
+	var params util.UserParams
+
 	var user models.UserUpdateDTO
+
+	if err := c.ShouldBindUri(&params); err != nil {
+		log.Error("failed to bind uri", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request parameters"))
+		return
+	}
+
 	if err := c.BindJSON(&user); err != nil {
 		log.Warn("invalid user update payload", zap.Error(err))
 		c.Error(err)
 		return
 	}
 
-	log.Info("updating user", zap.String("user_id", id))
+	userID := uuid.MustParse(params.UserID)
 
-	updatedUser, err := h.userService.UpdateUser(ctx, id, &user)
+	log.Info("updating user", zap.String("user_id", userID.String()))
+
+	updatedUser, err := h.userService.UpdateUser(ctx, userID, &user)
 	if err != nil {
-		log.Error("failed to update user", zap.String("user_id", id), zap.Error(err))
+		log.Error("failed to update user", zap.String("user_id", userID.String()), zap.Error(err))
 		c.Error(err)
 		return
 	}
@@ -121,19 +146,26 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 // @Param        id   path      string  true  "User ID"
 // @Success      200  {object}  map[string]interface{} "user deleted successfully"
 // @Failure      500  {object}  map[string]interface{} "failed to delete user"
-// @Router       /api/users/{id} [delete]
+// @Router       /api/users/{userID} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	log := logger.FromContext(ctx)
 
-	id := c.Param("id")
+	var params util.UserParams
 
-	log.Info("deleting user", zap.String("user_id", id))
+	if err := c.ShouldBindUri(&params); err != nil {
+		log.Error("failed to bind uri", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request parameters"))
+		return
+	}
 
-	err := h.userService.DeleteUser(ctx, id)
-	if err != nil {
-		log.Error("failed to delete user", zap.String("user_id", id), zap.Error(err))
+	userID := uuid.MustParse(params.UserID)
+
+	log.Info("deleting user", zap.String("user_id", userID.String()))
+
+	if err := h.userService.DeleteUser(ctx, userID); err != nil {
+		log.Error("failed to delete user", zap.String("user_id", userID.String()), zap.Error(err))
 		c.Error(err)
 		return
 	}
@@ -176,17 +208,25 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 // @Failure      500  {object}  map[string]interface{} "failed to list users by team ID"
 // @Router       /api/teams/{teamID}/users [get]
 func (h *UserHandler) ListUsersByTeamID(c *gin.Context) {
-	teamID := c.Param("teamID")
+	var params util.TeamParams
 
 	ctx := c.Request.Context()
 
 	log := logger.FromContext(ctx)
 
-	log.Info("listing users by team", zap.String("team_id", teamID))
+	if err := c.ShouldBindUri(&params); err != nil {
+		log.Error("failed to bind uri", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request parameters"))
+		return
+	}
+
+	teamID := uuid.MustParse(params.TeamID)
+
+	log.Info("listing users by team", zap.String("team_id", teamID.String()))
 	users, err := h.userService.ListUsersByTeamID(ctx, teamID)
 	if err != nil {
-		log.Error("failed to list users by team", zap.String("team_id", teamID), zap.Error(err))
-		c.Error(err)
+		log.Error("failed to list users by team", zap.String("team_id", teamID.String()), zap.Error(err))
+		c.Error(apperrors.New(http.StatusInternalServerError, "failed to list users by team"))
 		return
 	}
 
@@ -199,29 +239,43 @@ func (h *UserHandler) ListUsersByTeamID(c *gin.Context) {
 // @Tags         users
 // @Accept       json
 // @Produce      json
-// @Param        id    path      string              true  "User ID"
+// @Param        userID    path      string              true  "User ID"
 // @Param        body  body      models.SetDefaultProjectRequest  true  "Set default project request"
 // @Success      200   {object}  map[string]interface{} "default project set successfully"
 // @Failure      400   {object}  map[string]interface{} "invalid request payload"
 // @Failure      500   {object}  map[string]interface{} "failed to set default project"
-// @Router       /api/users/{id}/project [patch]
+// @Router       /api/users/{userID}/project [patch]
 func (h *UserHandler) SetDefaultProject(c *gin.Context) {
-	id := c.Param("id")
+	var params util.UserParams
+	var req models.SetDefaultProjectRequest
 
 	ctx := c.Request.Context()
 
 	log := logger.FromContext(ctx)
-	var req struct {
-		ProjectID string `json:"projectID"`
-	}
-	if err := c.BindJSON(&req); err != nil {
-		log.Warn("invalid set default project payload", zap.Error(err))
-		c.Error(err)
+
+	if err := c.ShouldBindUri(&params); err != nil {
+		log.Error("failed to bind uri", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request parameters"))
 		return
 	}
 
-	log.Info("setting default project", zap.String("project_id", req.ProjectID), zap.String("user_id", id))
-	updatedUser, err := h.userService.SetDefaultProject(ctx, id, req.ProjectID)
+	userID := uuid.MustParse(params.UserID)
+
+	if err := c.BindJSON(&req); err != nil {
+		log.Warn("invalid set default project payload", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request payload"))
+		return
+	}
+
+	projectID, err := uuid.Parse(req.ProjectID)
+	if err != nil {
+		log.Warn("invalid project id", zap.String("project_id", req.ProjectID), zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid project id"))
+		return
+	}
+
+	log.Info("setting default project", zap.String("project_id", req.ProjectID), zap.String("user_id", userID.String()))
+	updatedUser, err := h.userService.SetDefaultProject(ctx, userID, projectID)
 	if err != nil {
 		log.Error("failed to set default project", zap.Error(err))
 		c.Error(err)
@@ -229,7 +283,6 @@ func (h *UserHandler) SetDefaultProject(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "default project set successfully", updatedUser)
-
 }
 
 // ChangePassword godoc
@@ -238,34 +291,41 @@ func (h *UserHandler) SetDefaultProject(c *gin.Context) {
 // @Tags         users
 // @Accept       json
 // @Produce      json
-// @Param        id    path      string              true  "User ID"
+// @Param        userID    path      string              true  "User ID"
 // @Param        body  body      models.ChangePasswordRequest  true  "Change password request"
 // @Success      200   {object}  map[string]interface{} "password changed successfully"
 // @Failure      400   {object}  map[string]interface{} "invalid request payload"
 // @Failure      400   {object}  map[string]interface{} "failed to change password"
-// @Router       /api/users/{id}/password [patch]
+// @Router       /api/users/{userID}/password [patch]
 func (h *UserHandler) ChangePassword(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	log := logger.FromContext(ctx)
 
-	id := c.Param("id")
+	var params util.UserParams
+
+	if err := c.ShouldBindUri(&params); err != nil {
+		log.Error("failed to bind uri", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request parameters"))
+		return
+	}
+
+	userID := uuid.MustParse(params.UserID)
 
 	var req models.ChangePasswordRequest
 	if err := c.BindJSON(&req); err != nil {
 		log.Warn("invalid change password payload", zap.Error(err))
-		c.Error(err)
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request payload"))
 		return
 	}
 
-	err := h.userService.ChangePassword(ctx, id, &req)
-	if err != nil {
+	if err := h.userService.ChangePassword(ctx, userID, &req); err != nil {
 		log.Error("failed to change password", zap.Error(err))
 		c.Error(err)
 		return
 	}
 
-	log.Info("user changed password", zap.String("user_id", id))
+	log.Info("user changed password", zap.String("user_id", userID.String()))
 
 	response.Success(c, http.StatusOK, "password changed successfully", nil)
 }
@@ -274,36 +334,44 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 // @Summary      Change image
 // @Description  Changes the image of a user
 // @Tags         users
-// @Accept       multipart
+// @Accept       multipart/form-data
 // @Produce      json
-// @Param        id    path      string              true  "User ID"
-// @Param        image  body      models.ChangeImageRequest  true  "Change image request"
+// @Param        userID    path      string              true  "User ID"
+// @Param        image     formData  file                        true  "Image file"
 // @Success      200   {object}  map[string]interface{} "image changed successfully"
 // @Failure      400   {object}  map[string]interface{} "invalid request payload"
 // @Failure      400   {object}  map[string]interface{} "failed to change image"
-// @Router       /api/users/{id}/image [patch]
+// @Router       /api/users/{userID}/image [patch]
 func (h *UserHandler) ChangeImage(c *gin.Context) {
-	id := c.Param("id")
+	var params util.UserParams
 
 	ctx := c.Request.Context()
 
 	log := logger.FromContext(ctx)
 
-	file, err := c.FormFile("image")
-	if err != nil {
-		log.Warn("invalid change image payload", zap.Error(err))
-		c.Error(err)
+	if err := c.ShouldBindUri(&params); err != nil {
+		log.Error("failed to bind uri", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request parameters"))
 		return
 	}
 
-	err = h.userService.ChangeImage(ctx, id, file)
+	userID := uuid.MustParse(params.UserID)
+
+	file, err := c.FormFile("image")
+	if err != nil {
+		log.Warn("invalid change image payload", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request payload"))
+		return
+	}
+
+	err = h.userService.ChangeImage(ctx, userID, file)
 	if err != nil {
 		log.Error("failed to change image", zap.Error(err))
 		c.Error(err)
 		return
 	}
 
-	log.Info("user changed image", zap.String("user_id", id))
+	log.Info("user changed image", zap.String("user_id", userID.String()))
 
 	response.Success(c, http.StatusOK, "image changed successfully", nil)
 }

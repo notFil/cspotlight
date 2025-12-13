@@ -2,8 +2,10 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/notFil/cspotlight/internal/auth"
 
 	apperrors "github.com/notFil/cspotlight/internal/errors"
@@ -12,32 +14,34 @@ import (
 )
 
 type ProjectService interface {
-	GetProjectByID(ctx context.Context, id string) (*models.ProjectFetchDTO, error)
+	GetProjectByID(ctx context.Context, id uuid.UUID) (*models.ProjectFetchDTO, error)
 	CreateProject(ctx context.Context, project *models.ProjectUpsertDTO) error
-	UpdateProject(ctx context.Context, id string, project *models.ProjectUpsertDTO) (*models.ProjectFetchDTO, error)
-	DeleteProject(ctx context.Context, id string) error
+	UpdateProject(ctx context.Context, id uuid.UUID, project *models.ProjectUpsertDTO) (*models.ProjectFetchDTO, error)
+	DeleteProject(ctx context.Context, id uuid.UUID) error
 	ListProjects(ctx context.Context) ([]*models.ProjectFetchDTO, error)
 }
 
 type projectService struct {
 	projectRepo repositories.ProjectRepository
+	baseURL     string
 }
 
-func NewProjectService(projectRepo repositories.ProjectRepository) ProjectService {
+func NewProjectService(projectRepo repositories.ProjectRepository, baseURL string) ProjectService {
 	return &projectService{
 		projectRepo: projectRepo,
+		baseURL:     baseURL,
 	}
 }
 
-func (s *projectService) GetProjectByID(ctx context.Context, id string) (*models.ProjectFetchDTO, error) {
+func (s *projectService) GetProjectByID(ctx context.Context, id uuid.UUID) (*models.ProjectFetchDTO, error) {
 	p, err := s.projectRepo.GetProjectByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	claims := auth.GetUserClaims(ctx)
+	userContext := auth.GetUserContext(ctx)
 
-	if !claims.IsSuperadmin() && p.TeamID != claims.TeamID {
+	if !userContext.IsSuperadmin() && p.TeamID != userContext.TeamID {
 		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -45,29 +49,36 @@ func (s *projectService) GetProjectByID(ctx context.Context, id string) (*models
 		return nil, apperrors.New(http.StatusNotFound, "project not found")
 	}
 
-	return p.ToFetchDTO(), nil
+	project := p.ToFetchDTO()
+	project.ReportingURL = fmt.Sprintf("%s/api/v1/reports/%s/endpoint", s.baseURL, p.ID.String())
+
+	return project, nil
 }
 
 func (s *projectService) CreateProject(ctx context.Context, project *models.ProjectUpsertDTO) error {
-	claims := auth.GetUserClaims(ctx)
+	userContext := auth.GetUserContext(ctx)
+
 	p := project.ToProject()
-	if !claims.IsSuperadmin() {
-		p.TeamID = claims.TeamID
+
+	if !userContext.IsSuperadmin() && p.TeamID != userContext.TeamID {
+		return apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
+
 	if err := s.projectRepo.CreateProject(ctx, p); err != nil {
 		return apperrors.New(http.StatusInternalServerError, "failed to create project")
 	}
 	return nil
 }
 
-func (s *projectService) UpdateProject(ctx context.Context, id string, project *models.ProjectUpsertDTO) (*models.ProjectFetchDTO, error) {
-	claims := auth.GetUserClaims(ctx)
+func (s *projectService) UpdateProject(ctx context.Context, id uuid.UUID, project *models.ProjectUpsertDTO) (*models.ProjectFetchDTO, error) {
+	userContext := auth.GetUserContext(ctx)
+
 	p, err := s.projectRepo.GetProjectByID(ctx, id)
 	if err != nil {
 		return nil, apperrors.New(http.StatusNotFound, "failed to update project")
 	}
 
-	if !claims.IsSuperadmin() && p.TeamID != claims.TeamID {
+	if !userContext.IsSuperadmin() && p.TeamID != userContext.TeamID {
 		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -82,15 +93,18 @@ func (s *projectService) UpdateProject(ctx context.Context, id string, project *
 	return p.ToFetchDTO(), nil
 }
 
-func (s *projectService) DeleteProject(ctx context.Context, id string) error {
-	claims := auth.GetUserClaims(ctx)
+func (s *projectService) DeleteProject(ctx context.Context, id uuid.UUID) error {
+	userContext := auth.GetUserContext(ctx)
+
 	p, err := s.projectRepo.GetProjectByID(ctx, id)
 	if err != nil {
 		return apperrors.New(http.StatusNotFound, "project not found")
 	}
-	if !claims.IsSuperadmin() && p.TeamID != claims.TeamID {
+
+	if !userContext.IsSuperadmin() && p.TeamID != userContext.TeamID {
 		return apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
+
 	if err := s.projectRepo.DeleteProject(ctx, id); err != nil {
 		return apperrors.New(http.StatusInternalServerError, "failed to delete project")
 	}
@@ -98,21 +112,21 @@ func (s *projectService) DeleteProject(ctx context.Context, id string) error {
 }
 
 func (s *projectService) ListProjects(ctx context.Context) ([]*models.ProjectFetchDTO, error) {
-	var ps []*models.ProjectFetchDTO
+	var projects []*models.ProjectFetchDTO
 	var err error
 
-	claims := auth.GetUserClaims(ctx)
+	userContext := auth.GetUserContext(ctx)
 
-	if claims.IsSuperadmin() {
-		ps, err = s.projectRepo.ListProjects(ctx)
+	if userContext.IsSuperadmin() {
+		projects, err = s.projectRepo.ListProjects(ctx)
 	} else {
-		ps, err = s.projectRepo.ListProjectsByTeamID(ctx, claims.TeamID)
+		projects, err = s.projectRepo.ListProjectsByTeamID(ctx, userContext.TeamID)
 	}
 	if err != nil {
 		return nil, apperrors.New(http.StatusInternalServerError, "failed to list projects")
 	}
-	if ps == nil {
-		ps = []*models.ProjectFetchDTO{}
+	for _, p := range projects {
+		p.ReportingURL = fmt.Sprintf("%s/api/v1/reports/%s/endpoint", s.baseURL, p.ID.String())
 	}
-	return ps, nil
+	return projects, nil
 }

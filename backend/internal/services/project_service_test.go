@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/notFil/cspotlight/internal/auth"
 	"github.com/notFil/cspotlight/internal/models"
@@ -13,18 +12,18 @@ import (
 
 // MockProjectRepository is a manual mock for ProjectRepository
 type MockProjectRepository struct {
-	projects map[string]*models.Project
+	projects map[uuid.UUID]*models.Project
 }
 
 func NewMockProjectRepository() *MockProjectRepository {
 	return &MockProjectRepository{
-		projects: make(map[string]*models.Project),
+		projects: make(map[uuid.UUID]*models.Project),
 	}
 }
 
 func (m *MockProjectRepository) CreateProject(ctx context.Context, project *models.Project) error {
-	if project.ID == "" {
-		project.ID = uuid.New().String()
+	if project.ID == uuid.Nil {
+		project.ID = uuid.New()
 	}
 	if _, exists := m.projects[project.ID]; exists {
 		return errors.New("project already exists")
@@ -33,7 +32,7 @@ func (m *MockProjectRepository) CreateProject(ctx context.Context, project *mode
 	return nil
 }
 
-func (m *MockProjectRepository) GetProjectByID(ctx context.Context, id string) (*models.Project, error) {
+func (m *MockProjectRepository) GetProjectByID(ctx context.Context, id uuid.UUID) (*models.Project, error) {
 	if project, exists := m.projects[id]; exists {
 		return project, nil
 	}
@@ -48,7 +47,7 @@ func (m *MockProjectRepository) UpdateProject(ctx context.Context, project *mode
 	return errors.New("project not found")
 }
 
-func (m *MockProjectRepository) DeleteProject(ctx context.Context, id string) error {
+func (m *MockProjectRepository) DeleteProject(ctx context.Context, id uuid.UUID) error {
 	if _, exists := m.projects[id]; exists {
 		delete(m.projects, id)
 		return nil
@@ -64,7 +63,7 @@ func (m *MockProjectRepository) ListProjects(ctx context.Context) ([]*models.Pro
 	return projects, nil
 }
 
-func (m *MockProjectRepository) ListProjectsByTeamID(ctx context.Context, teamID string) ([]*models.ProjectFetchDTO, error) {
+func (m *MockProjectRepository) ListProjectsByTeamID(ctx context.Context, teamID uuid.UUID) ([]*models.ProjectFetchDTO, error) {
 	var projects []*models.ProjectFetchDTO
 	for _, project := range m.projects {
 		if project.TeamID == teamID {
@@ -74,6 +73,14 @@ func (m *MockProjectRepository) ListProjectsByTeamID(ctx context.Context, teamID
 	return projects, nil
 }
 
+func (m *MockProjectRepository) CreateProjectWithID(ctx context.Context, project *models.Project) error {
+	if project.ID == uuid.Nil {
+		project.ID = uuid.New()
+	}
+	m.projects[project.ID] = project
+	return nil
+}
+
 func TestCreateProject(t *testing.T) {
 	mockRepo := NewMockProjectRepository()
 	service := NewProjectService(mockRepo)
@@ -81,27 +88,27 @@ func TestCreateProject(t *testing.T) {
 	projectDTO := &models.ProjectUpsertDTO{
 		Name:        "Test Project",
 		Description: "A test project",
-		TeamID:      "team-1",
+		TeamID:      uuid.New(),
 	}
 
 	// Test as superadmin
-	adminClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "admin"}, Role: "superadmin"}
-	ctx := auth.ContextWithClaims(context.Background(), &adminClaims)
+	adminData := auth.AuthContext{Subject: uuid.New(), Role: "superadmin"}
+	ctx := auth.ContextWithUser(context.Background(), &adminData)
 	err := service.CreateProject(ctx, projectDTO)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
 	// Test as user (should force team ID)
-	userTeamID := "user-team-id"
-	userClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user"}, Role: "user", TeamID: userTeamID}
+	userTeamID := uuid.New()
+	userData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: userTeamID}
 	projectDTOUser := &models.ProjectUpsertDTO{
 		Name:        "User Project",
 		Description: "A user project",
-		TeamID:      "some-other-team", // Should be ignored/overwritten
+		TeamID:      uuid.New(), // Should be ignored/overwritten
 	}
 
-	ctx = auth.ContextWithClaims(context.Background(), &userClaims)
+	ctx = auth.ContextWithUser(context.Background(), &userData)
 	err = service.CreateProject(ctx, projectDTOUser)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -125,8 +132,8 @@ func TestGetProjectByID(t *testing.T) {
 	mockRepo := NewMockProjectRepository()
 	service := NewProjectService(mockRepo)
 
-	projectID := "proj-1"
-	teamID := "team-1"
+	projectID := uuid.New()
+	teamID := uuid.New()
 	project := &models.Project{
 		ID:     projectID,
 		Name:   "Test Project",
@@ -135,8 +142,8 @@ func TestGetProjectByID(t *testing.T) {
 	mockRepo.projects[projectID] = project
 
 	// Test authorized access (same team)
-	claims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user"}, Role: "user", TeamID: teamID}
-	ctx := auth.ContextWithClaims(context.Background(), &claims)
+	userData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: teamID}
+	ctx := auth.ContextWithUser(context.Background(), &userData)
 	fetchedProject, err := service.GetProjectByID(ctx, projectID)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -146,17 +153,17 @@ func TestGetProjectByID(t *testing.T) {
 	}
 
 	// Test unauthorized access (different team)
-	otherTeamID := "team-2"
-	otherClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "other"}, Role: "user", TeamID: otherTeamID}
-	ctx = auth.ContextWithClaims(context.Background(), &otherClaims)
+	otherTeamID := uuid.New()
+	otherData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: otherTeamID}
+	ctx = auth.ContextWithUser(context.Background(), &otherData)
 	_, err = service.GetProjectByID(ctx, projectID)
 	if err == nil {
 		t.Fatal("expected unauthorized error, got nil")
 	}
 
 	// Test superadmin access
-	adminClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "admin"}, Role: "superadmin"}
-	ctx = auth.ContextWithClaims(context.Background(), &adminClaims)
+	adminData := auth.AuthContext{Subject: uuid.New(), Role: "superadmin"}
+	ctx = auth.ContextWithUser(context.Background(), &adminData)
 	fetchedProjectAdmin, err := service.GetProjectByID(ctx, projectID)
 	if err != nil {
 		t.Fatalf("expected no error for admin, got %v", err)
@@ -170,8 +177,8 @@ func TestUpdateProject(t *testing.T) {
 	mockRepo := NewMockProjectRepository()
 	service := NewProjectService(mockRepo)
 
-	projectID := "proj-update"
-	teamID := "team-1"
+	projectID := uuid.New()
+	teamID := uuid.New()
 	project := &models.Project{
 		ID:     projectID,
 		Name:   "Original Name",
@@ -184,8 +191,8 @@ func TestUpdateProject(t *testing.T) {
 	}
 
 	// Test authorized update
-	claims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user"}, Role: "user", TeamID: teamID}
-	ctx := auth.ContextWithClaims(context.Background(), &claims)
+	userData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: teamID}
+	ctx := auth.ContextWithUser(context.Background(), &userData)
 	updatedProject, err := service.UpdateProject(ctx, projectID, updateDTO)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -195,9 +202,9 @@ func TestUpdateProject(t *testing.T) {
 	}
 
 	// Test unauthorized update
-	otherTeamID := "team-2"
-	otherClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "other"}, Role: "user", TeamID: otherTeamID}
-	ctx = auth.ContextWithClaims(context.Background(), &otherClaims)
+	otherTeamID := uuid.New()
+	otherData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: otherTeamID}
+	ctx = auth.ContextWithUser(context.Background(), &otherData)
 	_, err = service.UpdateProject(ctx, projectID, updateDTO)
 	if err == nil {
 		t.Fatal("expected unauthorized error, got nil")
@@ -208,8 +215,8 @@ func TestDeleteProject(t *testing.T) {
 	mockRepo := NewMockProjectRepository()
 	service := NewProjectService(mockRepo)
 
-	projectID := "proj-delete"
-	teamID := "team-1"
+	projectID := uuid.New()
+	teamID := uuid.New()
 	project := &models.Project{
 		ID:     projectID,
 		Name:   "To Delete",
@@ -218,17 +225,17 @@ func TestDeleteProject(t *testing.T) {
 	mockRepo.projects[projectID] = project
 
 	// Test unauthorized delete
-	otherTeamID := "team-2"
-	otherClaims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "other"}, Role: "user", TeamID: otherTeamID}
-	ctx := auth.ContextWithClaims(context.Background(), &otherClaims)
+	otherTeamID := uuid.New()
+	otherData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: otherTeamID}
+	ctx := auth.ContextWithUser(context.Background(), &otherData)
 	err := service.DeleteProject(ctx, projectID)
 	if err == nil {
 		t.Fatal("expected unauthorized error, got nil")
 	}
 
 	// Test authorized delete
-	claims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user"}, Role: "user", TeamID: teamID}
-	ctx = auth.ContextWithClaims(context.Background(), &claims)
+	userData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: teamID}
+	ctx = auth.ContextWithUser(context.Background(), &userData)
 	err = service.DeleteProject(ctx, projectID)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)

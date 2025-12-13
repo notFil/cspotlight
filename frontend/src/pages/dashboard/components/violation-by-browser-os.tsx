@@ -2,8 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { BROWSER_COLORS, OS_COLORS } from "@/constants";
 import { useReportBrowserOSViolation } from "@/hooks/use-reports";
-import { LoadingPage } from "@/components/loading-page";
-import { ErrorPage } from "@/components/error-page";
+import { LoadingPage } from "@/components/common/loading-page";
+import { ErrorPage } from "@/components/common/error-page";
 
 
 const ViolationByBrowserOS = ({ projectId }: { projectId: string }) => {

@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { Activity, Star } from "lucide-react";
-import { LoadingPage } from "@/components/loading-page";
-import { ErrorPage } from "@/components/error-page";
+import { Activity, Star, Copy } from "lucide-react";
+import { LoadingPage } from "@/components/common/loading-page";
+import { ErrorPage } from "@/components/common/error-page";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,6 +20,7 @@ import { useProjects } from "@/hooks/use-projects";
 import { useSetDefaultProject } from "@/hooks/use-users";
 import { useAuth } from "@/hooks/use-auth";
 import { timeAgo } from "@/utils/date";
+import { toast } from "sonner";
 
 const Projects = () => {
   const navigate = useNavigate();
@@ -39,6 +40,11 @@ const Projects = () => {
     if (user?.id) {
       setDefaultProject.mutate({ id: user.id, data: projectId });
     }
+  };
+
+  const handleCopyUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast.success("Reporting URL copied to clipboard");
   };
 
   return (
@@ -80,9 +86,21 @@ const Projects = () => {
                   <div className="space-y-4">
                     <div className="text-sm">
                       <p className="text-muted-foreground mb-1">Reporting URL</p>
-                      <code className="bg-muted px-2 py-1 rounded text-xs block truncate">
-                        {project.reportingUrl || "N/A"}
-                      </code>
+                      <div className="flex items-center gap-2">
+                        <code className="bg-muted px-2 py-1 rounded text-xs block truncate flex-1">
+                          {project.reportingUrl || "N/A"}
+                        </code>
+                        {project.reportingUrl && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => project.reportingUrl && handleCopyUrl(project.reportingUrl)}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center text-xs text-muted-foreground">
                       <Activity className="mr-1 h-3 w-3" />

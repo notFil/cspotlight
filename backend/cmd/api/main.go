@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/notFil/cspotlight/config"
-	"github.com/notFil/cspotlight/internal/database"
 	"github.com/notFil/cspotlight/internal/logger"
+	"github.com/notFil/cspotlight/internal/store"
 	"go.uber.org/zap"
 
 	"github.com/notFil/cspotlight/internal/router"
@@ -21,9 +21,11 @@ func main() {
 
 	logger.Logger.Info("Starting server on port %d", zap.Int("port", port))
 
-	db := database.ConnectDB(cfg.Store)
+	db := store.ConnectDB(cfg.Store.DSN)
 
-	router := router.SetUpRouter(db, cfg.JWTAuth)
+	cache := store.NewRedis(cfg.Store.Redis)
+
+	router := router.SetUpRouter(db, cache, cfg.Server.BaseURL, cfg.Token)
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),

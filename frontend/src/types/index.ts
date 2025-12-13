@@ -98,8 +98,8 @@ export interface APIResponse<T> {
   error?: string;
 }
 
-export interface ReportGraphDataDTO {
-  day: string;
+export interface ReportGraphData {
+  date: string;
   violations: Violation[];
 }
 
@@ -108,7 +108,7 @@ export interface Violation {
   count: number;
 }
 
-export interface ReportMetricsDTO {
+export interface ReportStatsMetrics {
   totalViolations: MetricSummary;
   totalCriticalViolations: MetricSummary;
   affectedDomains: MetricSummary;
@@ -120,7 +120,7 @@ export interface MetricSummary {
   change: number;
 }
 
-export interface ReportViolationTrendDTO extends Array<ViolationTrend> { }
+export interface ReportViolationTrends extends Array<ViolationTrend> { }
 
 export interface ViolationTrend {
   day: string;
@@ -129,13 +129,40 @@ export interface ViolationTrend {
   medium: number;
 }
 
-export interface ReportBrowserOSViolationDTO {
-  browser: StatsItem;
-  os: StatsItem;
+export interface ReportTopViolatedDirectives {
+  totalViolations: number;
+  violations: ViolatedDirectives[];
+}
+
+export interface ViolatedDirectives {
+  directive: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ReportTopViolatedDocumentURLs extends Array<ViolatedDocumentURLs> { }
+
+export interface ViolatedDocumentURLs {
+  url: string;
+  count: number;
+}
+
+export interface ReportBrowserOSViolations {
+  browser: StatsItem[];
+  os: StatsItem[];
 }
 
 export interface StatsItem {
   name: string;
   value: number;
+}
+
+export interface ReportTopViolationSources extends Array<ViolationSource> { }
+
+export interface ViolationSource {
+  blockedURL: string;
+  count: number;
+  severity: string;
+  lastSeen: string;
 }
 

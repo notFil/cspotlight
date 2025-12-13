@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/uuid"
 	apperrors "github.com/notFil/cspotlight/internal/errors"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/repositories"
@@ -11,9 +12,9 @@ import (
 
 type TeamService interface {
 	CreateTeam(ctx context.Context, user *models.TeamUpsertDTO) error
-	GetTeamByID(ctx context.Context, id string) (*models.TeamFetchDTO, error)
-	UpdateTeam(ctx context.Context, id string, team *models.TeamUpsertDTO) (*models.TeamFetchDTO, error)
-	DeleteTeam(ctx context.Context, id string) error
+	GetTeamByID(ctx context.Context, id uuid.UUID) (*models.TeamFetchDTO, error)
+	UpdateTeam(ctx context.Context, id uuid.UUID, team *models.TeamUpsertDTO) (*models.TeamFetchDTO, error)
+	DeleteTeam(ctx context.Context, id uuid.UUID) error
 	ListTeams(ctx context.Context) ([]*models.TeamFetchDTO, error)
 }
 
@@ -35,7 +36,7 @@ func (s *teamService) CreateTeam(ctx context.Context, team *models.TeamUpsertDTO
 	return nil
 }
 
-func (s *teamService) GetTeamByID(ctx context.Context, id string) (*models.TeamFetchDTO, error) {
+func (s *teamService) GetTeamByID(ctx context.Context, id uuid.UUID) (*models.TeamFetchDTO, error) {
 	t, err := s.teamRepo.GetTeamByID(ctx, id)
 	if err != nil {
 		return nil, apperrors.New(http.StatusNotFound, "team not found")
@@ -46,7 +47,7 @@ func (s *teamService) GetTeamByID(ctx context.Context, id string) (*models.TeamF
 	return t.ToFetchDTO(), nil
 }
 
-func (s *teamService) UpdateTeam(ctx context.Context, id string, team *models.TeamUpsertDTO) (*models.TeamFetchDTO, error) {
+func (s *teamService) UpdateTeam(ctx context.Context, id uuid.UUID, team *models.TeamUpsertDTO) (*models.TeamFetchDTO, error) {
 	t, err := s.teamRepo.GetTeamByID(ctx, id)
 	if err != nil {
 		return nil, apperrors.New(http.StatusNotFound, "team not found")
@@ -59,7 +60,7 @@ func (s *teamService) UpdateTeam(ctx context.Context, id string, team *models.Te
 	return t.ToFetchDTO(), nil
 }
 
-func (s *teamService) DeleteTeam(ctx context.Context, id string) error {
+func (s *teamService) DeleteTeam(ctx context.Context, id uuid.UUID) error {
 	if err := s.teamRepo.DeleteTeam(ctx, id); err != nil {
 		return apperrors.New(http.StatusInternalServerError, "failed to delete team")
 	}

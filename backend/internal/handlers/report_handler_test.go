@@ -10,22 +10,23 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/pagination"
 )
 
 type MockReportService struct {
-	BatchCreateReportsFunc func(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID string) error
+	BatchCreateReportsFunc func(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID uuid.UUID) error
 	mu                     sync.Mutex
 	batchCalls             int
 	receivedReports        []*models.CSPReportCreateDTO
 }
 
-func (m *MockReportService) ListReportsByProjectID(ctx context.Context, projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+func (m *MockReportService) ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
 	return nil, nil, nil
 }
 
-func (m *MockReportService) BatchCreateReports(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID string) error {
+func (m *MockReportService) BatchCreateReports(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID uuid.UUID) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.batchCalls++
@@ -45,11 +46,31 @@ func (m *MockReportService) BatchCreateReports(ctx context.Context, reports []*m
 	return nil
 }
 
-func (m *MockReportService) GetReportGraphData(ctx context.Context, projectID string) (*models.ReportGraphDataDTO, error) {
+func (m *MockReportService) GetReportGraphData(ctx context.Context, projectID uuid.UUID) (*models.ReportGraphDataDTO, error) {
 	return nil, nil
 }
 
-func (m *MockReportService) GetReportSummaryStats(ctx context.Context, projectID string) (*models.ReportMetricsDTO, error) {
+func (m *MockReportService) GetReportSummaryStats(ctx context.Context, projectID uuid.UUID) (*models.ReportMetricsDTO, error) {
+	return nil, nil
+}
+
+func (m *MockReportService) GetReportViolationTrend(ctx context.Context, projectID uuid.UUID) (*models.ReportViolationTrendDTO, error) {
+	return nil, nil
+}
+
+func (m *MockReportService) GetReportTopViolatedDirectives(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolatedDirectivesDTO, error) {
+	return nil, nil
+}
+
+func (m *MockReportService) GetReportSoftwareStats(ctx context.Context, projectID uuid.UUID) (*models.ReportSoftwareStatsDTO, error) {
+	return nil, nil
+}
+
+func (m *MockReportService) GetReportTopViolatedDocumentURLs(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolatedDocumentURLDTO, error) {
+	return nil, nil
+}
+
+func (m *MockReportService) GetReportTopViolationSources(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolationSourcesDTO, error) {
 	return nil, nil
 }
 
@@ -64,10 +85,10 @@ func TestReportHandler_CreateReport_Batching(t *testing.T) {
 	for i := 0; i < totalReports; i++ {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "projectID", Value: "proj-1"}}
+		c.Params = gin.Params{{Key: "projectID", Value: "00000000-0000-0000-0000-000000000001"}}
 
 		body := `{"reportBody": {"blockedURL": "http://evil.com"}, "type": "csp-report"}`
-		c.Request = httptest.NewRequest("POST", "/reports/proj-1", strings.NewReader(body))
+		c.Request = httptest.NewRequest("POST", "/reports/00000000-0000-0000-0000-000000000001", strings.NewReader(body))
 		c.Request.RemoteAddr = "1.2.3.4:1234"
 
 		handler.CreateReport(c)

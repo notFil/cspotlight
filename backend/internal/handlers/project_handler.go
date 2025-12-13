@@ -4,10 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	apperrors "github.com/notFil/cspotlight/internal/errors"
 	"github.com/notFil/cspotlight/internal/logger"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/response"
 	"github.com/notFil/cspotlight/internal/services"
+	"github.com/notFil/cspotlight/internal/util"
 	"go.uber.org/zap"
 )
 
@@ -36,9 +39,17 @@ func (h *ProjectHandler) GetProjectByID(c *gin.Context) {
 
 	log := logger.FromContext(ctx)
 
-	id := c.Param("id")
+	var params util.ProjectParams
 
-	project, err := h.projectService.GetProjectByID(ctx, id)
+	if err := c.ShouldBindUri(&params); err != nil {
+		log.Error("failed to bind uri", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request parameters"))
+		return
+	}
+
+	projectID := uuid.MustParse(params.ProjectID)
+
+	project, err := h.projectService.GetProjectByID(ctx, projectID)
 	if err != nil {
 		log.Error("failed to fetch project", zap.Error(err))
 		response.ErrorResponse(c, http.StatusInternalServerError, "failed to fetch project")
@@ -46,7 +57,7 @@ func (h *ProjectHandler) GetProjectByID(c *gin.Context) {
 	}
 
 	if project == nil {
-		log.Warn("project not found", zap.String("project_id", id))
+		log.Warn("project not found", zap.String("project_id", projectID.String()))
 		response.ErrorResponse(c, http.StatusNotFound, "project not found")
 		return
 	}
@@ -60,10 +71,10 @@ func (h *ProjectHandler) GetProjectByID(c *gin.Context) {
 // @Tags         projects
 // @Accept       json
 // @Produce      json
-// @Param        body  body      models.ProjectUpsertDTO  true  "Project info"
-// @Success      201   {object}  map[string]interface{} "Project created successfully"
-// @Failure      400   {object}  map[string]interface{} "Invalid request payload"
-// @Failure      500   {object}  map[string]interface{} "Failed to create project"
+// @Param        body  body      models.ProjectUpsertDTO  true  "project info"
+// @Success      201   {object}  map[string]interface{} "project created successfully"
+// @Failure      400   {object}  map[string]interface{} "invalid request payload"
+// @Failure      500   {object}  map[string]interface{} "failed to create project"
 // @Router       /api/projects [post]
 func (h *ProjectHandler) CreateProject(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -73,14 +84,14 @@ func (h *ProjectHandler) CreateProject(c *gin.Context) {
 	project := &models.ProjectUpsertDTO{}
 	if err := c.BindJSON(project); err != nil {
 		log.Warn("invalid request payload", zap.Error(err))
-		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		response.ErrorResponse(c, http.StatusBadRequest, "invalid request payload")
 		return
 	}
 
 	err := h.projectService.CreateProject(ctx, project)
 	if err != nil {
 		log.Error("failed to create project", zap.Error(err))
-		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to create project")
+		response.ErrorResponse(c, http.StatusInternalServerError, "failed to create project")
 		return
 	}
 
@@ -93,34 +104,42 @@ func (h *ProjectHandler) CreateProject(c *gin.Context) {
 // @Tags         projects
 // @Accept       json
 // @Produce      json
-// @Param        id    path      string                  true  "Project ID"
-// @Param        body  body      models.ProjectUpsertDTO  true  "Project info"
-// @Success      200   {object}  map[string]interface{} "Project updated successfully"
-// @Failure      400   {object}  map[string]interface{} "Invalid request payload"
-// @Failure      500   {object}  map[string]interface{} "Failed to update project"
-// @Router       /api/projects/{id} [put]
+// @Param        projectID    path      string                  true  "project ID"
+// @Param        body  body      models.ProjectUpsertDTO  true  "project info"
+// @Success      200   {object}  map[string]interface{} "project updated successfully"
+// @Failure      400   {object}  map[string]interface{} "invalid request payload"
+// @Failure      500   {object}  map[string]interface{} "failed to update project"
+// @Router       /api/projects/{projectID} [put]
 func (h *ProjectHandler) UpdateProject(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	log := logger.FromContext(ctx)
 
-	id := c.Param("id")
+	var params util.ProjectParams
+
+	if err := c.ShouldBindUri(&params); err != nil {
+		log.Error("failed to bind uri", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request parameters"))
+		return
+	}
+
+	id := uuid.MustParse(params.ProjectID)
 
 	project := &models.ProjectUpsertDTO{}
 	if err := c.BindJSON(project); err != nil {
 		log.Warn("invalid request payload", zap.Error(err))
-		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		response.ErrorResponse(c, http.StatusBadRequest, "invalid request payload")
 		return
 	}
 
 	updatedProject, err := h.projectService.UpdateProject(ctx, id, project)
 	if err != nil {
 		log.Error("failed to update project", zap.Error(err))
-		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to update project")
+		response.ErrorResponse(c, http.StatusInternalServerError, "failed to update project")
 		return
 	}
 
-	response.Success(c, http.StatusOK, "", updatedProject)
+	response.Success(c, http.StatusOK, "project updated successfully", updatedProject)
 }
 
 // DeleteProject godoc
@@ -128,24 +147,28 @@ func (h *ProjectHandler) UpdateProject(c *gin.Context) {
 // @Description  Delete a project by its ID
 // @Tags         projects
 // @Produce      json
-// @Param        id   path      string  true  "Project ID"
-// @Success      200  {object}  map[string]interface{} "Project deleted successfully"
+// @Param        projectID   path      string  true  "project ID"
+// @Success      200  {object}  map[string]interface{} "project deleted successfully"
 // @Failure      403  {object}  map[string]interface{} "failed to delete project"
-// @Router       /api/projects/{id} [delete]
+// @Router       /api/projects/{projectID} [delete]
 func (h *ProjectHandler) DeleteProject(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	log := logger.FromContext(ctx)
 
-	id := c.Param("id")
+	var params util.ProjectParams
 
-	if err := h.projectService.DeleteProject(ctx, id); err != nil {
+	if err := c.ShouldBindUri(&params); err != nil {
+		log.Error("failed to bind uri", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request parameters"))
+		return
+	}
+
+	projectID := uuid.MustParse(params.ProjectID)
+
+	if err := h.projectService.DeleteProject(ctx, projectID); err != nil {
 		log.Error("failed to delete project", zap.Error(err))
-		status := http.StatusInternalServerError
-		if err.Error() == "unauthorized" {
-			status = http.StatusForbidden
-		}
-		response.ErrorResponse(c, status, "failed to delete project")
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid project id"))
 		return
 	}
 
@@ -167,7 +190,7 @@ func (h *ProjectHandler) ListProjects(c *gin.Context) {
 	projects, err := h.projectService.ListProjects(ctx)
 	if err != nil {
 		log.Error("failed to list projects", zap.Error(err))
-		response.ErrorResponse(c, http.StatusInternalServerError, "failed to list projects")
+		c.Error(apperrors.New(http.StatusInternalServerError, "failed to list projects"))
 		return
 	}
 

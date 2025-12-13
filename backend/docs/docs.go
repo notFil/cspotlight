@@ -15,6 +15,314 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/analytics/{projectID}/graph-data": {
+            "get": {
+                "description": "Get graph data for reports of a project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "analytics"
+                ],
+                "summary": "Get report graph data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Graph data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get report graph data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/analytics/{projectID}/software-stats": {
+            "get": {
+                "description": "Get software statistics (browser/OS) for reports of a project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "analytics"
+                ],
+                "summary": "Get report software stats",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Software stats",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get report software stats",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/analytics/{projectID}/summary-stats": {
+            "get": {
+                "description": "Get summary statistics for reports of a project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "analytics"
+                ],
+                "summary": "Get report summary stats",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Summary stats",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get report summary stats",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/analytics/{projectID}/violated-directives": {
+            "get": {
+                "description": "Get top violated directives for a project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "analytics"
+                ],
+                "summary": "Get top violated directives",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Top violated directives",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get top violated directives",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/analytics/{projectID}/violated-document-urls": {
+            "get": {
+                "description": "Get top violated document URLs for a project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "analytics"
+                ],
+                "summary": "Get top violated document URLs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Top violated document URLs",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get top violated document URLs",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/analytics/{projectID}/violation-sources": {
+            "get": {
+                "description": "Get top violation sources for a project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "analytics"
+                ],
+                "summary": "Get top violation sources",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Top violation sources",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get top violation sources",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/analytics/{projectID}/violation-trend": {
+            "get": {
+                "description": "Get violation trend for a project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "analytics"
+                ],
+                "summary": "Get report violation trend",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Violation trend",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get report violation trend",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/login": {
             "post": {
                 "description": "Authenticates a user and returns a JWT token",
@@ -64,6 +372,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/auth/refresh": {
+            "post": {
+                "description": "Refreshes the JWT token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh token",
+                "parameters": [
+                    {
+                        "description": "Refresh token request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RefreshTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "token refreshed successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "invalid refresh token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to refresh token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/register": {
             "post": {
                 "description": "Registers a new user",
@@ -84,7 +441,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.UserCreateDTO"
+                            "$ref": "#/definitions/models.UserRegisterDTO"
                         }
                     }
                 ],
@@ -113,6 +470,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/auth/signout": {
+            "post": {
+                "description": "Signs out the user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Sign out",
+                "responses": {
+                    "200": {
+                        "description": "signed out successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to sign out",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/projects": {
             "get": {
                 "description": "Get a list of all projects",
@@ -131,8 +519,8 @@ const docTemplate = `{
                             "additionalProperties": true
                         }
                     },
-                    "500": {
-                        "description": "Failed to list projects",
+                    "403": {
+                        "description": "failed to list projects",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -154,7 +542,7 @@ const docTemplate = `{
                 "summary": "Create project",
                 "parameters": [
                     {
-                        "description": "Project info",
+                        "description": "project info",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -165,21 +553,21 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Project created successfully",
+                        "description": "project created successfully",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid request payload",
+                        "description": "invalid request payload",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "500": {
-                        "description": "Failed to create project",
+                        "description": "failed to create project",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -223,7 +611,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/api/projects/{projectID}": {
             "put": {
                 "description": "Update an existing project",
                 "consumes": [
@@ -239,13 +629,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Project ID",
-                        "name": "id",
+                        "description": "project ID",
+                        "name": "projectID",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Project info",
+                        "description": "project info",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -256,21 +646,21 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Project updated successfully",
+                        "description": "project updated successfully",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid request payload",
+                        "description": "invalid request payload",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "500": {
-                        "description": "Failed to update project",
+                        "description": "failed to update project",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -290,22 +680,130 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Project ID",
-                        "name": "id",
+                        "description": "project ID",
+                        "name": "projectID",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Project deleted successfully",
+                        "description": "project deleted successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "failed to delete project",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/reports/{projectID}": {
+            "get": {
+                "description": "Get a list of reports for a project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "List reports by project ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of reports",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "500": {
-                        "description": "Failed to delete project",
+                        "description": "Failed to list reports",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/reports/{projectID}/endpoint": {
+            "post": {
+                "description": "Create a new CSP report",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "Create report",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Report info",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CSPReportCreateDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Invalid request payload",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to create report",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -355,7 +853,7 @@ const docTemplate = `{
                 "summary": "Create team",
                 "parameters": [
                     {
-                        "description": "Team info",
+                        "description": "team info",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -366,21 +864,21 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Team created successfully",
+                        "description": "team created successfully",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid request payload",
+                        "description": "invalid request payload",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "500": {
-                        "description": "Failed to create team",
+                        "description": "failed to create team",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -389,7 +887,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/teams/{id}": {
+        "/api/teams/{teamID}": {
             "get": {
                 "description": "Get details of a team by its ID",
                 "produces": [
@@ -403,7 +901,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Team ID",
-                        "name": "id",
+                        "name": "teamID",
                         "in": "path",
                         "required": true
                     }
@@ -441,7 +939,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Team ID",
-                        "name": "id",
+                        "name": "teamID",
                         "in": "path",
                         "required": true
                     },
@@ -492,7 +990,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Team ID",
-                        "name": "id",
+                        "name": "teamID",
                         "in": "path",
                         "required": true
                     }
@@ -536,14 +1034,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of users by team",
+                        "description": "list of users by team",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "500": {
-                        "description": "Failed to list users by team ID",
+                        "description": "failed to list users by team ID",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -578,47 +1076,28 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Create a new user",
-                "consumes": [
-                    "application/json"
-                ],
+            }
+        },
+        "/api/users/me": {
+            "get": {
+                "description": "Get details of the current user",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "users"
                 ],
-                "summary": "Create user",
-                "parameters": [
-                    {
-                        "description": "User info",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.UserCreateDTO"
-                        }
-                    }
-                ],
+                "summary": "Get current user",
                 "responses": {
-                    "201": {
-                        "description": "User created successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request payload",
+                    "200": {
+                        "description": "User details",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "500": {
-                        "description": "Failed to create user",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -627,7 +1106,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/users/{id}": {
+        "/api/users/{userID}": {
             "get": {
                 "description": "Get details of a user by their ID",
                 "produces": [
@@ -641,21 +1120,21 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "User ID",
-                        "name": "id",
+                        "name": "userID",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "User details",
+                        "description": "user details",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "internal server error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -695,21 +1174,21 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "User updated successfully",
+                        "description": "user updated successfully",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid request payload",
+                        "description": "invalid request payload",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "500": {
-                        "description": "Failed to update user",
+                        "description": "failed to update user",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -737,14 +1216,166 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "User deleted successfully",
+                        "description": "user deleted successfully",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "500": {
-                        "description": "Failed to delete user",
+                        "description": "failed to delete user",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/{userID}/image": {
+            "patch": {
+                "description": "Changes the image of a user",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Change image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Image file",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "image changed successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to change image",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/{userID}/password": {
+            "patch": {
+                "description": "Changes the password of a user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Change password",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Change password request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ChangePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "password changed successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to change password",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/{userID}/project": {
+            "patch": {
+                "description": "Sets the default project for a user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Set default project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Set default project request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SetDefaultProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "default project set successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request payload",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to set default project",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -770,6 +1401,45 @@ const docTemplate = `{
                 }
             }
         },
+        "models.CSPReportCreateDTO": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "body": {
+                    "$ref": "#/definitions/models.ReportBody"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "user_agent": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ChangePasswordRequest": {
+            "type": "object",
+            "required": [
+                "confirmNewPassword",
+                "currentPassword",
+                "newPassword"
+            ],
+            "properties": {
+                "confirmNewPassword": {
+                    "type": "string"
+                },
+                "currentPassword": {
+                    "type": "string"
+                },
+                "newPassword": {
+                    "type": "string"
+                }
+            }
+        },
         "models.ProjectUpsertDTO": {
             "type": "object",
             "required": [
@@ -780,10 +1450,73 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "disabled": {
+                    "type": "boolean"
+                },
                 "name": {
                     "type": "string"
                 },
                 "teamId": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.RefreshTokenRequest": {
+            "type": "object",
+            "required": [
+                "refreshToken"
+            ],
+            "properties": {
+                "refreshToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ReportBody": {
+            "type": "object",
+            "properties": {
+                "blockedURL": {
+                    "type": "string"
+                },
+                "columnNumber": {
+                    "type": "integer"
+                },
+                "disposition": {
+                    "type": "string"
+                },
+                "documentURL": {
+                    "type": "string"
+                },
+                "effectiveDirective": {
+                    "type": "string"
+                },
+                "lineNumber": {
+                    "type": "integer"
+                },
+                "originalPolicy": {
+                    "type": "string"
+                },
+                "referrer": {
+                    "type": "string"
+                },
+                "sample": {
+                    "type": "string"
+                },
+                "scriptSample": {
+                    "type": "string"
+                },
+                "sourceFile": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.SetDefaultProjectRequest": {
+            "type": "object",
+            "required": [
+                "projectID"
+            ],
+            "properties": {
+                "projectID": {
                     "type": "string"
                 }
             }
@@ -802,17 +1535,20 @@ const docTemplate = `{
                 }
             }
         },
-        "models.UserCreateDTO": {
+        "models.UserRegisterDTO": {
             "type": "object",
             "required": [
+                "confirmPassword",
                 "email",
                 "firstName",
                 "lastName",
                 "password",
-                "role",
                 "username"
             ],
             "properties": {
+                "confirmPassword": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
@@ -823,12 +1559,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
-                },
-                "teamId": {
                     "type": "string"
                 },
                 "username": {
@@ -846,6 +1576,9 @@ const docTemplate = `{
                 "username"
             ],
             "properties": {
+                "disabled": {
+                    "type": "boolean"
+                },
                 "email": {
                     "type": "string"
                 },

@@ -9,15 +9,22 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useReportTopViolatedDocumentURLs } from "@/hooks/use-reports";
+import { LoadingPage } from "@/components/common/loading-page";
+import { ErrorPage } from "@/components/common/error-page";
 
-const TopViolatedDocumentUris = () => {
-  const data = [
-    { uri: "https://example.com/login", count: 1250 },
-    { uri: "https://example.com/checkout", count: 980 },
-    { uri: "https://example.com/dashboard", count: 750 },
-    { uri: "https://example.com/profile", count: 450 },
-    { uri: "https://example.com/settings", count: 200 },
-  ];
+const TopViolatedDocumentUrls = ({ projectId }: { projectId: string }) => {
+  const { data, isLoading, error } = useReportTopViolatedDocumentURLs(projectId);
+
+  if (isLoading) {
+    return <LoadingPage className="h-48" />;
+  }
+
+  if (error || !data) {
+    return <ErrorPage error={error as Error} className="h-48" />;
+  }
+
+  const topViolatedDocumentUrls = data?.data;
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -41,19 +48,19 @@ const TopViolatedDocumentUris = () => {
         <CardTitle>Top Violated Document URIs</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px] w-full mt-4">
+        <div className="h-[230px] w-full mt-4">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               layout="vertical"
-              data={data}
+              data={topViolatedDocumentUrls}
               margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" horizontal={false} className="stroke-border" opacity={0.3} />
               <XAxis type="number" hide />
               <YAxis
-                dataKey="uri"
+                dataKey="url"
                 type="category"
-                width={80}
+                width={150}
                 tick={{ fontSize: 12 }}
                 className="text-muted-foreground"
                 tickFormatter={(value) => {
@@ -81,4 +88,4 @@ const TopViolatedDocumentUris = () => {
   );
 };
 
-export default TopViolatedDocumentUris;
+export default TopViolatedDocumentUrls;

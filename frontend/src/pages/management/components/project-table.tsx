@@ -8,13 +8,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Plus } from "lucide-react";
+import { Edit, Trash2, Plus, Copy } from "lucide-react";
+import { toast } from "sonner";
 import type { Project } from "@/types";
 import { ProjectModal } from "./project-modal";
 import { DeleteConfirmModal } from "./delete-confirmation-modal";
 import { useProjects, useCreateProject, useUpdateProject, useDeleteProject } from "@/hooks/use-projects";
-import { LoadingPage } from "@/components/loading-page";
-import { ErrorPage } from "@/components/error-page";
+import { LoadingPage } from "@/components/common/loading-page";
+import { ErrorPage } from "@/components/common/error-page";
 
 
 export const ProjectTable = () => {
@@ -60,6 +61,11 @@ export const ProjectTable = () => {
     }
   };
 
+  const handleCopyUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast.success("Reporting URL copied to clipboard");
+  };
+
   if (isLoading) {
     return <LoadingPage />;
   }
@@ -98,7 +104,21 @@ export const ProjectTable = () => {
               <TableRow key={project.id}>
                 <TableCell className="font-medium">{project.name}</TableCell>
                 <TableCell>{project.teamName}</TableCell>
-                <TableCell className="max-w-xs truncate">{project.reportingUrl}</TableCell>
+                <TableCell className="max-w-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate" title={project.reportingUrl}>
+                      {project.reportingUrl}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 shrink-0"
+                      onClick={() => project.reportingUrl && handleCopyUrl(project.reportingUrl)}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </TableCell>
                 <TableCell>{project.lastActive || 'No recent activity'}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" onClick={() => handleEdit(project)}>

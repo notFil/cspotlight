@@ -18,8 +18,8 @@ import {
     Legend,
     ResponsiveContainer
 } from 'recharts';
-import { LoadingPage } from '@/components/loading-page';
-import { ErrorPage } from '@/components/error-page';
+import { LoadingPage } from '@/components/common/loading-page';
+import { ErrorPage } from '@/components/common/error-page';
 
 import { CSP_DIRECTIVE_COLORS } from '@/constants';
 
@@ -47,25 +47,43 @@ const ReportsGraph = ({ projectId }: { projectId: string }) => {
         const rawData = graphData?.data;
 
         if (!rawData || !Array.isArray(rawData)) {
-            console.warn('ReportsGraph: rawData is not an array', rawData);
+            console.warn('ReportsGraph: data is not an array', rawData);
             return [];
         }
 
-        // Transform API data to Recharts format
-        return rawData
-            .map((point: any) => {
-                const dataPoint: any = {
-                    day: point.day,
-                };
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-                if (point.violations) {
-                    point.violations.forEach((v: any) => {
-                        dataPoint[v.directive] = v.count;
-                    });
-                }
-                return dataPoint;
-            })
-            .slice(-duration);
+        const cutoffDate = new Date(today);
+        cutoffDate.setDate(today.getDate() - duration);
+
+
+        const filteredData = rawData
+            .filter((point: any) => {
+                if (!point.date) return false;
+
+                const [year, month, day] = point.date.split('-').map(Number);
+                const pointDate = new Date(year, month - 1, day);
+
+                return pointDate >= cutoffDate;
+            });
+
+        return filteredData.map((point: any) => {
+            const [year, month, day] = point.date.split('-').map(Number);
+            const dateObj = new Date(year, month - 1, day);
+            const displayDay = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+
+            const dataPoint: any = {
+                day: displayDay,
+            };
+
+            if (point.violations) {
+                point.violations.forEach((v: any) => {
+                    dataPoint[v.directive] = v.count;
+                });
+            }
+            return dataPoint;
+        });
     }, [graphData, duration, isLoading, error]);
 
     return (

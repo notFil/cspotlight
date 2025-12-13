@@ -3,7 +3,10 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/google/uuid"
+	apperrors "github.com/notFil/cspotlight/internal/errors"
 	"github.com/notFil/cspotlight/internal/response"
+	"github.com/notFil/cspotlight/internal/util"
 
 	"github.com/gin-gonic/gin"
 	"github.com/notFil/cspotlight/internal/logger"
@@ -28,22 +31,30 @@ func NewTeamHandler(teamService services.TeamService) *TeamHandler {
 // @Description  Get details of a team by its ID
 // @Tags         teams
 // @Produce      json
-// @Param        id   path      string  true  "Team ID"
+// @Param        teamID   path      string  true  "Team ID"
 // @Success      200  {object}  map[string]interface{} "Team details"
 // @Failure      500  {object}  map[string]interface{} "Internal server error"
-// @Router       /api/teams/{id} [get]
+// @Router       /api/teams/{teamID} [get]
 func (h *TeamHandler) GetTeamByID(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	log := logger.FromContext(ctx)
 
-	id := c.Param("id")
+	var params util.TeamParams
 
-	log.Info("fetching team", zap.String("team_id", id))
+	if err := c.ShouldBindUri(&params); err != nil {
+		log.Error("failed to bind uri", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request parameters"))
+		return
+	}
 
-	user, err := h.teamService.GetTeamByID(ctx, id)
+	teamID := uuid.MustParse(params.TeamID)
+
+	log.Info("fetching team", zap.String("team_id", teamID.String()))
+
+	user, err := h.teamService.GetTeamByID(ctx, teamID)
 	if err != nil {
-		log.Error("failed to fetch team", zap.String("team_id", id), zap.Error(err))
+		log.Error("failed to fetch team", zap.String("team_id", teamID.String()), zap.Error(err))
 		response.ErrorResponse(c, http.StatusInternalServerError, "failed to fetch team")
 		return
 	}
@@ -56,10 +67,10 @@ func (h *TeamHandler) GetTeamByID(c *gin.Context) {
 // @Tags         teams
 // @Accept       json
 // @Produce      json
-// @Param        body  body      models.TeamUpsertDTO  true  "Team info"
-// @Success      201   {object}  map[string]interface{} "Team created successfully"
-// @Failure      400   {object}  map[string]interface{} "Invalid request payload"
-// @Failure      500   {object}  map[string]interface{} "Failed to create team"
+// @Param        body  body      models.TeamUpsertDTO  true  "team info"
+// @Success      201   {object}  map[string]interface{} "team created successfully"
+// @Failure      400   {object}  map[string]interface{} "invalid request payload"
+// @Failure      500   {object}  map[string]interface{} "failed to create team"
 // @Router       /api/teams [post]
 func (h *TeamHandler) CreateTeam(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -69,19 +80,19 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 	team := &models.TeamUpsertDTO{}
 	if err := c.BindJSON(team); err != nil {
 		log.Warn("invalid team payload", zap.Error(err))
-		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		response.ErrorResponse(c, http.StatusBadRequest, "invalid request payload")
 		return
 	}
 
-	log.Info("creating team", zap.String("team_name", team.Name))
+	log.Info("creating team")
 
 	if err := h.teamService.CreateTeam(ctx, team); err != nil {
 		log.Error("failed to create team", zap.Error(err))
-		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to create team")
+		response.ErrorResponse(c, http.StatusInternalServerError, "failed to create team")
 		return
 	}
 
-	response.Success(c, http.StatusCreated, "Team created successfully", nil)
+	response.Success(c, http.StatusCreated, "team created successfully", nil)
 }
 
 // UpdateTeam godoc
@@ -90,18 +101,27 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 // @Tags         teams
 // @Accept       json
 // @Produce      json
-// @Param        id    path      string              true  "Team ID"
+// @Param        teamID    path      string              true  "Team ID"
 // @Param        body  body      models.TeamUpsertDTO  true  "Team info"
 // @Success      200   {object}  map[string]interface{} "Team updated successfully"
 // @Failure      400   {object}  map[string]interface{} "Invalid request payload"
 // @Failure      500   {object}  map[string]interface{} "Failed to update team"
-// @Router       /api/teams/{id} [put]
+// @Router       /api/teams/{teamID} [put]
 func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	log := logger.FromContext(ctx)
 
-	id := c.Param("id")
+	var params util.TeamParams
+
+	if err := c.ShouldBindUri(&params); err != nil {
+		log.Error("failed to bind uri", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request parameters"))
+		return
+	}
+
+	teamID := uuid.MustParse(params.TeamID)
+
 	team := &models.TeamUpsertDTO{}
 	if err := c.BindJSON(team); err != nil {
 		log.Warn("invalid team update payload", zap.Error(err))
@@ -109,11 +129,11 @@ func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 		return
 	}
 
-	log.Info("updating team", zap.String("team_id", id))
+	log.Info("updating team", zap.String("team_id", teamID.String()))
 
-	updatedTeam, err := h.teamService.UpdateTeam(ctx, id, team)
+	updatedTeam, err := h.teamService.UpdateTeam(ctx, teamID, team)
 	if err != nil {
-		log.Error("failed to update team", zap.String("team_id", id), zap.Error(err))
+		log.Error("failed to update team", zap.String("team_id", teamID.String()), zap.Error(err))
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to update team")
 		return
 	}
@@ -126,21 +146,29 @@ func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 // @Description  Delete a team by its ID
 // @Tags         teams
 // @Produce      json
-// @Param        id   path      string  true  "Team ID"
+// @Param        teamID   path      string  true  "Team ID"
 // @Success      200  {object}  map[string]interface{} "Team deleted successfully"
 // @Failure      500  {object}  map[string]interface{} "Failed to delete team"
-// @Router       /api/teams/{id} [delete]
+// @Router       /api/teams/{teamID} [delete]
 func (h *TeamHandler) DeleteTeam(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	log := logger.FromContext(ctx)
 
-	id := c.Param("id")
+	var params util.TeamParams
 
-	log.Info("deleting team", zap.String("team_id", id))
+	if err := c.ShouldBindUri(&params); err != nil {
+		log.Error("failed to bind uri", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid request parameters"))
+		return
+	}
 
-	if err := h.teamService.DeleteTeam(ctx, id); err != nil {
-		log.Error("failed to delete team", zap.String("team_id", id), zap.Error(err))
+	teamID := uuid.MustParse(params.TeamID)
+
+	log.Info("deleting team", zap.String("team_id", teamID.String()))
+
+	if err := h.teamService.DeleteTeam(ctx, teamID); err != nil {
+		log.Error("failed to delete team", zap.String("team_id", teamID.String()), zap.Error(err))
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete team")
 		return
 	}

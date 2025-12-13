@@ -2,10 +2,10 @@ import { useParams, useSearchParams } from "react-router-dom"
 import { columns } from "./columns"
 import { DataTable } from "./data-table"
 import { useReports } from "@/hooks/use-reports"
-import { LoadingPage } from "@/components/loading-page"
-import { ErrorPage } from "@/components/error-page"
+import { LoadingPage } from "@/components/common/loading-page"
+import { ErrorPage } from "@/components/common/error-page"
 
-export default function ReportsPage() {
+export default function Reports() {
   const { projectId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
 

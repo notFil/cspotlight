@@ -13,8 +13,8 @@ import type { Team } from "@/types";
 import { TeamModal } from "./team-modal";
 import { DeleteConfirmModal } from "./delete-confirmation-modal";
 import { useTeams, useCreateTeam, useUpdateTeam, useDeleteTeam } from "@/hooks/use-teams";
-import { LoadingPage } from "@/components/loading-page";
-import { ErrorPage } from "@/components/error-page";
+import { LoadingPage } from "@/components/common/loading-page";
+import { ErrorPage } from "@/components/common/error-page";
 
 export const TeamTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

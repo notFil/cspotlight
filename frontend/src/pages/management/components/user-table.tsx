@@ -14,8 +14,8 @@ import { UserModal } from "./user-modal";
 import { DeleteConfirmModal } from "./delete-confirmation-modal";
 import { useUsers, useUpdateUser, useDeleteUser } from "@/hooks/use-users";
 import { formatTimestamp } from "@/utils/date";
-import { LoadingPage } from "@/components/loading-page";
-import { ErrorPage } from "@/components/error-page";
+import { LoadingPage } from "@/components/common/loading-page";
+import { ErrorPage } from "@/components/common/error-page";
 
 export const UserTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

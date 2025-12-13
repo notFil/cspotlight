@@ -7,25 +7,27 @@ import (
 )
 
 type Config struct {
-	Server  ServerConfig
-	Store   StoreConfig
-	JWTAuth JWTConfig
+	Server Server
+	Store  Store
+	Token  Token
 }
 
-type ServerConfig struct {
+type Server struct {
 	Port        int
 	Environment string
+	BaseURL     string
 }
 
-type JWTConfig struct {
+type Token struct {
 	SecretKey              string
 	RefreshSecretKey       string
 	ExpiryInMinutes        int
 	RefreshExpiryInMinutes int
 }
 
-type StoreConfig struct {
-	DatabaseURL string
+type Store struct {
+	DSN   string
+	Redis string
 }
 
 // init sets Viper to read .env and environment variables
@@ -42,25 +44,27 @@ func init() {
 
 // LoadConfig returns string for key from Viper
 func LoadConfig() Config {
-	server := ServerConfig{
-		Port:        viper.GetInt("PORT"),
-		Environment: viper.GetString("ENVIRONMENT"),
+	server := Server{
+		Port:        viper.GetInt("APP_PORT"),
+		Environment: viper.GetString("APP_ENVIRONMENT"),
+		BaseURL:     viper.GetString("APP_BASE_URL"),
 	}
 
-	jwtAuth := JWTConfig{
+	token := Token{
 		SecretKey:              viper.GetString("JWT_SECRET_KEY"),
 		ExpiryInMinutes:        viper.GetInt("JWT_ACCESS_TOKEN_EXPIRY_MINUTES"),
 		RefreshSecretKey:       viper.GetString("JWT_REFRESH_SECRET_KEY"),
 		RefreshExpiryInMinutes: viper.GetInt("JWT_REFRESH_TOKEN_EXPIRY_MINUTES"),
 	}
 
-	store := StoreConfig{
-		DatabaseURL: viper.GetString("DB_URL"),
+	store := Store{
+		DSN:   viper.GetString("DB_ADDR"),
+		Redis: viper.GetString("REDIS_ADDR"),
 	}
 	cfg := Config{
-		Server:  server,
-		JWTAuth: jwtAuth,
-		Store:   store,
+		Server: server,
+		Token:  token,
+		Store:  store,
 	}
 	return cfg
 }

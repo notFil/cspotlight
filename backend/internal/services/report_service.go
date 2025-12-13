@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/notFil/cspotlight/internal/auth"
 	apperrors "github.com/notFil/cspotlight/internal/errors"
 	"github.com/notFil/cspotlight/internal/models"
@@ -12,12 +13,15 @@ import (
 )
 
 type ReportService interface {
-	ListReportsByProjectID(ctx context.Context, projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
-	BatchCreateReports(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID string) error
-	GetReportSummaryStats(ctx context.Context, projectID string) (*models.ReportMetricsDTO, error)
-	GetReportGraphData(ctx context.Context, projectID string) (*models.ReportGraphDataDTO, error)
-	GetReportViolationTrend(ctx context.Context, projectID string) (*models.ReportViolationTrendDTO, error)
-	GetReportSoftwareStats(ctx context.Context, projectID string) (*models.ReportSoftwareStatsDTO, error)
+	ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
+	BatchCreateReports(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID uuid.UUID) error
+	GetReportSummaryStats(ctx context.Context, projectID uuid.UUID) (*models.ReportMetricsDTO, error)
+	GetReportGraphData(ctx context.Context, projectID uuid.UUID) (*models.ReportGraphDataDTO, error)
+	GetReportViolationTrend(ctx context.Context, projectID uuid.UUID) (*models.ReportViolationTrendDTO, error)
+	GetReportTopViolatedDocumentURLs(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolatedDocumentURLDTO, error)
+	GetReportTopViolatedDirectives(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolatedDirectivesDTO, error)
+	GetReportSoftwareStats(ctx context.Context, projectID uuid.UUID) (*models.ReportSoftwareStatsDTO, error)
+	GetReportTopViolationSources(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolationSourcesDTO, error)
 }
 
 type reportService struct {
@@ -32,7 +36,7 @@ func NewReportService(reportRepo repositories.ReportRepository, projectRepo repo
 	}
 }
 
-func (s *reportService) BatchCreateReports(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID string) error {
+func (s *reportService) BatchCreateReports(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID uuid.UUID) error {
 	var cspReports []*models.CSPReport
 	for _, r := range reports {
 		cspReport := r.ToCSPReport()
@@ -43,13 +47,13 @@ func (s *reportService) BatchCreateReports(ctx context.Context, reports []*model
 	return s.reportRepo.BatchCreateReports(ctx, cspReports)
 }
 
-func (s *reportService) ListReportsByProjectID(ctx context.Context, projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
-	claims := auth.GetUserClaims(ctx)
+func (s *reportService) ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+	userContext := auth.GetUserContext(ctx)
 	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
 	if err != nil {
 		return nil, p, err
 	}
-	if claims.IsSuperadmin() && project.TeamID != claims.TeamID {
+	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
 		return nil, p, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -61,16 +65,16 @@ func (s *reportService) ListReportsByProjectID(ctx context.Context, projectID st
 	return reports, p, nil
 }
 
-func (s *reportService) GetReportSummaryStats(ctx context.Context, projectID string) (*models.ReportMetricsDTO, error) {
+func (s *reportService) GetReportSummaryStats(ctx context.Context, projectID uuid.UUID) (*models.ReportMetricsDTO, error) {
 	stats := &models.ReportMetricsDTO{}
 
-	claims := auth.GetUserClaims(ctx)
+	userContext := auth.GetUserContext(ctx)
 
 	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.IsSuperadmin() && project.TeamID != claims.TeamID {
+	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
 		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -85,16 +89,17 @@ func (s *reportService) GetReportSummaryStats(ctx context.Context, projectID str
 	return stats, nil
 }
 
-func (s *reportService) GetReportGraphData(ctx context.Context, projectID string) (*models.ReportGraphDataDTO, error) {
+func (s *reportService) GetReportGraphData(ctx context.Context, projectID uuid.UUID) (*models.ReportGraphDataDTO, error) {
 	g := &models.ReportGraphDataDTO{}
 
-	claims := auth.GetUserClaims(ctx)
+	userContext := auth.GetUserContext(ctx)
 
 	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.IsSuperadmin() && project.TeamID != claims.TeamID {
+
+	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
 		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -108,16 +113,17 @@ func (s *reportService) GetReportGraphData(ctx context.Context, projectID string
 	return g, nil
 }
 
-func (s *reportService) GetReportViolationTrend(ctx context.Context, projectID string) (*models.ReportViolationTrendDTO, error) {
+func (s *reportService) GetReportViolationTrend(ctx context.Context, projectID uuid.UUID) (*models.ReportViolationTrendDTO, error) {
 	t := &models.ReportViolationTrendDTO{}
 
-	claims := auth.GetUserClaims(ctx)
+	userContext := auth.GetUserContext(ctx)
 
 	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.IsSuperadmin() && project.TeamID != claims.TeamID {
+
+	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
 		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -131,16 +137,65 @@ func (s *reportService) GetReportViolationTrend(ctx context.Context, projectID s
 	return t, nil
 }
 
-func (s *reportService) GetReportSoftwareStats(ctx context.Context, projectID string) (*models.ReportSoftwareStatsDTO, error) {
-	stats := &models.ReportSoftwareStatsDTO{}
+func (s *reportService) GetReportTopViolatedDirectives(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolatedDirectivesDTO, error) {
+	t := &models.ReportTopViolatedDirectivesDTO{}
 
-	claims := auth.GetUserClaims(ctx)
+	userContext := auth.GetUserContext(ctx)
 
 	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.IsSuperadmin() && project.TeamID != claims.TeamID {
+
+	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
+		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
+	}
+
+	if t, err = s.reportRepo.GetReportTopViolatedDirectives(ctx, projectID); err != nil {
+		return nil, err
+	}
+
+	if t == nil {
+		return nil, apperrors.New(http.StatusNotFound, "report not found")
+	}
+	return t, nil
+}
+
+func (s *reportService) GetReportTopViolatedDocumentURLs(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolatedDocumentURLDTO, error) {
+	t := &models.ReportTopViolatedDocumentURLDTO{}
+
+	userContext := auth.GetUserContext(ctx)
+
+	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
+		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
+	}
+
+	if t, err = s.reportRepo.GetReportTopViolatedDocumentURLs(ctx, projectID); err != nil {
+		return nil, err
+	}
+
+	if t == nil {
+		return nil, apperrors.New(http.StatusNotFound, "report not found")
+	}
+	return t, nil
+}
+
+func (s *reportService) GetReportSoftwareStats(ctx context.Context, projectID uuid.UUID) (*models.ReportSoftwareStatsDTO, error) {
+	stats := &models.ReportSoftwareStatsDTO{}
+
+	userContext := auth.GetUserContext(ctx)
+
+	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
 		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -152,4 +207,28 @@ func (s *reportService) GetReportSoftwareStats(ctx context.Context, projectID st
 		return nil, apperrors.New(http.StatusNotFound, "report software stats not found")
 	}
 	return stats, nil
+}
+
+func (s *reportService) GetReportTopViolationSources(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolationSourcesDTO, error) {
+	t := &models.ReportTopViolationSourcesDTO{}
+
+	userContext := auth.GetUserContext(ctx)
+
+	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
+		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
+	}
+
+	if t, err = s.reportRepo.GetReportTopViolationSources(ctx, projectID); err != nil {
+		return nil, err
+	}
+
+	if t == nil {
+		return nil, apperrors.New(http.StatusNotFound, "report top violation sources not found")
+	}
+	return t, nil
 }

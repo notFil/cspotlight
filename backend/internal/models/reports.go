@@ -3,23 +3,24 @@ package models
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
 type CSPReport struct {
-	ID          string `gorm:"primaryKey;default:uuid_generate_v4()"`
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
 	Age         int
 	Body        datatypes.JSONType[ReportBody]
-	Disposition string `gorm:"type:varchar(20)"`
-	Directive   string `gorm:"type:varchar(50)"`
-	BlockedURL  string `gorm:"type:text"`
-	DocumentURL string `gorm:"type:text"`
-	ProjectID   string `gorm:"type:uuid"`
-	Type        string `gorm:"type:varchar(20)"`
-	URL         string `gorm:"type:varchar(100)"`
-	SourceIP    string `gorm:"type:varchar(20)"`
-	UserAgent   string `json:"user_agent"`
+	Disposition string    `gorm:"type:varchar(20)"`
+	Directive   string    `gorm:"type:varchar(50)"`
+	BlockedURL  string    `gorm:"type:text"`
+	DocumentURL string    `gorm:"type:text"`
+	ProjectID   uuid.UUID `gorm:"type:uuid"`
+	Type        string    `gorm:"type:varchar(20)"`
+	URL         string    `gorm:"type:varchar(100)"`
+	SourceIP    string    `gorm:"type:varchar(20)"`
+	UserAgent   string    `json:"user_agent"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt `gorm:"index"`
@@ -64,13 +65,14 @@ type CSPReportFetchDTO struct {
 type ReportGraphDataDTO []DataPoint
 
 type DataPoint struct {
-	Day        string      `json:"day"`
+	Date       string      `json:"date"`
 	Violations []Violation `json:"violations"`
 }
 
 type Violation struct {
-	Directive string `json:"directive"`
-	Count     int    `json:"count"`
+	Directive  string  `json:"directive"`
+	Count      int     `json:"count"`
+	Percentage float64 `json:"percentage"`
 }
 
 type ReportMetricsDTO struct {
@@ -101,8 +103,29 @@ type ReportSoftwareStatsDTO struct {
 }
 
 type StatItem struct {
-	Name  string `json:"name"`
-	Value int    `json:"value"`
+	Name  string  `json:"name"`
+	Value float64 `json:"value"`
+}
+
+type ReportTopViolatedDirectivesDTO struct {
+	TotalViolations int         `json:"totalViolations"`
+	Violations      []Violation `json:"violations"`
+}
+
+type ReportTopViolatedDocumentURLDTO []ViolationDocumentURIItem
+
+type ViolationDocumentURIItem struct {
+	URL   string `json:"url"`
+	Count int    `json:"count"`
+}
+
+type ReportTopViolationSourcesDTO []ViolationSourceItem
+
+type ViolationSourceItem struct {
+	BlockedURL string    `json:"blockedURL"`
+	Count      int       `json:"count"`
+	Severity   string    `json:"severity"`
+	LastSeen   time.Time `json:"lastSeen"`
 }
 
 func (r *CSPReportCreateDTO) ToCSPReport() *CSPReport {

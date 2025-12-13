@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/notFil/cspotlight/internal/auth"
 	"github.com/notFil/cspotlight/internal/models"
@@ -15,20 +14,20 @@ import (
 
 // MockReportRepository is a manual mock for ReportRepository
 type MockReportRepository struct {
-	reports    map[string]*models.CSPReport
-	reportDTOs map[string]*models.CSPReportFetchDTO
+	reports    map[uuid.UUID]*models.CSPReport
+	reportDTOs map[uuid.UUID]*models.CSPReportFetchDTO
 }
 
 func NewMockReportRepository() *MockReportRepository {
 	return &MockReportRepository{
-		reports:    make(map[string]*models.CSPReport),
-		reportDTOs: make(map[string]*models.CSPReportFetchDTO),
+		reports:    make(map[uuid.UUID]*models.CSPReport),
+		reportDTOs: make(map[uuid.UUID]*models.CSPReportFetchDTO),
 	}
 }
 
 func (m *MockReportRepository) CreateReport(ctx context.Context, report *models.CSPReport) error {
-	if report.ID == "" {
-		report.ID = uuid.New().String()
+	if report.ID == uuid.Nil {
+		report.ID = uuid.New()
 	}
 	m.reports[report.ID] = report
 	return nil
@@ -36,15 +35,15 @@ func (m *MockReportRepository) CreateReport(ctx context.Context, report *models.
 
 func (m *MockReportRepository) BatchCreateReports(ctx context.Context, reports []*models.CSPReport) error {
 	for _, report := range reports {
-		if report.ID == "" {
-			report.ID = uuid.New().String()
+		if report.ID == uuid.Nil {
+			report.ID = uuid.New()
 		}
 		m.reports[report.ID] = report
 	}
 	return nil
 }
 
-func (m *MockReportRepository) GetReportByID(ctx context.Context, id string) (*models.CSPReport, error) {
+func (m *MockReportRepository) GetReportByID(ctx context.Context, id uuid.UUID) (*models.CSPReport, error) {
 	if report, exists := m.reports[id]; exists {
 		return report, nil
 	}
@@ -59,7 +58,7 @@ func (m *MockReportRepository) UpdateReport(ctx context.Context, report *models.
 	return errors.New("report not found")
 }
 
-func (m *MockReportRepository) DeleteReport(ctx context.Context, id string) error {
+func (m *MockReportRepository) DeleteReport(ctx context.Context, id uuid.UUID) error {
 	if _, exists := m.reports[id]; exists {
 		delete(m.reports, id)
 		return nil
@@ -67,7 +66,7 @@ func (m *MockReportRepository) DeleteReport(ctx context.Context, id string) erro
 	return errors.New("report not found")
 }
 
-func (m *MockReportRepository) ListReportsByProjectID(ctx context.Context, projectID string, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+func (m *MockReportRepository) ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
 	var reports []*models.CSPReportFetchDTO
 	for _, report := range m.reports {
 		if report.ProjectID == projectID {
@@ -97,12 +96,32 @@ func (m *MockReportRepository) ListReportsByProjectID(ctx context.Context, proje
 	return reports, p, nil
 }
 
-func (m *MockReportRepository) GetReportSummaryStats(ctx context.Context, projectID string) (*models.ReportMetricsDTO, error) {
+func (m *MockReportRepository) GetReportSummaryStats(ctx context.Context, projectID uuid.UUID) (*models.ReportMetricsDTO, error) {
 	return &models.ReportMetricsDTO{}, nil
 }
 
-func (m *MockReportRepository) GetReportGraphData(ctx context.Context, projectID string) (*models.ReportGraphDataDTO, error) {
+func (m *MockReportRepository) GetReportGraphData(ctx context.Context, projectID uuid.UUID) (*models.ReportGraphDataDTO, error) {
 	return &models.ReportGraphDataDTO{}, nil
+}
+
+func (m *MockReportRepository) GetReportViolationTrend(ctx context.Context, projectID uuid.UUID) (*models.ReportViolationTrendDTO, error) {
+	return &models.ReportViolationTrendDTO{}, nil
+}
+
+func (m *MockReportRepository) GetReportTopViolatedDocumentURLs(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolatedDocumentURLDTO, error) {
+	return &models.ReportTopViolatedDocumentURLDTO{}, nil
+}
+
+func (m *MockReportRepository) GetReportTopViolatedDirectives(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolatedDirectivesDTO, error) {
+	return &models.ReportTopViolatedDirectivesDTO{}, nil
+}
+
+func (m *MockReportRepository) GetReportSoftwareStats(ctx context.Context, projectID uuid.UUID) (*models.ReportSoftwareStatsDTO, error) {
+	return &models.ReportSoftwareStatsDTO{}, nil
+}
+
+func (m *MockReportRepository) GetReportTopViolationSources(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolationSourcesDTO, error) {
+	return &models.ReportTopViolationSourcesDTO{}, nil
 }
 
 func TestCreateReport(t *testing.T) {
@@ -110,7 +129,7 @@ func TestCreateReport(t *testing.T) {
 	mockProjectRepo := NewMockProjectRepository()
 	service := NewReportService(mockRepo, mockProjectRepo)
 
-	projectID := "proj-1"
+	projectID := uuid.New()
 	reportDTO := &models.CSPReportCreateDTO{
 		Age:       100,
 		Type:      "csp-report",
@@ -150,24 +169,24 @@ func TestListReportsByProjectID(t *testing.T) {
 	mockProjectRepo := NewMockProjectRepository()
 	service := NewReportService(mockRepo, mockProjectRepo)
 
-	projectID := "proj-1"
-	teamID := "team-1"
+	projectID := uuid.New()
+	teamID := uuid.New()
 
 	// Setup project
 	mockProjectRepo.projects[projectID] = &models.Project{ID: projectID, TeamID: teamID}
 
 	// Add reports
-	r1 := &models.CSPReport{ID: "r1", ProjectID: projectID, Body: datatypes.NewJSONType(models.ReportBody{BlockedURL: "b1"})}
-	r2 := &models.CSPReport{ID: "r2", ProjectID: projectID, Body: datatypes.NewJSONType(models.ReportBody{BlockedURL: "b2"})}
-	r3 := &models.CSPReport{ID: "r3", ProjectID: "other-proj", Body: datatypes.NewJSONType(models.ReportBody{BlockedURL: "b3"})}
+	r1 := &models.CSPReport{ID: uuid.New(), ProjectID: projectID, Body: datatypes.NewJSONType(models.ReportBody{BlockedURL: "b1"})}
+	r2 := &models.CSPReport{ID: uuid.New(), ProjectID: projectID, Body: datatypes.NewJSONType(models.ReportBody{BlockedURL: "b2"})}
+	r3 := &models.CSPReport{ID: uuid.New(), ProjectID: uuid.New(), Body: datatypes.NewJSONType(models.ReportBody{BlockedURL: "b3"})}
 
-	mockRepo.reports["r1"] = r1
-	mockRepo.reports["r2"] = r2
-	mockRepo.reports["r3"] = r3
+	mockRepo.reports[r1.ID] = r1
+	mockRepo.reports[r2.ID] = r2
+	mockRepo.reports[r3.ID] = r3
 
 	p := &pagination.Pagination{Page: 1, PageSize: 10}
-	claims := auth.Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "user"}, Role: "user", TeamID: teamID}
-	ctx := auth.ContextWithClaims(context.Background(), &claims)
+	userData := auth.AuthContext{Subject: uuid.New(), Role: "user", TeamID: teamID}
+	ctx := auth.ContextWithUser(context.Background(), &userData)
 
 	dtos, _, err := service.ListReportsByProjectID(ctx, projectID, p)
 	if err != nil {

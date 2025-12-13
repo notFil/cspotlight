@@ -3,15 +3,16 @@ package repositories
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/notFil/cspotlight/internal/models"
 	"gorm.io/gorm"
 )
 
 type TeamRepository interface {
 	CreateTeam(ctx context.Context, team *models.Team) error
-	GetTeamByID(ctx context.Context, id string) (*models.Team, error)
+	GetTeamByID(ctx context.Context, id uuid.UUID) (*models.Team, error)
 	UpdateTeam(ctx context.Context, team *models.Team) error
-	DeleteTeam(ctx context.Context, id string) error
+	DeleteTeam(ctx context.Context, id uuid.UUID) error
 	ListTeams(ctx context.Context) ([]*models.Team, error)
 }
 
@@ -27,7 +28,7 @@ func (r *teamRepository) CreateTeam(ctx context.Context, team *models.Team) erro
 	return r.db.WithContext(ctx).Create(team).Error
 }
 
-func (r *teamRepository) GetTeamByID(ctx context.Context, id string) (team *models.Team, err error) {
+func (r *teamRepository) GetTeamByID(ctx context.Context, id uuid.UUID) (team *models.Team, err error) {
 	err = r.db.WithContext(ctx).First(&team, "id = ?", id).Error
 	return team, err
 }
@@ -36,7 +37,7 @@ func (r *teamRepository) UpdateTeam(ctx context.Context, team *models.Team) erro
 	return r.db.WithContext(ctx).Save(team).Error
 }
 
-func (r *teamRepository) DeleteTeam(ctx context.Context, id string) error {
+func (r *teamRepository) DeleteTeam(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&models.Team{}, "id = ?", id).Error
 }
 
