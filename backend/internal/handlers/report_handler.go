@@ -19,8 +19,9 @@ import (
 )
 
 type ReportHandler struct {
-	reportService services.ReportService
-	reportQueue   chan reportJob
+	reportService  services.ReportService
+	projectService services.ProjectService
+	reportQueue    chan reportJob
 }
 
 type reportJob struct {
@@ -29,10 +30,11 @@ type reportJob struct {
 }
 
 // NewReportHandler creates a new ReportHandler
-func NewReportHandler(reportService services.ReportService) *ReportHandler {
+func NewReportHandler(reportService services.ReportService, projectService services.ProjectService) *ReportHandler {
 	h := &ReportHandler{
-		reportService: reportService,
-		reportQueue:   make(chan reportJob, 1000),
+		reportService:  reportService,
+		projectService: projectService,
+		reportQueue:    make(chan reportJob, 1000),
 	}
 	go h.startWorker()
 	return h
@@ -118,12 +120,19 @@ func (h *ReportHandler) ListReportsByProjectID(c *gin.Context) {
 
 	projectID := uuid.MustParse(params.ProjectID)
 
+	_, err := h.projectService.GetProjectByID(ctx, projectID)
+	if err != nil {
+		log.Error("failed to get project", zap.String("project_id", projectID.String()), zap.Error(err))
+		c.Error(err)
+		return
+	}
+
 	log.Info("listing reports", zap.String("project_id", projectID.String()))
 
 	reports, meta, err := h.reportService.ListReportsByProjectID(ctx, projectID, p)
 	if err != nil {
 		log.Error("failed to list reports", zap.String("project_id", projectID.String()), zap.Error(err))
-		c.Error(apperrors.New(http.StatusInternalServerError, "failed to list reports"))
+		c.Error(err)
 		return
 	}
 	response.SuccessPagedResponse(c, http.StatusOK, "reports fetched successfully", reports, meta)

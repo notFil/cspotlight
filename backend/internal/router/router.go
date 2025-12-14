@@ -20,7 +20,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func SetUpRouter(db *gorm.DB, baseURL string, sessionCfg config.Session, corsCfg config.CORS, redisCfg config.Redis, isProduction bool) *gin.Engine {
+func SetUpRouter(db *gorm.DB, baseURL string, staticPath string, sessionCfg config.Session, corsCfg config.CORS, redisCfg config.Redis, isProduction bool) *gin.Engine {
 	var store sessions.Store
 	var err error
 
@@ -44,6 +44,7 @@ func SetUpRouter(db *gorm.DB, baseURL string, sessionCfg config.Session, corsCfg
 	router.Use(gin.Recovery())
 	router.Use(middleware.RequestLogger())
 	router.Use(middleware.ErrorHandler())
+	router.Static("/static", staticPath)
 
 	router.RedirectTrailingSlash = false
 	router.RedirectFixedPath = false
@@ -67,15 +68,15 @@ func SetUpRouter(db *gorm.DB, baseURL string, sessionCfg config.Session, corsCfg
 
 	projectService := services.NewProjectService(projectRepo, baseURL)
 	teamService := services.NewTeamService(teamRepo)
-	userService := services.NewUserService(userRepo, projectRepo)
-	reportService := services.NewReportService(reportRepo, projectRepo)
+	userService := services.NewUserService(userRepo)
+	reportService := services.NewReportService(reportRepo)
 
 	authHandler := handlers.NewAuthHandler(userService)
 	projectHandler := handlers.NewProjectHandler(projectService)
 	teamHandler := handlers.NewTeamHandler(teamService)
-	userHandler := handlers.NewUserHandler(userService)
-	reportHandler := handlers.NewReportHandler(reportService)
-	analyticsHandler := handlers.NewAnalyticsHandler(reportService)
+	userHandler := handlers.NewUserHandler(userService, projectService, staticPath)
+	reportHandler := handlers.NewReportHandler(reportService, projectService)
+	analyticsHandler := handlers.NewAnalyticsHandler(reportService, projectService)
 
 	// ------------------------------------------------------
 

@@ -19,8 +19,8 @@ func ParseUserAgent(userAgent string) BrowserOS {
 	}{
 		{"Edge", regexp.MustCompile(`edg(?:e|a?)?/`)},
 		{"Opera", regexp.MustCompile(`op(?:era|r)[/\s]`)},
-		{"Samsung Internet", regexp.MustCompile(`samsungbrowser`)},
-		{"UC Browser", regexp.MustCompile(`ucbrowser`)},
+		{"Samsung", regexp.MustCompile(`samsungbrowser`)},
+		{"UCBrowser", regexp.MustCompile(`ucbrowser`)},
 		{"Chrome", regexp.MustCompile(`chrome|crios`)},
 		{"Firefox", regexp.MustCompile(`firefox|fxios`)},
 		{"IE", regexp.MustCompile(`trident|msie`)},
@@ -47,7 +47,7 @@ func ParseUserAgent(userAgent string) BrowserOS {
 		{"Android", regexp.MustCompile(`android`)},
 		{"Windows", regexp.MustCompile(`windows nt`)},
 		{"macOS", regexp.MustCompile(`mac os x`)},
-		{"Chrome OS", regexp.MustCompile(`cros`)},
+		{"ChromeOS", regexp.MustCompile(`cros`)},
 		{"Linux", regexp.MustCompile(`linux`)},
 	}
 

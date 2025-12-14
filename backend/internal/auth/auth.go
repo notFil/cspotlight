@@ -35,11 +35,11 @@ func (c *UserContext) IsSuperadmin() bool {
 	return strings.EqualFold(c.Role, "superadmin")
 }
 
-func (c *UserContext) SameUser(id uuid.UUID) bool {
+func (c *UserContext) IsSameUser(id uuid.UUID) bool {
 	return c.ID == id
 }
 
-func (c *UserContext) SameTeam(id uuid.UUID) bool {
+func (c *UserContext) HasSameTeam(id uuid.UUID) bool {
 	return c.TeamID == id
 }
 

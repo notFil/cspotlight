@@ -58,7 +58,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Set("userID", user.ID.String())
 	session.Set("role", user.Role)
-	session.Set("teamID", user.TeamID.String())
+	session.Set("role", user.Role)
+	if user.TeamID != nil {
+		session.Set("teamID", user.TeamID.String())
+	}
 	if err = session.Save(); err != nil {
 		log.Error("failed to save session", zap.Error(err))
 		c.Error(apperrors.New(http.StatusInternalServerError, "authentication failed"))
@@ -66,7 +69,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	log.Info("login successful", zap.String("user_id", user.ID.String()))
-	response.Success(c, http.StatusOK, "login successful", user)
+	response.Success(c, http.StatusOK, "login successful", nil)
 }
 
 // Register godoc
@@ -125,7 +128,7 @@ func (h *AuthHandler) SignOut(c *gin.Context) {
 	}
 
 	session := sessions.Default(c)
-	session.Options(sessions.Options{MaxAge: -1})
+	session.Options(sessions.Options{MaxAge: -1, Path: "/"})
 	session.Clear()
 	if err := session.Save(); err != nil {
 		log.Error("failed to save session", zap.Error(err))

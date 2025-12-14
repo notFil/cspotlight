@@ -27,18 +27,18 @@ type User struct {
 }
 
 type UserFetchDTO struct {
-	ID               uuid.UUID `json:"id"`
-	FirstName        string    `json:"firstName"`
-	LastName         string    `json:"lastName"`
-	Username         string    `json:"username"`
-	Role             string    `json:"role"`
-	DefaultProjectID uuid.UUID `json:"defaultProjectId,omitempty"`
-	Image            string    `json:"image,omitempty"`
-	Email            string    `json:"email"`
-	Disabled         bool      `json:"disabled"`
-	TeamID           uuid.UUID `json:"teamId"`
-	TeamName         string    `json:"teamName"`
-	UpdatedAt        time.Time `json:"updatedAt"`
+	ID               uuid.UUID  `json:"id"`
+	FirstName        string     `json:"firstName"`
+	LastName         string     `json:"lastName"`
+	Username         string     `json:"username"`
+	Role             string     `json:"role"`
+	DefaultProjectID *uuid.UUID `json:"defaultProjectId,omitempty"`
+	Image            string     `json:"image,omitempty"`
+	Email            string     `json:"email"`
+	Disabled         bool       `json:"disabled"`
+	TeamID           *uuid.UUID `json:"teamId"`
+	TeamName         string     `json:"teamName"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
 }
 
 type UserRegisterDTO struct {
@@ -71,12 +71,8 @@ type ChangePasswordRequest struct {
 	ConfirmNewPassword string `json:"confirmNewPassword" binding:"required"`
 }
 
-type RefreshTokenRequest struct {
-	RefreshToken string `json:"refreshToken" binding:"required"`
-}
-
 type SetDefaultProjectRequest struct {
-	ProjectID string `json:"projectID" binding:"required"`
+	ProjectID string `json:"projectID" binding:"required,uuid"`
 }
 
 func (u *User) ToFetchDTO() *UserFetchDTO {
@@ -92,11 +88,11 @@ func (u *User) ToFetchDTO() *UserFetchDTO {
 		UpdatedAt: u.UpdatedAt,
 	}
 	if u.TeamID != nil {
-		dto.TeamID = *u.TeamID
+		dto.TeamID = u.TeamID
 		dto.TeamName = u.Team.Name
 	}
 	if u.DefaultProjectID != nil {
-		dto.DefaultProjectID = *u.DefaultProjectID
+		dto.DefaultProjectID = u.DefaultProjectID
 	}
 	return &dto
 }

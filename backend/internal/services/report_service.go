@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/notFil/cspotlight/internal/auth"
 	apperrors "github.com/notFil/cspotlight/internal/errors"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/pagination"
@@ -25,14 +24,12 @@ type ReportService interface {
 }
 
 type reportService struct {
-	reportRepo  repositories.ReportRepository
-	projectRepo repositories.ProjectRepository
+	reportRepo repositories.ReportRepository
 }
 
-func NewReportService(reportRepo repositories.ReportRepository, projectRepo repositories.ProjectRepository) ReportService {
+func NewReportService(reportRepo repositories.ReportRepository) ReportService {
 	return &reportService{
-		reportRepo:  reportRepo,
-		projectRepo: projectRepo,
+		reportRepo: reportRepo,
 	}
 }
 
@@ -48,15 +45,6 @@ func (s *reportService) BatchCreateReports(ctx context.Context, reports []*model
 }
 
 func (s *reportService) ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
-	userContext := auth.GetUserContext(ctx)
-	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
-	if err != nil {
-		return nil, p, err
-	}
-	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
-		return nil, p, apperrors.New(http.StatusUnauthorized, "unauthorized access")
-	}
-
 	reports, p, err := s.reportRepo.ListReportsByProjectID(ctx, projectID, p)
 	if err != nil {
 		return nil, p, err
@@ -66,19 +54,8 @@ func (s *reportService) ListReportsByProjectID(ctx context.Context, projectID uu
 }
 
 func (s *reportService) GetReportSummaryStats(ctx context.Context, projectID uuid.UUID) (*models.ReportMetricsDTO, error) {
-	stats := &models.ReportMetricsDTO{}
-
-	userContext := auth.GetUserContext(ctx)
-
-	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
+	stats, err := s.reportRepo.GetReportSummaryStats(ctx, projectID)
 	if err != nil {
-		return nil, err
-	}
-	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
-		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
-	}
-
-	if stats, err = s.reportRepo.GetReportSummaryStats(ctx, projectID); err != nil {
 		return nil, err
 	}
 
@@ -90,20 +67,8 @@ func (s *reportService) GetReportSummaryStats(ctx context.Context, projectID uui
 }
 
 func (s *reportService) GetReportGraphData(ctx context.Context, projectID uuid.UUID) (*models.ReportGraphDataDTO, error) {
-	g := &models.ReportGraphDataDTO{}
-
-	userContext := auth.GetUserContext(ctx)
-
-	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
+	g, err := s.reportRepo.GetReportGraphData(ctx, projectID)
 	if err != nil {
-		return nil, err
-	}
-
-	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
-		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
-	}
-
-	if g, err = s.reportRepo.GetReportGraphData(ctx, projectID); err != nil {
 		return nil, err
 	}
 
@@ -114,20 +79,8 @@ func (s *reportService) GetReportGraphData(ctx context.Context, projectID uuid.U
 }
 
 func (s *reportService) GetReportViolationTrend(ctx context.Context, projectID uuid.UUID) (*models.ReportViolationTrendDTO, error) {
-	t := &models.ReportViolationTrendDTO{}
-
-	userContext := auth.GetUserContext(ctx)
-
-	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
+	t, err := s.reportRepo.GetReportViolationTrend(ctx, projectID)
 	if err != nil {
-		return nil, err
-	}
-
-	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
-		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
-	}
-
-	if t, err = s.reportRepo.GetReportViolationTrend(ctx, projectID); err != nil {
 		return nil, err
 	}
 
@@ -138,20 +91,8 @@ func (s *reportService) GetReportViolationTrend(ctx context.Context, projectID u
 }
 
 func (s *reportService) GetReportTopViolatedDirectives(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolatedDirectivesDTO, error) {
-	t := &models.ReportTopViolatedDirectivesDTO{}
-
-	userContext := auth.GetUserContext(ctx)
-
-	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
+	t, err := s.reportRepo.GetReportTopViolatedDirectives(ctx, projectID)
 	if err != nil {
-		return nil, err
-	}
-
-	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
-		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
-	}
-
-	if t, err = s.reportRepo.GetReportTopViolatedDirectives(ctx, projectID); err != nil {
 		return nil, err
 	}
 
@@ -162,20 +103,8 @@ func (s *reportService) GetReportTopViolatedDirectives(ctx context.Context, proj
 }
 
 func (s *reportService) GetReportTopViolatedDocumentURLs(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolatedDocumentURLDTO, error) {
-	t := &models.ReportTopViolatedDocumentURLDTO{}
-
-	userContext := auth.GetUserContext(ctx)
-
-	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
+	t, err := s.reportRepo.GetReportTopViolatedDocumentURLs(ctx, projectID)
 	if err != nil {
-		return nil, err
-	}
-
-	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
-		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
-	}
-
-	if t, err = s.reportRepo.GetReportTopViolatedDocumentURLs(ctx, projectID); err != nil {
 		return nil, err
 	}
 
@@ -186,20 +115,8 @@ func (s *reportService) GetReportTopViolatedDocumentURLs(ctx context.Context, pr
 }
 
 func (s *reportService) GetReportSoftwareStats(ctx context.Context, projectID uuid.UUID) (*models.ReportSoftwareStatsDTO, error) {
-	stats := &models.ReportSoftwareStatsDTO{}
-
-	userContext := auth.GetUserContext(ctx)
-
-	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
+	stats, err := s.reportRepo.GetReportSoftwareStats(ctx, projectID)
 	if err != nil {
-		return nil, err
-	}
-
-	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
-		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
-	}
-
-	if stats, err = s.reportRepo.GetReportSoftwareStats(ctx, projectID); err != nil {
 		return nil, err
 	}
 
@@ -210,20 +127,8 @@ func (s *reportService) GetReportSoftwareStats(ctx context.Context, projectID uu
 }
 
 func (s *reportService) GetReportTopViolationSources(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolationSourcesDTO, error) {
-	t := &models.ReportTopViolationSourcesDTO{}
-
-	userContext := auth.GetUserContext(ctx)
-
-	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
+	t, err := s.reportRepo.GetReportTopViolationSources(ctx, projectID)
 	if err != nil {
-		return nil, err
-	}
-
-	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
-		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
-	}
-
-	if t, err = s.reportRepo.GetReportTopViolationSources(ctx, projectID); err != nil {
 		return nil, err
 	}
 

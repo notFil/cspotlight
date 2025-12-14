@@ -41,7 +41,7 @@ func (s *projectService) GetProjectByID(ctx context.Context, id uuid.UUID) (*mod
 
 	userContext := auth.GetUserContext(ctx)
 
-	if !userContext.IsSuperadmin() && p.TeamID != userContext.TeamID {
+	if !userContext.IsSuperadmin() && !userContext.HasSameTeam(p.TeamID) {
 		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -60,7 +60,7 @@ func (s *projectService) CreateProject(ctx context.Context, project *models.Proj
 
 	p := project.ToProject()
 
-	if !userContext.IsSuperadmin() && p.TeamID != userContext.TeamID {
+	if !userContext.IsSuperadmin() && !userContext.HasSameTeam(p.TeamID) {
 		return apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -78,7 +78,7 @@ func (s *projectService) UpdateProject(ctx context.Context, id uuid.UUID, projec
 		return nil, apperrors.New(http.StatusNotFound, "failed to update project")
 	}
 
-	if !userContext.IsSuperadmin() && p.TeamID != userContext.TeamID {
+	if !userContext.IsSuperadmin() && !userContext.HasSameTeam(p.TeamID) {
 		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -101,7 +101,7 @@ func (s *projectService) DeleteProject(ctx context.Context, id uuid.UUID) error 
 		return apperrors.New(http.StatusNotFound, "project not found")
 	}
 
-	if !userContext.IsSuperadmin() && p.TeamID != userContext.TeamID {
+	if !userContext.IsSuperadmin() && !userContext.HasSameTeam(p.TeamID) {
 		return apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -127,6 +127,10 @@ func (s *projectService) ListProjects(ctx context.Context) ([]*models.ProjectFet
 	}
 	for _, p := range projects {
 		p.ReportingURL = fmt.Sprintf("%s/api/v1/reports/%s/endpoint", s.baseURL, p.ID.String())
+	}
+
+	if projects == nil {
+		return []*models.ProjectFetchDTO{}, nil
 	}
 	return projects, nil
 }

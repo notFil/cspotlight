@@ -14,12 +14,14 @@ import (
 )
 
 type AnalyticsHandler struct {
-	reportService services.ReportService
+	reportService  services.ReportService
+	projectService services.ProjectService
 }
 
-func NewAnalyticsHandler(s services.ReportService) *AnalyticsHandler {
+func NewAnalyticsHandler(r services.ReportService, p services.ProjectService) *AnalyticsHandler {
 	return &AnalyticsHandler{
-		reportService: s,
+		reportService:  r,
+		projectService: p,
 	}
 }
 
@@ -45,6 +47,12 @@ func (h *AnalyticsHandler) GetReportSummaryStats(c *gin.Context) {
 	}
 
 	projectID := uuid.MustParse(params.ProjectID)
+	_, err := h.projectService.GetProjectByID(ctx, projectID)
+	if err != nil {
+		log.Error("failed to get project", zap.String("project_id", projectID.String()), zap.Error(err))
+		c.Error(err)
+		return
+	}
 
 	data, err := h.reportService.GetReportSummaryStats(ctx, projectID)
 	if err != nil {
@@ -78,6 +86,12 @@ func (h *AnalyticsHandler) GetReportGraphData(c *gin.Context) {
 	}
 
 	projectID := uuid.MustParse(params.ProjectID)
+	_, err := h.projectService.GetProjectByID(ctx, projectID)
+	if err != nil {
+		log.Error("failed to get project", zap.String("project_id", projectID.String()), zap.Error(err))
+		c.Error(err)
+		return
+	}
 
 	data, err := h.reportService.GetReportGraphData(ctx, projectID)
 	if err != nil {
@@ -111,6 +125,12 @@ func (h *AnalyticsHandler) GetReportTopViolatedDirectives(c *gin.Context) {
 	}
 
 	projectID := uuid.MustParse(params.ProjectID)
+	_, err := h.projectService.GetProjectByID(ctx, projectID)
+	if err != nil {
+		log.Error("failed to get project", zap.String("project_id", projectID.String()), zap.Error(err))
+		c.Error(err)
+		return
+	}
 
 	data, err := h.reportService.GetReportTopViolatedDirectives(ctx, projectID)
 	if err != nil {
@@ -144,6 +164,12 @@ func (h *AnalyticsHandler) GetReportViolationTrend(c *gin.Context) {
 	}
 
 	projectID := uuid.MustParse(params.ProjectID)
+	_, err := h.projectService.GetProjectByID(ctx, projectID)
+	if err != nil {
+		log.Error("failed to get project", zap.String("project_id", projectID.String()), zap.Error(err))
+		c.Error(err)
+		return
+	}
 
 	data, err := h.reportService.GetReportViolationTrend(ctx, projectID)
 	if err != nil {
@@ -177,6 +203,12 @@ func (h *AnalyticsHandler) GetReportTopViolatedDocumentURLs(c *gin.Context) {
 	}
 
 	projectID := uuid.MustParse(params.ProjectID)
+	_, err := h.projectService.GetProjectByID(ctx, projectID)
+	if err != nil {
+		log.Error("failed to get project", zap.String("project_id", projectID.String()), zap.Error(err))
+		c.Error(err)
+		return
+	}
 
 	data, err := h.reportService.GetReportTopViolatedDocumentURLs(ctx, projectID)
 	if err != nil {
@@ -210,6 +242,12 @@ func (h *AnalyticsHandler) GetReportSoftwareStats(c *gin.Context) {
 	}
 
 	projectID := uuid.MustParse(params.ProjectID)
+	_, err := h.projectService.GetProjectByID(ctx, projectID)
+	if err != nil {
+		log.Error("failed to get project", zap.String("project_id", projectID.String()), zap.Error(err))
+		c.Error(err)
+		return
+	}
 
 	data, err := h.reportService.GetReportSoftwareStats(ctx, projectID)
 	if err != nil {
@@ -242,6 +280,12 @@ func (h *AnalyticsHandler) GetReportTopViolationSources(c *gin.Context) {
 	}
 
 	projectID := uuid.MustParse(params.ProjectID)
+	_, err := h.projectService.GetProjectByID(ctx, projectID)
+	if err != nil {
+		log.Error("failed to get project", zap.String("project_id", projectID.String()), zap.Error(err))
+		c.Error(err)
+		return
+	}
 
 	data, err := h.reportService.GetReportTopViolationSources(ctx, projectID)
 	if err != nil {
