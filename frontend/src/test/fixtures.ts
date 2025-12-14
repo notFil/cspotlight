@@ -14,10 +14,10 @@ import type {
 
 export const mockUser: User = {
   id: 'u123',
-  firstName: 'John',
-  lastName: 'Doe',
-  username: 'johndoe',
-  email: 'john@example.com',
+  firstName: 'Rick',
+  lastName: 'James',
+  username: 'rjames',
+  email: 'rjames@example.com',
   role: 'user',
   image: '',
   disabled: false,
