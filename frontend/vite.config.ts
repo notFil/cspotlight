@@ -1,29 +1,41 @@
+/// <reference types="vitest" />
 import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [
-    react({
-      babel: {
-        plugins: [['babel-plugin-react-compiler']],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  return {
+    plugins: [
+      react({
+        babel: {
+          plugins: [['babel-plugin-react-compiler']],
+        },
+      }),
+      tailwindcss()
+    ],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
       },
-    }),
-    tailwindcss()
-  ],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
     },
-  },
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
+    server: {
+      proxy: {
+        '/api': {
+          changeOrigin: true,
+          target: env.VITE_API_URL,
+        },
+        '/static': {
+          changeOrigin: true,
+          target: env.VITE_API_URL,
+        }
       }
+    },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './src/test/setup.ts',
     }
   }
 })
