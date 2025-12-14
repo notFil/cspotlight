@@ -126,8 +126,8 @@ func (m *MockReportRepository) GetReportTopViolationSources(ctx context.Context,
 
 func TestCreateReport(t *testing.T) {
 	mockRepo := NewMockReportRepository()
-	mockProjectRepo := NewMockProjectRepository()
-	service := NewReportService(mockRepo, mockProjectRepo)
+
+	service := NewReportService(mockRepo)
 
 	projectID := uuid.New()
 	reportDTO := &models.CSPReportCreateDTO{
@@ -167,7 +167,7 @@ func TestCreateReport(t *testing.T) {
 func TestListReportsByProjectID(t *testing.T) {
 	mockRepo := NewMockReportRepository()
 	mockProjectRepo := NewMockProjectRepository()
-	service := NewReportService(mockRepo, mockProjectRepo)
+	service := NewReportService(mockRepo)
 
 	projectID := uuid.New()
 	teamID := uuid.New()
@@ -195,5 +195,103 @@ func TestListReportsByProjectID(t *testing.T) {
 
 	if len(dtos) != 2 {
 		t.Fatalf("expected 2 reports, got %d", len(dtos))
+	}
+}
+
+func TestGetReportSummaryStats(t *testing.T) {
+	mockRepo := NewMockReportRepository()
+	service := NewReportService(mockRepo)
+	projectID := uuid.New()
+
+	stats, err := service.GetReportSummaryStats(context.Background(), projectID)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if stats == nil {
+		t.Fatal("expected stats, got nil")
+	}
+}
+
+func TestGetReportGraphData(t *testing.T) {
+	mockRepo := NewMockReportRepository()
+	service := NewReportService(mockRepo)
+	projectID := uuid.New()
+
+	data, err := service.GetReportGraphData(context.Background(), projectID)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if data == nil {
+		t.Fatal("expected data, got nil")
+	}
+}
+
+func TestGetReportViolationTrend(t *testing.T) {
+	mockRepo := NewMockReportRepository()
+	service := NewReportService(mockRepo)
+	projectID := uuid.New()
+
+	data, err := service.GetReportViolationTrend(context.Background(), projectID)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if data == nil {
+		t.Fatal("expected data, got nil")
+	}
+}
+
+func TestGetReportTopViolatedDocumentURLs(t *testing.T) {
+	mockRepo := NewMockReportRepository()
+	service := NewReportService(mockRepo)
+	projectID := uuid.New()
+
+	data, err := service.GetReportTopViolatedDocumentURLs(context.Background(), projectID)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if data == nil {
+		t.Fatal("expected data, got nil")
+	}
+}
+
+func TestGetReportTopViolatedDirectives(t *testing.T) {
+	mockRepo := NewMockReportRepository()
+	service := NewReportService(mockRepo)
+	projectID := uuid.New()
+
+	data, err := service.GetReportTopViolatedDirectives(context.Background(), projectID)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if data == nil {
+		t.Fatal("expected data, got nil")
+	}
+}
+
+func TestGetReportSoftwareStats(t *testing.T) {
+	mockRepo := NewMockReportRepository()
+	service := NewReportService(mockRepo)
+	projectID := uuid.New()
+
+	data, err := service.GetReportSoftwareStats(context.Background(), projectID)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if data == nil {
+		t.Fatal("expected data, got nil")
+	}
+}
+
+func TestGetReportTopViolationSources(t *testing.T) {
+	mockRepo := NewMockReportRepository()
+	service := NewReportService(mockRepo)
+	projectID := uuid.New()
+
+	data, err := service.GetReportTopViolationSources(context.Background(), projectID)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if data == nil {
+		t.Fatal("expected data, got nil")
 	}
 }

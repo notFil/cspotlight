@@ -86,8 +86,7 @@ func (m *MockUserRepository) ListUsersByTeamID(ctx context.Context, teamID uuid.
 
 func TestRegisterUser(t *testing.T) {
 	mockRepo := NewMockUserRepository()
-	mockProjectRepo := NewMockProjectRepository()
-	service := NewUserService(mockRepo, mockProjectRepo)
+	service := NewUserService(mockRepo)
 
 	userDTO := &models.UserRegisterDTO{
 		FirstName:       "John",
@@ -115,8 +114,7 @@ func TestRegisterUser(t *testing.T) {
 
 func TestGetUserByID(t *testing.T) {
 	mockRepo := NewMockUserRepository()
-	mockProjectRepo := NewMockProjectRepository()
-	service := NewUserService(mockRepo, mockProjectRepo)
+	service := NewUserService(mockRepo)
 
 	userID := uuid.New()
 	user := &models.User{
@@ -164,8 +162,7 @@ func TestGetUserByID(t *testing.T) {
 
 func TestAuthenticateUser(t *testing.T) {
 	mockRepo := NewMockUserRepository()
-	mockProjectRepo := NewMockProjectRepository()
-	service := NewUserService(mockRepo, mockProjectRepo)
+	service := NewUserService(mockRepo)
 
 	password := "password123"
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)

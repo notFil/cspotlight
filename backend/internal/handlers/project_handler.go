@@ -168,7 +168,7 @@ func (h *ProjectHandler) DeleteProject(c *gin.Context) {
 
 	if err := h.projectService.DeleteProject(ctx, projectID); err != nil {
 		log.Error("failed to delete project", zap.Error(err))
-		c.Error(apperrors.New(http.StatusBadRequest, "invalid project id"))
+		c.Error(err)
 		return
 	}
 

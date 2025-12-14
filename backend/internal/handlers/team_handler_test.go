@@ -70,11 +70,12 @@ func TestTeamHandler_GetTeamByID(t *testing.T) {
 		handler := NewTeamHandler(mockService)
 
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "teamID", Value: teamID.String()}}
-		c.Request = httptest.NewRequest("GET", "/teams/"+teamID.String(), nil)
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.GET("/teams/:teamID", handler.GetTeamByID)
 
-		handler.GetTeamByID(c)
+		req := httptest.NewRequest("GET", "/teams/"+teamID.String(), nil)
+		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusOK {
 			t.Errorf("expected status 200, got %d", w.Code)
@@ -90,12 +91,12 @@ func TestTeamHandler_GetTeamByID(t *testing.T) {
 		handler := NewTeamHandler(mockService)
 
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "teamID", Value: teamID.String()}}
-		c.Request = httptest.NewRequest("GET", "/teams/"+teamID.String(), nil)
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.GET("/teams/:teamID", handler.GetTeamByID)
 
-		handler.GetTeamByID(c)
-		middleware.ErrorHandler()(c)
+		req := httptest.NewRequest("GET", "/teams/"+teamID.String(), nil)
+		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusInternalServerError {
 			t.Errorf("expected status 500, got %d", w.Code)
@@ -115,11 +116,14 @@ func TestTeamHandler_CreateTeam(t *testing.T) {
 		handler := NewTeamHandler(mockService)
 
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		body := `{"name": "New Team"}`
-		c.Request = httptest.NewRequest("POST", "/teams", bytes.NewBufferString(body))
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.POST("/teams", handler.CreateTeam)
 
-		handler.CreateTeam(c)
+		body := `{"name": "New Team"}`
+		req := httptest.NewRequest("POST", "/teams", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusCreated {
 			t.Errorf("expected status 201, got %d", w.Code)
@@ -129,10 +133,13 @@ func TestTeamHandler_CreateTeam(t *testing.T) {
 	t.Run("InvalidPayload", func(t *testing.T) {
 		handler := NewTeamHandler(&MockTeamService{})
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest("POST", "/teams", bytes.NewBufferString("invalid"))
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.POST("/teams", handler.CreateTeam)
 
-		handler.CreateTeam(c)
+		req := httptest.NewRequest("POST", "/teams", bytes.NewBufferString("invalid"))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("expected status 400, got %d", w.Code)

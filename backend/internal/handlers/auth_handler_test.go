@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
-	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,6 +13,7 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/notFil/cspotlight/internal/auth"
 	"github.com/notFil/cspotlight/internal/logger"
 	"github.com/notFil/cspotlight/internal/middleware"
 	"github.com/notFil/cspotlight/internal/models"
@@ -35,29 +34,19 @@ type MockUserService struct {
 	ListUsersByTeamIDFunc func(ctx context.Context, teamID uuid.UUID) ([]*models.UserFetchDTO, error)
 	DeleteUserFunc        func(ctx context.Context, id uuid.UUID) error
 	ChangePasswordFunc    func(ctx context.Context, id uuid.UUID, request *models.ChangePasswordRequest) error
-	ChangeImageFunc       func(ctx context.Context, id uuid.UUID, image *multipart.FileHeader) error
+	ChangeImageFunc       func(ctx context.Context, id uuid.UUID, path string) error
 }
 
 func (m *MockUserService) RegisterUser(ctx context.Context, user *models.UserRegisterDTO) error {
 	if m.RegisterUserFunc != nil {
-		err := m.RegisterUserFunc(ctx, user)
-		fmt.Printf("Mock RegisterUser called, returning: %v\n", err)
-		return err
+		return m.RegisterUserFunc(ctx, user)
 	}
-	fmt.Println("Mock RegisterUser called, func is nil")
 	return nil
 }
 
 func (m *MockUserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.UserFetchDTO, error) {
 	if m.GetUserByIDFunc != nil {
 		return m.GetUserByIDFunc(ctx, id)
-	}
-	return nil, nil
-}
-
-func (m *MockUserService) GetUserByUsername(ctx context.Context, username string) (*models.UserFetchDTO, error) {
-	if m.GetUserByUsernameFunc != nil {
-		return m.GetUserByUsernameFunc(ctx, username)
 	}
 	return nil, nil
 }
@@ -111,9 +100,9 @@ func (m *MockUserService) ChangePassword(ctx context.Context, id uuid.UUID, requ
 	return nil
 }
 
-func (m *MockUserService) ChangeImage(ctx context.Context, id uuid.UUID, image *multipart.FileHeader) error {
+func (m *MockUserService) ChangeImage(ctx context.Context, id uuid.UUID, path string) error {
 	if m.ChangeImageFunc != nil {
-		return m.ChangeImageFunc(ctx, id, image)
+		return m.ChangeImageFunc(ctx, id, path)
 	}
 	return nil
 }
@@ -157,30 +146,36 @@ func TestAuthHandler_Login(t *testing.T) {
 		handler := NewAuthHandler(mockService)
 
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		body := `{"username": "testuser", "password": "password"}`
-		c.Request = httptest.NewRequest("POST", "/login", bytes.NewBufferString(body))
+		router := gin.New()
 		store := cookie.NewStore([]byte("secret"))
-		sessions.Sessions("session", store)(c)
+		router.Use(sessions.Sessions("session", store))
+		router.Use(middleware.ErrorHandler())
+		router.POST("/login", handler.Login)
 
-		handler.Login(c)
+		body := `{"username": "testuser", "password": "password"}`
+		req := httptest.NewRequest("POST", "/login", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusOK {
 			t.Errorf("expected status 200, got %d", w.Code)
 		}
 
-		if !bytes.Contains(w.Body.Bytes(), []byte("testuser")) {
-			t.Errorf("expected response to contain 'testuser', got %s", w.Body.String())
+		if bytes.Contains(w.Body.Bytes(), []byte("testuser")) {
+			t.Errorf("expected response to not contain 'testuser', got %s", w.Body.String())
 		}
 	})
 
 	t.Run("InvalidPayload", func(t *testing.T) {
 		handler := NewAuthHandler(&MockUserService{})
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest("POST", "/login", bytes.NewBufferString("invalid"))
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.POST("/login", handler.Login)
 
-		handler.Login(c)
+		req := httptest.NewRequest("POST", "/login", bytes.NewBufferString("invalid"))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("expected status 400, got %d", w.Code)
@@ -196,12 +191,14 @@ func TestAuthHandler_Login(t *testing.T) {
 		handler := NewAuthHandler(mockService)
 
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		body := `{"username": "testuser", "password": "wrongpassword"}`
-		c.Request = httptest.NewRequest("POST", "/login", bytes.NewBufferString(body))
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.POST("/login", handler.Login)
 
-		handler.Login(c)
-		middleware.ErrorHandler()(c)
+		body := `{"username": "testuser", "password": "wrongpassword"}`
+		req := httptest.NewRequest("POST", "/login", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusUnauthorized {
 			t.Errorf("expected status 401, got %d. Body: %s", w.Code, w.Body.String())
@@ -221,11 +218,14 @@ func TestAuthHandler_Register(t *testing.T) {
 		handler := NewAuthHandler(mockService)
 
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		body := `{"email": "test@example.com", "password": "password", "confirmPassword": "password", "firstName": "Test", "lastName": "User", "username": "testuser", "role": "user"}`
-		c.Request = httptest.NewRequest("POST", "/register", bytes.NewBufferString(body))
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.POST("/register", handler.Register)
 
-		handler.Register(c)
+		body := `{"email": "test@example.com", "password": "password", "confirmPassword": "password", "firstName": "Test", "lastName": "User", "username": "testuser", "role": "user"}`
+		req := httptest.NewRequest("POST", "/register", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusCreated {
 			t.Errorf("expected status 201, got %d", w.Code)
@@ -241,12 +241,14 @@ func TestAuthHandler_Register(t *testing.T) {
 		handler := NewAuthHandler(mockService)
 
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		body := `{"email": "test@example.com", "password": "password", "confirmPassword": "password", "firstName": "Test", "lastName": "User", "username": "testuser", "role": "user"}`
-		c.Request = httptest.NewRequest("POST", "/register", bytes.NewBufferString(body))
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.POST("/register", handler.Register)
 
-		handler.Register(c)
-		middleware.ErrorHandler()(c)
+		body := `{"email": "test@example.com", "password": "password", "confirmPassword": "password", "firstName": "Test", "lastName": "User", "username": "testuser", "role": "user"}`
+		req := httptest.NewRequest("POST", "/register", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusInternalServerError {
 			t.Errorf("expected status 500, got %d. Body: %s", w.Code, w.Body.String())
@@ -259,22 +261,29 @@ func TestAuthHandler_SignOut(t *testing.T) {
 	handler := NewAuthHandler(&MockUserService{})
 
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	body := `{"refreshToken": "refresh_token"}`
-	c.Request = httptest.NewRequest("POST", "/signout", bytes.NewBufferString(body))
+	router := gin.New()
 	store := cookie.NewStore([]byte("secret"))
-	sessions.Sessions("session", store)(c)
-	c.Request.Header.Set("Authorization", "Bearer access_token")
+	router.Use(sessions.Sessions("session", store))
+	router.Use(middleware.ErrorHandler())
 
-	handler.SignOut(c)
+	// Inject user context
+	router.Use(func(c *gin.Context) {
+		userCtx := auth.NewUserContext(uuid.New().String(), uuid.New().String(), "user")
+		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
+		c.Next()
+	})
 
-	// Since we are not setting up UserContext or valid tokens in MockCache,
-	// checking UserContext will fail (return 401) or Token Revocation will fail (return 500).
-	// Original test expected 200 which implies it wasn't reaching error states properly or failing silently.
-	// With valid inputs, it will hit UserContext check.
-	// We should probably allow it to fail with 401 or 500, or mock everything perfectly.
-	// For now, let's accept 401 as we don't inject UserContext.
-	if w.Code != http.StatusUnauthorized && w.Code != http.StatusInternalServerError && w.Code != http.StatusOK {
-		t.Errorf("expected status 200, 401 or 500, got %d", w.Code)
+	router.POST("/signout", handler.SignOut)
+
+	req := httptest.NewRequest("POST", "/signout", nil)
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	cookie := w.Result().Header.Get("Set-Cookie")
+	if cookie == "" {
+		t.Error("expected Set-Cookie header to be present")
 	}
 }

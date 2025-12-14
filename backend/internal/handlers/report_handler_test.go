@@ -11,18 +11,31 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	apperrors "github.com/notFil/cspotlight/internal/errors"
+	"github.com/notFil/cspotlight/internal/middleware"
 	"github.com/notFil/cspotlight/internal/models"
 	"github.com/notFil/cspotlight/internal/pagination"
 )
 
 type MockReportService struct {
-	BatchCreateReportsFunc func(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID uuid.UUID) error
-	mu                     sync.Mutex
-	batchCalls             int
-	receivedReports        []*models.CSPReportCreateDTO
+	BatchCreateReportsFunc               func(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID uuid.UUID) error
+	ListReportsByProjectIDFunc           func(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
+	GetReportSummaryStatsFunc            func(ctx context.Context, projectID uuid.UUID) (*models.ReportMetricsDTO, error)
+	GetReportGraphDataFunc               func(ctx context.Context, projectID uuid.UUID) (*models.ReportGraphDataDTO, error)
+	GetReportViolationTrendFunc          func(ctx context.Context, projectID uuid.UUID) (*models.ReportViolationTrendDTO, error)
+	GetReportTopViolatedDocumentURLsFunc func(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolatedDocumentURLDTO, error)
+	GetReportTopViolatedDirectivesFunc   func(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolatedDirectivesDTO, error)
+	GetReportSoftwareStatsFunc           func(ctx context.Context, projectID uuid.UUID) (*models.ReportSoftwareStatsDTO, error)
+	GetReportTopViolationSourcesFunc     func(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolationSourcesDTO, error)
+	mu                                   sync.Mutex // Kept for potential future use or if other tests rely on it
+	batchCalls                           int        // Kept for potential future use or if other tests rely on it
+	receivedReports                      []*models.CSPReportCreateDTO
 }
 
 func (m *MockReportService) ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+	if m.ListReportsByProjectIDFunc != nil {
+		return m.ListReportsByProjectIDFunc(ctx, projectID, p)
+	}
 	return nil, nil, nil
 }
 
@@ -31,14 +44,8 @@ func (m *MockReportService) BatchCreateReports(ctx context.Context, reports []*m
 	defer m.mu.Unlock()
 	m.batchCalls++
 
-	// Verify SourceIP is set
+	// Capture reports for test verification
 	m.receivedReports = append(m.receivedReports, reports...)
-
-	for _, r := range reports {
-		if r.SourceIP != "1.2.3.4" {
-			// logging or panic?
-		}
-	}
 
 	if m.BatchCreateReportsFunc != nil {
 		return m.BatchCreateReportsFunc(ctx, reports, projectID)
@@ -78,23 +85,26 @@ func TestReportHandler_CreateReport_Batching(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mockService := &MockReportService{}
-	handler := NewReportHandler(mockService)
+	mockProjectService := &MockProjectService{}
+	handler := NewReportHandler(mockService, mockProjectService)
+
+	router := gin.New()
+	router.Use(middleware.ErrorHandler())
+	router.POST("/reports/:projectID", handler.CreateReport)
 
 	totalReports := 150
 
 	for i := 0; i < totalReports; i++ {
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "projectID", Value: "00000000-0000-0000-0000-000000000001"}}
-
 		body := `{"reportBody": {"blockedURL": "http://evil.com"}, "type": "csp-report"}`
-		c.Request = httptest.NewRequest("POST", "/reports/00000000-0000-0000-0000-000000000001", strings.NewReader(body))
-		c.Request.RemoteAddr = "1.2.3.4:1234"
+		req := httptest.NewRequest("POST", "/reports/00000000-0000-0000-0000-000000000001", strings.NewReader(body))
+		req.RemoteAddr = "1.2.3.4:1234"
+		req.Header.Set("Content-Type", "application/json")
 
-		handler.CreateReport(c)
+		router.ServeHTTP(w, req)
 
-		if c.Writer.Status() != http.StatusNoContent {
-			t.Errorf("iteration %d: expected status 204, got %d", i, c.Writer.Status())
+		if w.Code != http.StatusNoContent {
+			t.Errorf("iteration %d: expected status 204, got %d", i, w.Code)
 		}
 	}
 
@@ -119,4 +129,57 @@ func TestReportHandler_CreateReport_Batching(t *testing.T) {
 			t.Errorf("expected SourceIP 1.2.3.4, got %s", r.SourceIP)
 		}
 	}
+}
+
+func TestReportHandler_ListReportsByProjectID(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	projectID := uuid.New()
+
+	t.Run("Success", func(t *testing.T) {
+		mockService := &MockReportService{
+			ListReportsByProjectIDFunc: func(ctx context.Context, pid uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+				return []*models.CSPReportFetchDTO{{BlockedURL: "http://example.com"}}, &pagination.Pagination{Page: 1, PageSize: 10, TotalRows: 1}, nil
+			},
+		}
+		mockProjectService := &MockProjectService{
+			GetProjectByIDFunc: func(ctx context.Context, id uuid.UUID) (*models.ProjectFetchDTO, error) {
+				return &models.ProjectFetchDTO{ID: id}, nil
+			},
+		}
+		handler := NewReportHandler(mockService, mockProjectService)
+
+		w := httptest.NewRecorder()
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.GET("/reports/:projectID", handler.ListReportsByProjectID)
+
+		req := httptest.NewRequest("GET", "/reports/"+projectID.String(), nil)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected status 200, got %d", w.Code)
+		}
+	})
+
+	t.Run("ProjectNotFound", func(t *testing.T) {
+		mockService := &MockReportService{}
+		mockProjectService := &MockProjectService{
+			GetProjectByIDFunc: func(ctx context.Context, id uuid.UUID) (*models.ProjectFetchDTO, error) {
+				return nil, apperrors.New(http.StatusNotFound, "project not found")
+			},
+		}
+		handler := NewReportHandler(mockService, mockProjectService)
+
+		w := httptest.NewRecorder()
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.GET("/reports/:projectID", handler.ListReportsByProjectID)
+
+		req := httptest.NewRequest("GET", "/reports/"+projectID.String(), nil)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("expected status 404, got %d", w.Code)
+		}
+	})
 }

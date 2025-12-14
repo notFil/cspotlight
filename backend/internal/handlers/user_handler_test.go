@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"image"
+	"image/png"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +18,8 @@ import (
 	"github.com/notFil/cspotlight/internal/models"
 )
 
+const staticPath = "../static"
+
 func TestUserHandler_GetUserByID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -26,7 +30,8 @@ func TestUserHandler_GetUserByID(t *testing.T) {
 				return &models.UserFetchDTO{ID: id, Username: "testuser"}, nil
 			},
 		}
-		handler := NewUserHandler(mockService)
+		mockProjectService := &MockProjectService{}
+		handler := NewUserHandler(mockService, mockProjectService, staticPath)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -53,7 +58,8 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 				return &models.UserFetchDTO{ID: id, Username: user.Username}, nil
 			},
 		}
-		handler := NewUserHandler(mockService)
+		mockProjectService := &MockProjectService{}
+		handler := NewUserHandler(mockService, mockProjectService, staticPath)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -81,7 +87,8 @@ func TestUserHandler_DeleteUser(t *testing.T) {
 				return nil
 			},
 		}
-		handler := NewUserHandler(mockService)
+		mockProjectService := &MockProjectService{}
+		handler := NewUserHandler(mockService, mockProjectService, staticPath)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -107,7 +114,8 @@ func TestUserHandler_ListUsers(t *testing.T) {
 				return []*models.UserFetchDTO{{ID: uuid.New()}}, nil
 			},
 		}
-		handler := NewUserHandler(mockService)
+		mockProjectService := &MockProjectService{}
+		handler := NewUserHandler(mockService, mockProjectService, staticPath)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -133,7 +141,8 @@ func TestUserHandler_ListUsersByTeamID(t *testing.T) {
 				return []*models.UserFetchDTO{{ID: uuid.New()}}, nil
 			},
 		}
-		handler := NewUserHandler(mockService)
+		mockProjectService := &MockProjectService{}
+		handler := NewUserHandler(mockService, mockProjectService, staticPath)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -158,20 +167,30 @@ func TestUserHandler_SetDefaultProject(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockUserService{
 			SetDefaultProjectFunc: func(ctx context.Context, id uuid.UUID, projectID uuid.UUID) (*models.UserFetchDTO, error) {
-				return &models.UserFetchDTO{ID: id, DefaultProjectID: projectID}, nil
+				return &models.UserFetchDTO{ID: id, DefaultProjectID: &projectID}, nil
 			},
 		}
-		handler := NewUserHandler(mockService)
+		mockProjectService := &MockProjectService{
+			GetProjectByIDFunc: func(ctx context.Context, id uuid.UUID) (*models.ProjectFetchDTO, error) {
+				return &models.ProjectFetchDTO{ID: id}, nil
+			},
+		}
+		handler := NewUserHandler(mockService, mockProjectService, staticPath)
 
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "userID", Value: userID.String()}}
-		body := `{"projectID": "` + projectID.String() + `"}`
-		c.Request = httptest.NewRequest("PATCH", "/users/"+userID.String()+"/default-project", bytes.NewBufferString(body))
-		userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
-		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.Use(func(c *gin.Context) {
+			userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+			c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
+			c.Next()
+		})
+		router.PATCH("/users/:userID/default-project", handler.SetDefaultProject)
 
-		handler.SetDefaultProject(c)
+		body := `{"projectID": "` + projectID.String() + `"}`
+		req := httptest.NewRequest("PATCH", "/users/"+userID.String()+"/default-project", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusOK {
 			t.Errorf("expected status 200, got %d", w.Code)
@@ -184,18 +203,27 @@ func TestUserHandler_SetDefaultProject(t *testing.T) {
 				return nil, errors.New("failed")
 			},
 		}
-		handler := NewUserHandler(mockService)
+		mockProjectService := &MockProjectService{
+			GetProjectByIDFunc: func(ctx context.Context, id uuid.UUID) (*models.ProjectFetchDTO, error) {
+				return &models.ProjectFetchDTO{ID: id}, nil
+			},
+		}
+		handler := NewUserHandler(mockService, mockProjectService, staticPath)
 
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "userID", Value: userID.String()}}
-		body := `{"projectID": "` + projectID.String() + `"}`
-		c.Request = httptest.NewRequest("PATCH", "/users/default-project", bytes.NewBufferString(body))
-		userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
-		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.Use(func(c *gin.Context) {
+			userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+			c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
+			c.Next()
+		})
+		router.PATCH("/users/:userID/default-project", handler.SetDefaultProject)
 
-		handler.SetDefaultProject(c)
-		middleware.ErrorHandler()(c)
+		body := `{"projectID": "` + projectID.String() + `"}`
+		req := httptest.NewRequest("PATCH", "/users/"+userID.String()+"/default-project", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusInternalServerError {
 			t.Errorf("expected status 500, got %d", w.Code)
@@ -209,27 +237,35 @@ func TestUserHandler_ChangeImage(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockUserService{
-			ChangeImageFunc: func(ctx context.Context, id uuid.UUID, image *multipart.FileHeader) error {
+			ChangeImageFunc: func(ctx context.Context, id uuid.UUID, path string) error {
 				return nil
 			},
 		}
-		handler := NewUserHandler(mockService)
+		mockProjectService := &MockProjectService{}
+		handler := NewUserHandler(mockService, mockProjectService, staticPath)
 
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Params = gin.Params{{Key: "userID", Value: userID.String()}}
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.Use(func(c *gin.Context) {
+			userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+			c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
+			c.Next()
+		})
+		router.PATCH("/users/:userID/image", handler.ChangeImage)
+
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
-		part, _ := writer.CreateFormFile("image", "test.jpg")
-		part.Write([]byte("image content"))
+		part, _ := writer.CreateFormFile("image", "test.png")
+
+		img := image.NewRGBA(image.Rect(0, 0, 1, 1))
+		png.Encode(part, img)
+
 		writer.Close()
 
-		c.Request = httptest.NewRequest("PATCH", "/users/"+userID.String()+"/image", body)
-		userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
-		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
-		c.Request.Header.Set("Content-Type", writer.FormDataContentType())
-
-		handler.ChangeImage(c)
+		req := httptest.NewRequest("PATCH", "/users/"+userID.String()+"/image", body)
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusOK {
 			t.Errorf("expected status 200, got %d", w.Code)

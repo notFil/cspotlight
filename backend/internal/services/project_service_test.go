@@ -105,7 +105,7 @@ func TestCreateProject(t *testing.T) {
 	projectDTOUser := &models.ProjectUpsertDTO{
 		Name:        "User Project",
 		Description: "A user project",
-		TeamID:      uuid.New(), // Should be ignored/overwritten
+		TeamID:      userTeamID,
 	}
 
 	ctx = auth.ContextWithUser(context.Background(), &userData)
