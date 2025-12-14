@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -16,6 +17,8 @@ export default function Signup() {
     password: "",
     confirmPassword: "",
   })
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const { register, loading, error: authError } = useAuth()
 
@@ -66,7 +69,6 @@ export default function Signup() {
                 <Label htmlFor="firstName">First name</Label>
                 <Input
                   id="firstName"
-                  placeholder="Max"
                   required
                   value={formData.firstName}
                   onChange={handleChange}
@@ -77,7 +79,6 @@ export default function Signup() {
                 <Label htmlFor="lastName">Last name</Label>
                 <Input
                   id="lastName"
-                  placeholder="Robinson"
                   required
                   value={formData.lastName}
                   onChange={handleChange}
@@ -89,7 +90,6 @@ export default function Signup() {
               <Label htmlFor="username">Username</Label>
               <Input
                 id="username"
-                placeholder="mrobinson"
                 required
                 value={formData.username}
                 onChange={handleChange}
@@ -101,7 +101,6 @@ export default function Signup() {
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
                 required
                 value={formData.email}
                 onChange={handleChange}
@@ -110,25 +109,63 @@ export default function Signup() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                disabled={loading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  disabled={loading}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">
+                    {showPassword ? "Hide password" : "Show password"}
+                  </span>
+                </Button>
+              </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                required
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                disabled={loading}
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  disabled={loading}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  disabled={loading}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">
+                    {showConfirmPassword ? "Hide password" : "Show password"}
+                  </span>
+                </Button>
+              </div>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Creating account..." : "Create account"}

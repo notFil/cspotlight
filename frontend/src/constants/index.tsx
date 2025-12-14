@@ -40,9 +40,11 @@ export const BROWSER_COLORS: Record<string, string> = {
 };
 
 export const OS_COLORS: Record<string, string> = {
-  Windows: 'bg-blue-500',
-  MacOS: 'bg-zinc-500',
+  Windows: 'bg-red-500',
+  macOS: 'bg-zinc-500',
   Linux: 'bg-orange-500',
+  iOS: 'bg-blue-500',
   Android: 'bg-green-500',
+  ChromeOS: 'bg-yellow-500',
   Others: 'bg-slate-400',
 };

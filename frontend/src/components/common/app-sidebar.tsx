@@ -33,6 +33,7 @@ const items = [
     title: "Management",
     url: "/management",
     icon: ClipboardList,
+    adminOnly: true,
   },
 ]
 
@@ -53,14 +54,16 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title} className="h-12 text-base hover:bg-primary/10 hover:text-primary transition-colors">
-                    <Link to={item.url}>
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                item.adminOnly && user?.role === "user" ? null : (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild tooltip={item.title} className="h-12 text-base hover:bg-primary/10 hover:text-primary transition-colors">
+                      <Link to={item.url}>
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
               ))}
             </SidebarMenu>
           </SidebarGroupContent>

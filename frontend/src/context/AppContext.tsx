@@ -76,7 +76,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 const user = await userService.getCurrentUser();
                 dispatch({ type: 'SET_USER', payload: user });
             } catch (error) {
-                // Not logged in or session expired
                 console.log('No active session');
             } finally {
                 dispatch({ type: 'SET_LOADING', payload: false });
@@ -89,8 +88,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const login = async (credentials: UserLogin) => {
         dispatch({ type: 'SET_LOADING', payload: true });
         try {
-            // Login now works via cookies. The response contains user data.
-            const user = await authService.login(credentials);
+            await authService.login(credentials);
+            const user = await userService.getCurrentUser();
             dispatch({ type: 'SET_USER', payload: user });
             navigate('/');
         } catch (error: any) {
@@ -110,7 +109,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             console.error('Logout failed', error);
         } finally {
             localStorage.clear();
-            document.cookie = 'session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
             dispatch({ type: 'SET_USER', payload: null });
             navigate('/login');
         }

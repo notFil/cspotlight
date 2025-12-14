@@ -1,13 +1,12 @@
 import { apiClient } from "./api";
-import type { UserRegister, UserLogin, User } from "@/types";
+import type { UserRegister, UserLogin } from "@/types";
 
 class AuthService {
   constructor() {
   }
 
-  public async login(credentials: UserLogin): Promise<User> {
-    const response = await apiClient.post<User>('/api/v1/auth/login', credentials);
-    return response.data;
+  public async login(credentials: UserLogin): Promise<void> {
+    await apiClient.post('/api/v1/auth/login', credentials);
   }
 
   public async register(user: UserRegister): Promise<any> {
