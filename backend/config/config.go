@@ -17,6 +17,7 @@ type Server struct {
 	Port        int
 	Environment string
 	BaseURL     string
+	StaticPath  string
 }
 
 type CORS struct {
@@ -62,6 +63,7 @@ func LoadConfig() Config {
 		Port:        viper.GetInt("APP_PORT"),
 		Environment: viper.GetString("APP_ENVIRONMENT"),
 		BaseURL:     viper.GetString("APP_BASE_URL"),
+		StaticPath:  viper.GetString("APP_STATIC_PATH"),
 	}
 
 	session := Session{

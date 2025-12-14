@@ -1,8 +1,13 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"time"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/notFil/cspotlight/internal/auth"
 	apperrors "github.com/notFil/cspotlight/internal/errors"
 	"github.com/notFil/cspotlight/internal/response"
@@ -17,13 +22,17 @@ import (
 )
 
 type UserHandler struct {
-	userService services.UserService
+	userService    services.UserService
+	projectService services.ProjectService
+	staticPath     string
 }
 
 // NewUserHandler creates a new UserHandler
-func NewUserHandler(s services.UserService) *UserHandler {
+func NewUserHandler(u services.UserService, p services.ProjectService, staticPath string) *UserHandler {
 	return &UserHandler{
-		userService: s,
+		userService:    u,
+		projectService: p,
+		staticPath:     staticPath,
 	}
 }
 
@@ -267,10 +276,11 @@ func (h *UserHandler) SetDefaultProject(c *gin.Context) {
 		return
 	}
 
-	projectID, err := uuid.Parse(req.ProjectID)
+	projectID := uuid.MustParse(req.ProjectID)
+	_, err := h.projectService.GetProjectByID(ctx, projectID)
 	if err != nil {
-		log.Warn("invalid project id", zap.String("project_id", req.ProjectID), zap.Error(err))
-		c.Error(apperrors.New(http.StatusBadRequest, "invalid project id"))
+		log.Error("failed to get project", zap.Error(err))
+		c.Error(err)
 		return
 	}
 
@@ -326,6 +336,14 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 	}
 
 	log.Info("user changed password", zap.String("user_id", userID.String()))
+	session := sessions.Default(c)
+	session.Options(sessions.Options{MaxAge: -1})
+	session.Clear()
+	if err := session.Save(); err != nil {
+		log.Error("failed to save session", zap.Error(err))
+		c.Error(apperrors.New(http.StatusInternalServerError, "failed to sign out"))
+		return
+	}
 
 	response.Success(c, http.StatusOK, "password changed successfully", nil)
 }
@@ -364,7 +382,29 @@ func (h *UserHandler) ChangeImage(c *gin.Context) {
 		return
 	}
 
-	err = h.userService.ChangeImage(ctx, userID, file)
+	uploadDir := fmt.Sprintf("%s/images/users", h.staticPath)
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		log.Error("failed to create upload directory", zap.Error(err))
+		c.Error(apperrors.New(http.StatusInternalServerError, "failed to process image"))
+		return
+	}
+
+	filename := fmt.Sprintf("%s_%d.png", uuid.New().String(), time.Now().Unix())
+	dst := filepath.Join(uploadDir, filename)
+
+	if err := util.ValidateImage(file); err != nil {
+		log.Error("failed to validate image", zap.Error(err))
+		c.Error(apperrors.New(http.StatusBadRequest, "invalid image"))
+		return
+	}
+
+	if err := c.SaveUploadedFile(file, dst); err != nil {
+		log.Error("failed to save uploaded file", zap.Error(err))
+		c.Error(apperrors.New(http.StatusInternalServerError, "failed to save uploaded file"))
+		return
+	}
+
+	err = h.userService.ChangeImage(ctx, userID, dst)
 	if err != nil {
 		log.Error("failed to change image", zap.Error(err))
 		c.Error(err)

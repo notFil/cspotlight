@@ -26,7 +26,7 @@ func main() {
 
 	db := store.ConnectDB(cfg.Store.DSN)
 
-	router := router.SetUpRouter(db, cfg.Server.BaseURL, cfg.Session, cfg.CORS, cfg.Store.Redis, isProduction)
+	router := router.SetUpRouter(db, cfg.Server.BaseURL, cfg.Server.StaticPath, cfg.Session, cfg.CORS, cfg.Store.Redis, isProduction)
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),

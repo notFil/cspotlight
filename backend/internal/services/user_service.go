@@ -2,15 +2,9 @@ package services
 
 import (
 	"context"
-	"encoding/base64"
-	"errors"
-	"fmt"
-	"io"
-	"mime/multipart"
 	"net/http"
-	"slices"
+	"path/filepath"
 
-	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
 	"github.com/notFil/cspotlight/internal/auth"
 	apperrors "github.com/notFil/cspotlight/internal/errors"
@@ -18,10 +12,6 @@ import (
 	"github.com/notFil/cspotlight/internal/repositories"
 	"golang.org/x/crypto/bcrypt"
 )
-
-const ImageMaxSize = 2 << 20
-
-var ImageAllowedExts = []string{"image/jpeg", "image/png", "image/gif"}
 
 type UserService interface {
 	RegisterUser(ctx context.Context, user *models.UserRegisterDTO) error
@@ -33,18 +23,16 @@ type UserService interface {
 	ListUsersByTeamID(ctx context.Context, teamID uuid.UUID) ([]*models.UserFetchDTO, error)
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	ChangePassword(ctx context.Context, id uuid.UUID, request *models.ChangePasswordRequest) error
-	ChangeImage(ctx context.Context, id uuid.UUID, image *multipart.FileHeader) error
+	ChangeImage(ctx context.Context, id uuid.UUID, path string) error
 }
 
 type userService struct {
-	userRepo    repositories.UserRepository
-	projectRepo repositories.ProjectRepository
+	userRepo repositories.UserRepository
 }
 
-func NewUserService(userRepo repositories.UserRepository, projectRepo repositories.ProjectRepository) UserService {
+func NewUserService(userRepo repositories.UserRepository) UserService {
 	return &userService{
-		userRepo:    userRepo,
-		projectRepo: projectRepo,
+		userRepo: userRepo,
 	}
 }
 
@@ -56,7 +44,7 @@ func (s *userService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Us
 		return nil, err
 	}
 
-	if !(userContext.IsSuperadmin() || (userContext.IsAdmin() && u.TeamID != nil && userContext.SameTeam(*u.TeamID)) || userContext.SameUser(id)) {
+	if !(userContext.IsSuperadmin() || (userContext.IsAdmin() && u.TeamID != nil && userContext.HasSameTeam(*u.TeamID)) || userContext.IsSameUser(id)) {
 		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -160,16 +148,7 @@ func (s *userService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 
 func (s *userService) SetDefaultProject(ctx context.Context, id uuid.UUID, projectID uuid.UUID) (*models.UserFetchDTO, error) {
 	userContext := auth.GetUserContext(ctx)
-	if !userContext.SameUser(id) {
-		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
-	}
-
-	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
-	if project == nil || err != nil {
-		return nil, apperrors.New(http.StatusNotFound, "project not found")
-	}
-
-	if !userContext.IsSuperadmin() && !project.BelongsToTeam(userContext.TeamID) {
+	if !userContext.IsSameUser(id) {
 		return nil, apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 	u, err := s.userRepo.GetUserByID(ctx, id)
@@ -185,7 +164,7 @@ func (s *userService) SetDefaultProject(ctx context.Context, id uuid.UUID, proje
 
 func (s *userService) ChangePassword(ctx context.Context, id uuid.UUID, request *models.ChangePasswordRequest) error {
 	userContext := auth.GetUserContext(ctx)
-	if !userContext.SameUser(id) {
+	if !userContext.IsSameUser(id) {
 		return apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
 
@@ -213,57 +192,22 @@ func (s *userService) ChangePassword(ctx context.Context, id uuid.UUID, request 
 	return nil
 }
 
-func (s *userService) ChangeImage(ctx context.Context, id uuid.UUID, image *multipart.FileHeader) error {
+func (s *userService) ChangeImage(ctx context.Context, id uuid.UUID, path string) error {
 	userContext := auth.GetUserContext(ctx)
-	if !userContext.SameUser(id) {
+	if !userContext.IsSameUser(id) {
 		return apperrors.New(http.StatusUnauthorized, "unauthorized access")
 	}
-
-	if image.Size > ImageMaxSize {
-		return apperrors.New(http.StatusBadRequest, "image too large")
-	}
-
-	f, err := image.Open()
-	if err != nil {
-		return apperrors.New(http.StatusInternalServerError, "failed to open image")
-	}
-	defer f.Close()
-
-	mimeType, err := validateImageMimeType(f)
-	if err != nil {
-		return apperrors.New(http.StatusBadRequest, "invalid image format")
-	}
-
-	data, err := io.ReadAll(f)
-	if err != nil {
-		return apperrors.New(http.StatusInternalServerError, "failed to read image")
-	}
-
-	strFile := base64.StdEncoding.EncodeToString(data)
 
 	u, err := s.userRepo.GetUserByID(ctx, id)
 	if err != nil {
 		return apperrors.New(http.StatusNotFound, "user not found")
 	}
-	u.Image = fmt.Sprintf("data:%s;base64,%s", mimeType, strFile)
+
+	path = filepath.Clean(path)
+
+	u.Image = path
 	if err := s.userRepo.UpdateUser(ctx, u); err != nil {
 		return apperrors.New(http.StatusInternalServerError, "failed to update user")
 	}
 	return nil
-}
-
-func validateImageMimeType(f multipart.File) (string, error) {
-	mimeType, err := mimetype.DetectReader(f)
-	if err != nil {
-		return "", err
-	}
-	if !slices.Contains(ImageAllowedExts, mimeType.String()) {
-		return "", errors.New("invalid image format")
-	}
-
-	if _, err := f.Seek(0, io.SeekStart); err != nil {
-		return "", err
-	}
-
-	return mimeType.String(), nil
 }
