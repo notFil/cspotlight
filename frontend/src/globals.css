@@ -39,29 +39,22 @@
 */
 :root {
     --background: 60 9% 98%;
-    /* #fcfcf9 */
     --foreground: 187 54% 12%;
-    /* Updated to match navy: #13343b */
     --card: 0 0% 100%;
-    /* #fffffe */
     --card-foreground: 187 54% 12%;
     --popover: 0 0% 100%;
     --popover-foreground: 187 54% 12%;
     --primary: 187 62.2% 34.1%;
-    /* Navy blue: #21808d */
     --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 187 54% 12%;
     --muted: 210 40% 96%;
     --muted-foreground: 196 7% 43%;
-    /* #626c71 */
     --accent: 210 40% 96%;
     --accent-foreground: 187 54% 12%;
     --destructive: 351 74.3% 43.9%;
-    /* Error red: #c0152f */
     --destructive-foreground: 210 40% 98%;
     --border: 37 24% 74%;
-    /* rgba(94, 82, 64, 0.2) approximation */
     --input: 37 24% 74%;
     --ring: 187 62.2% 34.1%;
     --radius: 0.5rem;
@@ -91,44 +84,40 @@
 }
 
 .dark {
-    --background: 210 30% 8%;
-    /* Deep navy background: ~#0d1117 */
-    --foreground: 210 40% 98%;
-    --card: 215 25% 12%;
-    /* Slightly lighter navy for cards: ~#172030 */
-    --card-foreground: 210 40% 98%;
-    --popover: 215 25% 12%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 183 59% 48%;
-    /* Bright teal: #32b8c6 */
-    --primary-foreground: 210 30% 8%;
-    --secondary: 217 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 25% 20%;
-    --muted-foreground: 215 15% 65%;
-    --accent: 183 59% 48%;
-    /* Using teal for accent */
-    --accent-foreground: 210 30% 8%;
-    --destructive: 1 100% 66%;
-    /* Bright red: #ff5459 */
-    --destructive-foreground: 210 40% 98%;
-    --border: 215 15% 15%;
-    /* Very subtle borders */
-    --input: 215 25% 18%;
-    --ring: 183 59% 48%;
+    --background: 0 0% 4%;
+    /* Deep black/gray background: #0a0a0a */
+    --foreground: 0 0% 98%;
+    --card: 0 0% 8%;
+    /* Slightly lighter gray for cards: #141414 */
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 0 0% 83%;
 
     /* Legacy dashboard colors dark mode */
-    --color-background: #0d1117;
-    --color-surface: #172030;
-    --color-text: #f5f5f5;
-    --color-text-secondary: rgba(167, 169, 169, 0.7);
-    --color-primary: #32b8c6;
-    --color-primary-hover: #2da6b2;
-    --color-border: rgba(119, 124, 124, 0.2);
-    --color-card-border: rgba(119, 124, 124, 0.15);
-    --color-success: #32b8c6;
-    --color-error: #ff5459;
-    --color-warning: #e68161;
+    --color-background: #0a0a0a;
+    --color-surface: #141414;
+    --color-text: #fafafa;
+    --color-text-secondary: #a3a3a3;
+    --color-primary: #fafafa;
+    --color-primary-hover: #e5e5e5;
+    --color-border: #262626;
+    --color-card-border: #262626;
+    --color-success: #fafafa;
+    --color-error: #7f1d1d;
+    --color-warning: #78350f;
 
     /* Sidebar variables mapped to theme */
     --sidebar-background: var(--card);
@@ -168,9 +157,6 @@
     }
 }
 
-/* 
-   Merged styles from index.css and App.css
-*/
 
 /* Logo styles from App.css */
 .logo {
@@ -435,12 +421,10 @@
 
 .trend-up {
     color: hsl(var(--destructive));
-    /* Using destructive for 'error' color mapping */
 }
 
 .trend-down {
     color: hsl(var(--primary));
-    /* Using primary/success color mapping */
 }
 
 .severity-badge {
