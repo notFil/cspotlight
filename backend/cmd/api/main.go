@@ -5,12 +5,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/notFil/cspotlight/config"
-	"github.com/notFil/cspotlight/internal/logger"
-	"github.com/notFil/cspotlight/internal/store"
+	"cspotlight/config"
+	"cspotlight/internal/logger"
+	"cspotlight/internal/store"
+
 	"go.uber.org/zap"
 
-	"github.com/notFil/cspotlight/internal/router"
+	"cspotlight/internal/router"
 )
 
 func main() {
@@ -24,9 +25,9 @@ func main() {
 
 	logger.Logger.Info("Starting server on port %d", zap.Int("port", port))
 
-	db := store.ConnectDB(cfg.Store.DSN)
+	db := store.NewDatabase(cfg.Store.DSN)
 
-	router := router.SetUpRouter(db, cfg.Server.BaseURL, cfg.Server.StaticPath, cfg.Session, cfg.CORS, cfg.Store.Redis, isProduction)
+	router := router.SetUpRouter(db, cfg.Server.BaseURL, cfg.Server.StaticPath, cfg.Session, cfg.CORS, isProduction)
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),

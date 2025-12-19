@@ -34,8 +34,7 @@ type Session struct {
 }
 
 type Store struct {
-	DSN   string
-	Redis Redis
+	DSN string
 }
 
 type Redis struct {
@@ -74,12 +73,6 @@ func LoadConfig() Config {
 
 	store := Store{
 		DSN: viper.GetString("DB_ADDR"),
-		Redis: Redis{
-			Addr:      viper.GetString("REDIS_ADDR"),
-			Username:  viper.GetString("REDIS_USERNAME"),
-			Password:  viper.GetString("REDIS_PASSWORD"),
-			IdleConns: viper.GetInt("REDIS_IDLE_CONNS"),
-		},
 	}
 
 	cors := CORS{
