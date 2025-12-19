@@ -6,11 +6,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	apperrors "cspotlight/internal/errors"
+	"cspotlight/internal/middleware"
+	"cspotlight/internal/models"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	apperrors "github.com/notFil/cspotlight/internal/errors"
-	"github.com/notFil/cspotlight/internal/middleware"
-	"github.com/notFil/cspotlight/internal/models"
 )
 
 func TestAnalyticsHandler_GetReportSummaryStats(t *testing.T) {

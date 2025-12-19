@@ -4,34 +4,30 @@ import (
 	"net/http"
 	"time"
 
+	"cspotlight/config"
+	docs "cspotlight/docs"
+	"cspotlight/internal/handlers"
+	"cspotlight/internal/middleware"
+	"cspotlight/internal/repositories"
+	"cspotlight/internal/services"
+	"cspotlight/internal/store"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
-	"github.com/notFil/cspotlight/config"
-	docs "github.com/notFil/cspotlight/docs"
-	"github.com/notFil/cspotlight/internal/handlers"
-	"github.com/notFil/cspotlight/internal/middleware"
-	"github.com/notFil/cspotlight/internal/repositories"
-	"github.com/notFil/cspotlight/internal/services"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"gorm.io/gorm"
 )
 
-func SetUpRouter(db *gorm.DB, baseURL string, staticPath string, sessionCfg config.Session, corsCfg config.CORS, redisCfg config.Redis, isProduction bool) *gin.Engine {
+func SetUpRouter(db store.Database, baseURL string, staticPath string, sessionCfg config.Session, corsCfg config.CORS, isProduction bool) *gin.Engine {
 	var store sessions.Store
-	var err error
 
 	router := gin.New()
 	if sessionCfg.UseCookieStore {
 		store = cookie.NewStore(sessionCfg.SecretKey)
 	} else {
-		store, err = redis.NewStore(redisCfg.IdleConns, "tcp", redisCfg.Addr, redisCfg.Username, redisCfg.Password, sessionCfg.SecretKey)
-		if err != nil {
-			panic("Failed to create redis store: " + err.Error())
-		}
+		store = db.CreateSessionStore(sessionCfg.SecretKey)
 	}
 	store.Options(sessions.Options{
 		Path:     "/",
@@ -61,10 +57,10 @@ func SetUpRouter(db *gorm.DB, baseURL string, staticPath string, sessionCfg conf
 	// ------------------------------------------------------
 	// Setup Repositories + Services + Handlers
 	// ------------------------------------------------------
-	projectRepo := repositories.NewProjectRepository(db)
-	teamRepo := repositories.NewTeamRepository(db)
-	userRepo := repositories.NewUserRepository(db)
-	reportRepo := repositories.NewReportRepository(db)
+	projectRepo := repositories.NewProjectRepository(db.DB)
+	teamRepo := repositories.NewTeamRepository(db.DB)
+	userRepo := repositories.NewUserRepository(db.DB)
+	reportRepo := repositories.NewReportRepository(db.DB)
 
 	projectService := services.NewProjectService(projectRepo, baseURL)
 	teamService := services.NewTeamService(teamRepo)

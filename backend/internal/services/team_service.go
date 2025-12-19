@@ -4,10 +4,11 @@ import (
 	"context"
 	"net/http"
 
+	apperrors "cspotlight/internal/errors"
+	"cspotlight/internal/models"
+	"cspotlight/internal/repositories"
+
 	"github.com/google/uuid"
-	apperrors "github.com/notFil/cspotlight/internal/errors"
-	"github.com/notFil/cspotlight/internal/models"
-	"github.com/notFil/cspotlight/internal/repositories"
 )
 
 type TeamService interface {

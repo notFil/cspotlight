@@ -3,9 +3,10 @@ package middleware
 import (
 	"net/http"
 
+	apperrors "cspotlight/internal/errors"
+	"cspotlight/internal/response"
+
 	"github.com/gin-gonic/gin"
-	apperrors "github.com/notFil/cspotlight/internal/errors"
-	"github.com/notFil/cspotlight/internal/response"
 )
 
 func ErrorHandler() gin.HandlerFunc {

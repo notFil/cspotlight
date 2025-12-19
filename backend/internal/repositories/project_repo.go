@@ -3,8 +3,9 @@ package repositories
 import (
 	"context"
 
+	"cspotlight/internal/models"
+
 	"github.com/google/uuid"
-	"github.com/notFil/cspotlight/internal/models"
 	"gorm.io/gorm"
 )
 

@@ -3,9 +3,10 @@ package middleware
 import (
 	"time"
 
+	"cspotlight/internal/logger"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/notFil/cspotlight/internal/logger"
 	"go.uber.org/zap"
 )
 

@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/google/uuid"
-	"github.com/notFil/cspotlight/internal/auth"
+	"cspotlight/internal/auth"
 
-	apperrors "github.com/notFil/cspotlight/internal/errors"
-	"github.com/notFil/cspotlight/internal/models"
-	"github.com/notFil/cspotlight/internal/repositories"
+	"github.com/google/uuid"
+
+	apperrors "cspotlight/internal/errors"
+	"cspotlight/internal/models"
+	"cspotlight/internal/repositories"
 )
 
 type ProjectService interface {

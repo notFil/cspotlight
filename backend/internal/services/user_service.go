@@ -5,11 +5,12 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"cspotlight/internal/auth"
+	apperrors "cspotlight/internal/errors"
+	"cspotlight/internal/models"
+	"cspotlight/internal/repositories"
+
 	"github.com/google/uuid"
-	"github.com/notFil/cspotlight/internal/auth"
-	apperrors "github.com/notFil/cspotlight/internal/errors"
-	"github.com/notFil/cspotlight/internal/models"
-	"github.com/notFil/cspotlight/internal/repositories"
 	"golang.org/x/crypto/bcrypt"
 )
 

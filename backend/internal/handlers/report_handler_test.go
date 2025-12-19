@@ -9,12 +9,13 @@ import (
 	"testing"
 	"time"
 
+	apperrors "cspotlight/internal/errors"
+	"cspotlight/internal/middleware"
+	"cspotlight/internal/models"
+	"cspotlight/internal/pagination"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	apperrors "github.com/notFil/cspotlight/internal/errors"
-	"github.com/notFil/cspotlight/internal/middleware"
-	"github.com/notFil/cspotlight/internal/models"
-	"github.com/notFil/cspotlight/internal/pagination"
 )
 
 type MockReportService struct {

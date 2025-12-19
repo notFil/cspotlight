@@ -4,11 +4,12 @@ import (
 	"context"
 	"math"
 
+	"cspotlight/internal/constants"
+	"cspotlight/internal/models"
+	"cspotlight/internal/pagination"
+	"cspotlight/internal/util"
+
 	"github.com/google/uuid"
-	"github.com/notFil/cspotlight/internal/constants"
-	"github.com/notFil/cspotlight/internal/models"
-	"github.com/notFil/cspotlight/internal/pagination"
-	"github.com/notFil/cspotlight/internal/util"
 	"gorm.io/gorm"
 )
 
@@ -43,11 +44,11 @@ func (r *reportRepository) ListReportsByProjectID(ctx context.Context, projectID
 	// Count total unique groups for pagination
 	var totalRows int64
 	countQuery := `
-		SELECT COUNT(*) 
+		SELECT COUNT(*)
 		FROM (
-			SELECT 1 
-			FROM csp_reports 
-			WHERE project_id = ? 
+			SELECT 1
+			FROM csp_reports
+			WHERE project_id = ?
 			GROUP BY url, directive, blocked_url, disposition, document_url, body, source_ip, user_agent
 		) AS sub
 	`
@@ -59,7 +60,7 @@ func (r *reportRepository) ListReportsByProjectID(ctx context.Context, projectID
 	// Fetch paginated results
 	// Fetch paginated results
 	selectQuery := `
-    SELECT 
+    SELECT
         url,
         directive,
 				blocked_url,
@@ -88,7 +89,7 @@ func (r *reportRepository) GetReportSummaryStats(ctx context.Context, projectID 
 	var dto models.ReportMetricsDTO
 
 	query := `
-		SELECT 
+		SELECT
 			COUNT(*) AS total_violations,
 			COUNT(CASE WHEN created_at < NOW() - INTERVAL '24 hours' THEN 1 END) AS total_violations_24h,
 			COUNT(CASE WHEN directive in ? THEN 1 END) AS total_critical_violations,
@@ -145,7 +146,7 @@ func (r *reportRepository) GetReportGraphData(ctx context.Context, projectID uui
 	var dto models.ReportGraphDataDTO
 
 	query := `
-		SELECT 
+		SELECT
 			TO_CHAR(created_at, 'YYYY-MM-DD') AS date,
 			directive,
 			COUNT(id) AS count
@@ -184,7 +185,7 @@ func (r *reportRepository) GetReportViolationTrend(ctx context.Context, projectI
 	trends := make([]models.ViolationTrend, 0)
 
 	query := `
-		SELECT 
+		SELECT
 			TO_CHAR(created_at, 'FMMonth DD') AS day,
 			COUNT(*) AS total,
 			COUNT(CASE WHEN directive in ? THEN 1 END) AS critical,
@@ -265,7 +266,7 @@ func (r *reportRepository) GetReportTopViolatedDocumentURLs(ctx context.Context,
 	var dto models.ReportTopViolatedDocumentURLDTO
 
 	query := `
-		SELECT 
+		SELECT
 			document_url as url,
 			COUNT(*) AS count
 		FROM csp_reports
@@ -286,7 +287,7 @@ func (r *reportRepository) GetReportSoftwareStats(ctx context.Context, projectID
 	var dto models.ReportSoftwareStatsDTO
 
 	query := `
-		SELECT 
+		SELECT
 			user_agent,
 			COUNT(*) AS count
 		FROM csp_reports

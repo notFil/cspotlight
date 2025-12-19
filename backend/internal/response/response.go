@@ -1,8 +1,9 @@
 package response
 
 import (
+	"cspotlight/internal/pagination"
+
 	"github.com/gin-gonic/gin"
-	"github.com/notFil/cspotlight/internal/pagination"
 )
 
 type Response struct {

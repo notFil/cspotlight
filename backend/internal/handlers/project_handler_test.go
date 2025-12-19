@@ -7,12 +7,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"cspotlight/internal/auth"
+	apperrors "cspotlight/internal/errors"
+	"cspotlight/internal/middleware"
+	"cspotlight/internal/models"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/notFil/cspotlight/internal/auth"
-	apperrors "github.com/notFil/cspotlight/internal/errors"
-	"github.com/notFil/cspotlight/internal/middleware"
-	"github.com/notFil/cspotlight/internal/models"
 )
 
 type MockProjectService struct {

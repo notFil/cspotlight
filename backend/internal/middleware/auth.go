@@ -4,11 +4,12 @@ import (
 	"net/http"
 	"slices"
 
+	"cspotlight/internal/auth"
+	apperrors "cspotlight/internal/errors"
+	logger "cspotlight/internal/logger"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/notFil/cspotlight/internal/auth"
-	apperrors "github.com/notFil/cspotlight/internal/errors"
-	logger "github.com/notFil/cspotlight/internal/logger"
 )
 
 func AuthMiddleware(c *gin.Context) {
