@@ -5,10 +5,11 @@ import (
 	"errors"
 	"testing"
 
+	"cspotlight/internal/auth"
+	"cspotlight/internal/models"
+	"cspotlight/internal/pagination"
+
 	"github.com/google/uuid"
-	"github.com/notFil/cspotlight/internal/auth"
-	"github.com/notFil/cspotlight/internal/models"
-	"github.com/notFil/cspotlight/internal/pagination"
 	"gorm.io/datatypes"
 )
 

@@ -5,9 +5,10 @@ import (
 	"errors"
 	"testing"
 
+	"cspotlight/internal/auth"
+	"cspotlight/internal/models"
+
 	"github.com/google/uuid"
-	"github.com/notFil/cspotlight/internal/auth"
-	"github.com/notFil/cspotlight/internal/models"
 )
 
 // MockProjectRepository is a manual mock for ProjectRepository

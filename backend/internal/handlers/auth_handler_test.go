@@ -9,14 +9,15 @@ import (
 	"testing"
 	"time"
 
+	"cspotlight/internal/auth"
+	"cspotlight/internal/logger"
+	"cspotlight/internal/middleware"
+	"cspotlight/internal/models"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/notFil/cspotlight/internal/auth"
-	"github.com/notFil/cspotlight/internal/logger"
-	"github.com/notFil/cspotlight/internal/middleware"
-	"github.com/notFil/cspotlight/internal/models"
 )
 
 func init() {

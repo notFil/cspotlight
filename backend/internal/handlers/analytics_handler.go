@@ -3,13 +3,14 @@ package handlers
 import (
 	"net/http"
 
+	apperrors "cspotlight/internal/errors"
+	"cspotlight/internal/logger"
+	"cspotlight/internal/response"
+	"cspotlight/internal/services"
+	"cspotlight/internal/util"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	apperrors "github.com/notFil/cspotlight/internal/errors"
-	"github.com/notFil/cspotlight/internal/logger"
-	"github.com/notFil/cspotlight/internal/response"
-	"github.com/notFil/cspotlight/internal/services"
-	"github.com/notFil/cspotlight/internal/util"
 	"go.uber.org/zap"
 )
 

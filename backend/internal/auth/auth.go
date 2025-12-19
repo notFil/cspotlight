@@ -4,8 +4,9 @@ import (
 	"context"
 	"strings"
 
+	"cspotlight/internal/constants"
+
 	"github.com/google/uuid"
-	"github.com/notFil/cspotlight/internal/constants"
 )
 
 type contextKey struct{}

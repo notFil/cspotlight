@@ -8,10 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"cspotlight/internal/middleware"
+	"cspotlight/internal/models"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/notFil/cspotlight/internal/middleware"
-	"github.com/notFil/cspotlight/internal/models"
 )
 
 type MockTeamService struct {

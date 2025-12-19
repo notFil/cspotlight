@@ -5,8 +5,9 @@ import (
 	"errors"
 	"testing"
 
+	"cspotlight/internal/models"
+
 	"github.com/google/uuid"
-	"github.com/notFil/cspotlight/internal/models"
 )
 
 // MockTeamRepository is a manual mock for TeamRepository
