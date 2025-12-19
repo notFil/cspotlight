@@ -9,9 +9,9 @@ serve:
 	go run cmd/api/main.go
 
 build:
-	GOARCH=amd64 GOOS=darwin go build -o ${APP_EXECUTABLE}-darwin cmd/api/main.go
-	GOARCH=amd64 GOOS=linux go build -o ${APP_EXECUTABLE}-linux cmd/api/main.go
-	GOARCH=amd64 GOOS=windows go build -o ${APP_EXECUTABLE}-windows cmd/api/main.go
+	CGO_ENABLED=0 GOOS=darwin go build -o ${APP_EXECUTABLE}-darwin cmd/api/main.go
+	CGO_ENABLED=0 GOOS=linux go build -o ${APP_EXECUTABLE}-linux cmd/api/main.go
+	CGO_ENABLED=0 GOOS=windows go build -o ${APP_EXECUTABLE}-windows cmd/api/main.go
 
 run: build
 	./${APP_EXECUTABLE}

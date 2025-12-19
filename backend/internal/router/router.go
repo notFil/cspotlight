@@ -44,6 +44,7 @@ func SetUpRouter(db *gorm.DB, baseURL string, staticPath string, sessionCfg conf
 	router.Use(gin.Recovery())
 	router.Use(middleware.RequestLogger())
 	router.Use(middleware.ErrorHandler())
+	router.Use(middleware.RateLimiter())
 	router.Static("/static", staticPath)
 
 	router.RedirectTrailingSlash = false
