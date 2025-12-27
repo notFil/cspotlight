@@ -9,7 +9,7 @@ services:
       - ./frontend:/app
     working_dir: /app
     environment:
-      - VITE_API_URL=http://backend:8080
+      - REACT_APP_API_BASE_URL=http://backend:8080
     deploy:
       resources:
         limits:
@@ -37,11 +37,9 @@ services:
       - "5434:5432"
     env_file:
       - "cspotlight.env"
-    environment:
-      - PGDATA=/var/lib/postgresql/data
     volumes:
-      - postgres_data:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres -d cspotlight" ]
       interval: 5s

@@ -24,11 +24,11 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': {
           changeOrigin: true,
-          target: env.VITE_API_URL,
+          target: env.REACT_APP_API_BASE_URL,
         },
         '/static': {
           changeOrigin: true,
-          target: env.VITE_API_URL,
+          target: env.REACT_APP_API_BASE_URL,
         }
       }
     },

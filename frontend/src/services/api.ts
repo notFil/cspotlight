@@ -7,7 +7,7 @@ class APIClient {
 
     constructor() {
         this.client = axios.create({
-            baseURL: import.meta.env.DEV ? '' : import.meta.env.VITE_API_URL,
+            baseURL: import.meta.env.DEV ? '' : import.meta.env.REACT_APP_API_BASE_URL,
             timeout: 5000,
             withCredentials: true,
             headers: {
