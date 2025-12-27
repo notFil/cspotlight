@@ -23,6 +23,10 @@ services:
         condition: service_healthy
     env_file:
       - "cspotlight.env"
+    environment:
+      - APP_STATIC_PATH=/static
+    volumes:
+      - static_data:/static
     deploy:
       resources:
         limits:
@@ -36,7 +40,7 @@ services:
     environment:
       - PGDATA=/var/lib/postgresql/data
     volumes:
-      - ./postgres/data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres -d cspotlight" ]
@@ -47,3 +51,6 @@ services:
       resources:
         limits:
           memory: 2G
+volumes:
+  postgres_data:
+  static_data:

@@ -27,7 +27,6 @@ WORKDIR /
 COPY --from=builder /app/app-linux ./server
 
 # Copy necessary directories
-COPY --from=builder /app/static ./static
 COPY --from=builder /app/docs ./docs
 COPY --from=builder /app/migrations ./migrations
 
