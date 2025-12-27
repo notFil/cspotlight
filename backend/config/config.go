@@ -34,7 +34,8 @@ type Session struct {
 }
 
 type Store struct {
-	DSN string
+	DSN         string
+	MigratorDSN string
 }
 
 type Redis struct {
@@ -72,7 +73,8 @@ func LoadConfig() Config {
 	}
 
 	store := Store{
-		DSN: viper.GetString("DB_ADDR"),
+		DSN:         viper.GetString("DB_ADDR"),
+		MigratorDSN: viper.GetString("MIGRATOR_DB_ADDR"),
 	}
 
 	cors := CORS{

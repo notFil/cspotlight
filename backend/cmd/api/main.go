@@ -25,6 +25,12 @@ func main() {
 
 	logger.Logger.Info("Starting server on port %d", zap.Int("port", port))
 
+	logger.Logger.Info("Initiating database migrations")
+	if err := store.RunMigrations(cfg.Store.MigratorDSN); err != nil {
+		logger.Logger.Warn("failed to run migrations: %v", zap.Error(err))
+	}
+	logger.Logger.Info("Database migrations completed")
+
 	db := store.NewDatabase(cfg.Store.DSN)
 
 	router := router.SetUpRouter(db, cfg.Server.BaseURL, cfg.Server.StaticPath, cfg.Session, cfg.CORS, isProduction)
