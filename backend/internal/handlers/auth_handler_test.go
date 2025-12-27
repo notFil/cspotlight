@@ -269,7 +269,7 @@ func TestAuthHandler_SignOut(t *testing.T) {
 
 	// Inject user context
 	router.Use(func(c *gin.Context) {
-		userCtx := auth.NewUserContext(uuid.New().String(), uuid.New().String(), "user")
+		userCtx := auth.NewUserContext(uuid.New(), uuid.New(), "user")
 		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 		c.Next()
 	})

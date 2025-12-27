@@ -7,9 +7,11 @@ import (
 	"cspotlight/internal/auth"
 	apperrors "cspotlight/internal/errors"
 	logger "cspotlight/internal/logger"
+	"cspotlight/internal/util"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 func AuthMiddleware(c *gin.Context) {
@@ -20,14 +22,19 @@ func AuthMiddleware(c *gin.Context) {
 	teamID := session.Get("teamID")
 	role := session.Get("role")
 
-	if userID == nil || teamID == nil || role == nil {
+	if userID == nil || role == nil {
 		logger.Error("unauthorized")
 		c.Error(apperrors.New(http.StatusUnauthorized, "unauthorized"))
 		c.Abort()
 		return
 	}
 
-	userContext := auth.NewUserContext(userID.(string), teamID.(string), role.(string))
+	parsedUserID, _ := util.ParseUUIDValue(userID)
+	parsedTeamID, _ := util.ParseUUIDValue(teamID)
+
+	userContext := auth.NewUserContext(parsedUserID, parsedTeamID, role.(string))
+
+	logger.Info("user context created", zap.String("userID", userContext.ID.String()), zap.String("teamID", userContext.TeamID.String()), zap.String("role", userContext.Role))
 
 	ctx := auth.ContextWithUser(c, userContext)
 

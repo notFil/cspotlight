@@ -17,13 +17,11 @@ type UserContext struct {
 	Role   string
 }
 
-func NewUserContext(id string, teamID string, role string) *UserContext {
-	parsedID := uuid.MustParse(id)
-	parsedTeamID := uuid.MustParse(teamID)
+func NewUserContext(id uuid.UUID, teamID uuid.UUID, role string) *UserContext {
 
 	return &UserContext{
-		ID:     parsedID,
-		TeamID: parsedTeamID,
+		ID:     id,
+		TeamID: teamID,
 		Role:   role,
 	}
 }

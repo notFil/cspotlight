@@ -1,8 +1,11 @@
 package util
 
 import (
+	"errors"
 	"regexp"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 type BrowserOS struct {
@@ -70,5 +73,19 @@ func ParseUserAgent(userAgent string) BrowserOS {
 	return BrowserOS{
 		Browser: browser,
 		OS:      os,
+	}
+}
+
+func ParseUUIDValue(i interface{}) (uuid.UUID, error) {
+	if i == nil {
+		return uuid.Nil, nil
+	}
+	switch v := i.(type) {
+	case uuid.UUID:
+		return v, nil
+	case string:
+		return uuid.Parse(v)
+	default:
+		return uuid.Nil, errors.New("invalid type")
 	}
 }

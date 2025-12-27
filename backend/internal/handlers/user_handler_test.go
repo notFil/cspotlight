@@ -38,7 +38,7 @@ func TestUserHandler_GetUserByID(t *testing.T) {
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "userID", Value: userID.String()}}
 		c.Request = httptest.NewRequest("GET", "/users/"+userID.String(), nil)
-		userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+		userCtx := auth.NewUserContext(userID, uuid.New(), "user")
 		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.GetUserByID(c)
@@ -67,7 +67,7 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 		c.Params = gin.Params{{Key: "userID", Value: userID.String()}}
 		body := `{"username": "updateduser", "firstName": "Updated", "lastName": "User", "email": "updated@example.com", "role": "user"}`
 		c.Request = httptest.NewRequest("PUT", "/users/"+userID.String(), bytes.NewBufferString(body))
-		userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+		userCtx := auth.NewUserContext(userID, uuid.New(), "user")
 		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.UpdateUser(c)
@@ -95,7 +95,7 @@ func TestUserHandler_DeleteUser(t *testing.T) {
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "userID", Value: userID.String()}}
 		c.Request = httptest.NewRequest("DELETE", "/users/"+userID.String(), nil)
-		userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+		userCtx := auth.NewUserContext(userID, uuid.New(), "user")
 		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.DeleteUser(c)
@@ -121,7 +121,7 @@ func TestUserHandler_ListUsers(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("GET", "/users", nil)
-		userCtx := auth.NewUserContext(uuid.New().String(), uuid.New().String(), "user")
+		userCtx := auth.NewUserContext(uuid.New(), uuid.New(), "user")
 		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.ListUsers(c)
@@ -149,7 +149,7 @@ func TestUserHandler_ListUsersByTeamID(t *testing.T) {
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "teamID", Value: teamID.String()}}
 		c.Request = httptest.NewRequest("GET", "/teams/"+teamID.String()+"/users", nil)
-		userCtx := auth.NewUserContext(uuid.NewString(), uuid.NewString(), "user")
+		userCtx := auth.NewUserContext(uuid.New(), uuid.New(), "user")
 		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.ListUsersByTeamID(c)
@@ -182,7 +182,7 @@ func TestUserHandler_SetDefaultProject(t *testing.T) {
 		router := gin.New()
 		router.Use(middleware.ErrorHandler())
 		router.Use(func(c *gin.Context) {
-			userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+			userCtx := auth.NewUserContext(userID, uuid.New(), "user")
 			c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 			c.Next()
 		})
@@ -215,7 +215,7 @@ func TestUserHandler_SetDefaultProject(t *testing.T) {
 		router := gin.New()
 		router.Use(middleware.ErrorHandler())
 		router.Use(func(c *gin.Context) {
-			userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+			userCtx := auth.NewUserContext(userID, uuid.New(), "user")
 			c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 			c.Next()
 		})
@@ -249,7 +249,7 @@ func TestUserHandler_ChangeImage(t *testing.T) {
 		router := gin.New()
 		router.Use(middleware.ErrorHandler())
 		router.Use(func(c *gin.Context) {
-			userCtx := auth.NewUserContext(userID.String(), uuid.New().String(), "user")
+			userCtx := auth.NewUserContext(userID, uuid.New(), "user")
 			c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 			c.Next()
 		})

@@ -75,7 +75,7 @@ func TestProjectHandler_GetProjectByID(t *testing.T) {
 		router := gin.New()
 		router.Use(middleware.ErrorHandler())
 		router.Use(func(c *gin.Context) {
-			userCtx := auth.NewUserContext(uuid.NewString(), uuid.NewString(), "user")
+			userCtx := auth.NewUserContext(uuid.New(), uuid.New(), "user")
 			c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 			c.Next()
 		})
@@ -107,7 +107,7 @@ func TestProjectHandler_GetProjectByID(t *testing.T) {
 		router := gin.New()
 		router.Use(middleware.ErrorHandler())
 		router.Use(func(c *gin.Context) {
-			userCtx := auth.NewUserContext(uuid.NewString(), uuid.NewString(), "user")
+			userCtx := auth.NewUserContext(uuid.New(), uuid.New(), "user")
 			c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 			c.Next()
 		})
@@ -140,7 +140,7 @@ func TestProjectHandler_CreateProject(t *testing.T) {
 		router := gin.New()
 		router.Use(middleware.ErrorHandler())
 		router.Use(func(c *gin.Context) {
-			userCtx := auth.NewUserContext(uuid.NewString(), uuid.NewString(), "user")
+			userCtx := auth.NewUserContext(uuid.New(), uuid.New(), "user")
 			c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 			c.Next()
 		})
@@ -162,7 +162,7 @@ func TestProjectHandler_CreateProject(t *testing.T) {
 		router := gin.New()
 		router.Use(middleware.ErrorHandler())
 		router.Use(func(c *gin.Context) {
-			userCtx := auth.NewUserContext(uuid.NewString(), uuid.NewString(), "user")
+			userCtx := auth.NewUserContext(uuid.New(), uuid.New(), "user")
 			c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 			c.Next()
 		})
@@ -195,7 +195,7 @@ func TestProjectHandler_UpdateProject(t *testing.T) {
 		c.Params = gin.Params{{Key: "projectID", Value: projectID.String()}}
 		body := `{"name": "Updated Project", "teamId": "` + uuid.New().String() + `"}`
 		c.Request = httptest.NewRequest("PUT", "/projects/"+projectID.String(), bytes.NewBufferString(body))
-		userCtx := auth.NewUserContext(uuid.NewString(), uuid.NewString(), "user")
+		userCtx := auth.NewUserContext(uuid.New(), uuid.New(), "user")
 		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.UpdateProject(c)
@@ -222,7 +222,7 @@ func TestProjectHandler_DeleteProject(t *testing.T) {
 		c, _ := gin.CreateTestContext(w)
 		c.Params = gin.Params{{Key: "projectID", Value: projectID.String()}}
 		c.Request = httptest.NewRequest("DELETE", "/projects/"+projectID.String(), nil)
-		userCtx := auth.NewUserContext(uuid.NewString(), uuid.NewString(), "user")
+		userCtx := auth.NewUserContext(uuid.New(), uuid.New(), "user")
 		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.DeleteProject(c)
@@ -244,7 +244,7 @@ func TestProjectHandler_DeleteProject(t *testing.T) {
 		router := gin.New()
 		router.Use(middleware.ErrorHandler())
 		router.Use(func(c *gin.Context) {
-			userCtx := auth.NewUserContext(uuid.NewString(), uuid.NewString(), "user")
+			userCtx := auth.NewUserContext(uuid.New(), uuid.New(), "user")
 			c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 			c.Next()
 		})
@@ -273,7 +273,7 @@ func TestProjectHandler_ListProjects(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("GET", "/projects", nil)
-		userCtx := auth.NewUserContext(uuid.NewString(), uuid.NewString(), "user")
+		userCtx := auth.NewUserContext(uuid.New(), uuid.New(), "user")
 		c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
 
 		handler.ListProjects(c)
