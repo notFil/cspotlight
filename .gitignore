@@ -21,6 +21,7 @@ vite.config.ts.timestamp-*
 # Database files
 *.sqlite3
 *.db
+postgres/data
 
 # Logs
 logs
