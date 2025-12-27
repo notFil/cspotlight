@@ -59,7 +59,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Set("userID", user.ID.String())
 	session.Set("role", user.Role)
-	session.Set("role", user.Role)
 	if user.TeamID != nil {
 		session.Set("teamID", user.TeamID.String())
 	}
