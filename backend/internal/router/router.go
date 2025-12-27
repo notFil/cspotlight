@@ -40,6 +40,7 @@ func SetUpRouter(db store.Database, baseURL string, staticPath string, sessionCf
 	router.Use(gin.Recovery())
 	router.Use(middleware.RequestLogger())
 	router.Use(middleware.ErrorHandler())
+	router.Use(middleware.RateLimiter())
 	router.Static("/static", staticPath)
 
 	router.RedirectTrailingSlash = false

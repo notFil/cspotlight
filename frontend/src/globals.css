@@ -411,12 +411,10 @@
 
 .trend-up {
     color: hsl(var(--destructive));
-    /* Using destructive for 'error' color mapping */
 }
 
 .trend-down {
     color: hsl(var(--primary));
-    /* Using primary/success color mapping */
 }
 
 .severity-badge {
