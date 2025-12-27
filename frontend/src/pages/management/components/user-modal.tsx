@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React from "react";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -68,21 +68,26 @@ export const UserModal: React.FC<UserModalProps> = ({
       role: 'user',
       disabled: false,
     },
+    values: user ? {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      teamId: user.teamId,
+      disabled: user.disabled,
+    } : {
+      firstName: '',
+      lastName: '',
+      username: '',
+      email: '',
+      role: 'user',
+      teamId: '',
+      disabled: false,
+    }
   });
 
-  useEffect(() => {
-    if (user) {
-      form.reset({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        teamId: user.teamId,
-        disabled: user.disabled,
-      });
-    }
-  }, [user, isOpen, form]);
+
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const selectedTeam = teams?.find(t => t.id === values.teamId);
@@ -200,7 +205,7 @@ export const UserModal: React.FC<UserModalProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Team</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingTeams}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingTeams || !teams || teams.length === 0}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a team" />

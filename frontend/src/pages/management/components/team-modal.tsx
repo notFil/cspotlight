@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -47,27 +47,23 @@ export const TeamModal: React.FC<TeamModalProps> = ({
       name: '',
       description: '',
     },
+    values: team ? {
+      name: team.name,
+      description: team.description,
+    } : {
+      name: '',
+      description: '',
+    }
   });
 
-  useEffect(() => {
-    if (team) {
-      form.reset({
-        name: team.name,
-        description: team.description,
-      });
-    } else {
-      form.reset({
-        name: '',
-        description: '',
-      });
-    }
-  }, [team, isOpen, form]);
+
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     onSave({
       id: team?.id || '',
       ...values,
-      description: values.description || ''    });
+      description: values.description || ''
+    });
   };
 
   return (

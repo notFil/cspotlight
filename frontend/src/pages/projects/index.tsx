@@ -141,7 +141,7 @@ const Projects = () => {
           })}
           {projects?.length === 0 && (
             <div className="col-span-full text-center py-12 text-muted-foreground">
-              No projects found. Reach to your admin to create a project.
+              No projects found. Reach out to your admin to create a project.
             </div>
           )}
         </div>
