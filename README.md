@@ -1,4 +1,4 @@
-# 🌐 cspotlight – Content Security Policy (CSP) Violation Collector & Analyzer
+# cspotlight
 
 **cspotlight** is an open-source CSP report collector and analyzer designed to help security engineers and developers monitor, analyze, and respond to browser-enforced Content Security Policy violations.
 
