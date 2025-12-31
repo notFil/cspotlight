@@ -1,9 +1,22 @@
 import { apiClient } from './api';
-import type { CSPReport, APIResponse, ReportGraphData, ReportStatsMetrics, ReportViolationTrends, ReportBrowserOSViolations, ReportTopViolatedDirectives, ReportTopViolatedDocumentURLs, ReportTopViolationSources } from '@/types';
+import type { CSPReport, APIResponse, ReportGraphData, ReportStatsMetrics, ReportViolationTrends, ReportBrowserOSViolations, ReportTopViolatedDirectives, ReportTopViolatedDocumentURLs, ReportTopViolationSources, ReportFilters } from '@/types';
 
 class ReportService {
-  public async getReports(projectId: string, page: number = 1, pageSize: number = 10): Promise<APIResponse<CSPReport[]>> {
-    return await apiClient.get<CSPReport[]>(`/api/v1/reports/${projectId}?page=${page}&page_size=${pageSize}`);
+  public async getReports(projectId: string, page: number = 1, pageSize: number = 10, filters?: ReportFilters): Promise<APIResponse<CSPReport[]>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      page_size: pageSize.toString(),
+    });
+
+    if (filters) {
+      if (filters.directive) params.append('directive', filters.directive);
+      if (filters.disposition) params.append('disposition', filters.disposition);
+      if (filters.blockedURL) params.append('blocked_url', filters.blockedURL);
+      if (filters.userAgent) params.append('user_agent', filters.userAgent);
+      if (filters.documentURL) params.append('document_url', filters.documentURL);
+    }
+
+    return await apiClient.get<CSPReport[]>(`/api/v1/reports/${projectId}?${params.toString()}`);
   }
 
   public async getReportSummaryStats(projectId: string): Promise<APIResponse<ReportStatsMetrics>> {

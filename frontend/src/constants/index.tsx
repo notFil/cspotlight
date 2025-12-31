@@ -13,7 +13,6 @@ export const CSP_DIRECTIVE_COLORS: Record<string, string> = {
   'media-src': '#059669',
   'frame-src': '#2DD4BF',
   'sandbox': '#14B8A6',
-  'report-uri': '#0D9488',
   'child-src': '#22D3EE',
   'form-action': '#06B6D4',
   'frame-ancestors': '#0891B2',
@@ -25,7 +24,7 @@ export const CSP_DIRECTIVE_COLORS: Record<string, string> = {
   'navigate-to': '#2563EB',
 };
 
-export const directives = Object.keys(CSP_DIRECTIVE_COLORS);
+export const DIRECTIVES = Object.keys(CSP_DIRECTIVE_COLORS);
 
 export const BROWSER_COLORS: Record<string, string> = {
   Chrome: '#3b82f6',

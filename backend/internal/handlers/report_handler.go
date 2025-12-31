@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"time"
 
 	apperrors "cspotlight/internal/errors"
@@ -111,13 +110,7 @@ func (h *ReportHandler) ListReportsByProjectID(c *gin.Context) {
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
-
-	p := &pagination.Pagination{
-		Page:     page,
-		PageSize: pageSize,
-	}
+	p := pagination.NewPagination(c.DefaultQuery("page", "1"), c.DefaultQuery("page_size", "10"))
 
 	projectID := uuid.MustParse(params.ProjectID)
 
@@ -128,9 +121,17 @@ func (h *ReportHandler) ListReportsByProjectID(c *gin.Context) {
 		return
 	}
 
+	filter := &models.ReportFilter{
+		Directive:   c.Query("directive"),
+		Disposition: c.Query("disposition"),
+		BlockedURL:  c.Query("blocked_url"),
+		UserAgent:   c.Query("user_agent"),
+		DocumentURL: c.Query("document_url"),
+	}
+
 	log.Info("listing reports", zap.String("project_id", projectID.String()))
 
-	reports, meta, err := h.reportService.ListReportsByProjectID(ctx, projectID, p)
+	reports, meta, err := h.reportService.ListReportsByProjectID(ctx, projectID, p, filter)
 	if err != nil {
 		log.Error("failed to list reports", zap.String("project_id", projectID.String()), zap.Error(err))
 		c.Error(err)
@@ -174,7 +175,7 @@ func (h *ReportHandler) processBatch(batch []reportJob) {
 	}
 
 	for projectID, reports := range grouped {
-		if err := h.reportService.BatchCreateReports(context.Background(), reports, projectID); err != nil { // Passing nil context as c and claims are unavailable
+		if err := h.reportService.BatchCreateReports(context.Background(), reports, projectID); err != nil {
 			logger.Logger.Error("failed to create batch reports", zap.String("project_id", projectID.String()), zap.Error(err))
 		}
 	}

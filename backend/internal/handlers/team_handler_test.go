@@ -197,6 +197,26 @@ func TestTeamHandler_DeleteTeam(t *testing.T) {
 			t.Errorf("expected status 200, got %d", w.Code)
 		}
 	})
+
+	t.Run("ServiceError", func(t *testing.T) {
+		mockService := &MockTeamService{
+			DeleteTeamFunc: func(ctx context.Context, id uuid.UUID) error {
+				return errors.New("failed to delete team")
+			},
+		}
+		handler := NewTeamHandler(mockService)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Params = gin.Params{{Key: "teamID", Value: teamID.String()}}
+		c.Request = httptest.NewRequest("DELETE", "/teams/"+teamID.String(), nil)
+
+		handler.DeleteTeam(c)
+
+		if w.Code != http.StatusInternalServerError {
+			t.Errorf("expected status 500, got %d", w.Code)
+		}
+	})
 }
 
 func TestTeamHandler_ListTeams(t *testing.T) {

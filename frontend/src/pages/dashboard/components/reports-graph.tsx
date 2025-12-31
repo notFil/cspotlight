@@ -21,18 +21,16 @@ import {
 import { LoadingPage } from '@/components/common/loading-page';
 import { ErrorPage } from '@/components/common/error-page';
 
-import { CSP_DIRECTIVE_COLORS } from '@/constants';
+import { CSP_DIRECTIVE_COLORS, DIRECTIVES } from '@/constants';
 
-const DIRECTIVE_COLORS = CSP_DIRECTIVE_COLORS;
-
-type DirectiveKey = keyof typeof DIRECTIVE_COLORS;
+type DirectiveKey = keyof typeof CSP_DIRECTIVE_COLORS;
 
 import { useReportGraphData } from '@/hooks/use-reports';
 
 const ReportsGraph = ({ projectId }: { projectId: string }) => {
     const [duration, setDuration] = useState(30);
     const [enabledDirectives, setEnabledDirectives] = useState<Set<DirectiveKey>>(
-        new Set(['script-src', 'script-src-elem', 'img-src', 'style-src', 'connect-src', 'frame-src'])
+        new Set(DIRECTIVES)
     );
 
     const { data: graphData, isLoading, error } = useReportGraphData(projectId);
@@ -114,7 +112,7 @@ const ReportsGraph = ({ projectId }: { projectId: string }) => {
                         className="flex flex-wrap gap-2 flex-1"
                         variant="outline"
                     >
-                        {(Object.keys(DIRECTIVE_COLORS) as DirectiveKey[]).map((directive) => (
+                        {DIRECTIVES.map((directive) => (
                             <ToggleGroupItem
                                 key={directive}
                                 value={directive}
@@ -123,7 +121,7 @@ const ReportsGraph = ({ projectId }: { projectId: string }) => {
                             >
                                 <span
                                     className="inline-block w-3 h-3 rounded-full"
-                                    style={{ backgroundColor: DIRECTIVE_COLORS[directive] }}
+                                    style={{ backgroundColor: CSP_DIRECTIVE_COLORS[directive] }}
                                 />
                                 <span className="text-xs font-medium">{directive}</span>
                             </ToggleGroupItem>
@@ -164,13 +162,13 @@ const ReportsGraph = ({ projectId }: { projectId: string }) => {
                                     }}
                                 />
                                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                                {(Object.keys(DIRECTIVE_COLORS) as DirectiveKey[]).map((directive) => (
+                                {DIRECTIVES.map((directive) => (
                                     enabledDirectives.has(directive) && (
                                         <Line
                                             key={directive}
                                             type="monotone"
                                             dataKey={directive}
-                                            stroke={DIRECTIVE_COLORS[directive]}
+                                            stroke={CSP_DIRECTIVE_COLORS[directive]}
                                             strokeWidth={3.0}
                                             dot={{ r: 3 }}
                                             activeDot={{ r: 5 }}

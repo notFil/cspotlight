@@ -67,7 +67,7 @@ func (m *MockReportRepository) DeleteReport(ctx context.Context, id uuid.UUID) e
 	return errors.New("report not found")
 }
 
-func (m *MockReportRepository) ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+func (m *MockReportRepository) ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination, filter *models.ReportFilter) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
 	var reports []*models.CSPReportFetchDTO
 	for _, report := range m.reports {
 		if report.ProjectID == projectID {
@@ -127,10 +127,12 @@ func (m *MockReportRepository) GetReportTopViolationSources(ctx context.Context,
 
 func TestCreateReport(t *testing.T) {
 	mockRepo := NewMockReportRepository()
+	mockProjectRepo := NewMockProjectRepository()
 
-	service := NewReportService(mockRepo)
+	service := NewReportService(mockRepo, mockProjectRepo)
 
 	projectID := uuid.New()
+	mockProjectRepo.projects[projectID] = &models.Project{ID: projectID, Disabled: false}
 	reportDTO := &models.CSPReportCreateDTO{
 		Age:       100,
 		Type:      "csp-report",
@@ -168,7 +170,7 @@ func TestCreateReport(t *testing.T) {
 func TestListReportsByProjectID(t *testing.T) {
 	mockRepo := NewMockReportRepository()
 	mockProjectRepo := NewMockProjectRepository()
-	service := NewReportService(mockRepo)
+	service := NewReportService(mockRepo, mockProjectRepo)
 
 	projectID := uuid.New()
 	teamID := uuid.New()
@@ -189,7 +191,7 @@ func TestListReportsByProjectID(t *testing.T) {
 	userData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: teamID}
 	ctx := auth.ContextWithUser(context.Background(), &userData)
 
-	dtos, _, err := service.ListReportsByProjectID(ctx, projectID, p)
+	dtos, _, err := service.ListReportsByProjectID(ctx, projectID, p, nil)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -201,7 +203,8 @@ func TestListReportsByProjectID(t *testing.T) {
 
 func TestGetReportSummaryStats(t *testing.T) {
 	mockRepo := NewMockReportRepository()
-	service := NewReportService(mockRepo)
+	mockProjectRepo := NewMockProjectRepository()
+	service := NewReportService(mockRepo, mockProjectRepo)
 	projectID := uuid.New()
 
 	stats, err := service.GetReportSummaryStats(context.Background(), projectID)
@@ -215,7 +218,8 @@ func TestGetReportSummaryStats(t *testing.T) {
 
 func TestGetReportGraphData(t *testing.T) {
 	mockRepo := NewMockReportRepository()
-	service := NewReportService(mockRepo)
+	mockProjectRepo := NewMockProjectRepository()
+	service := NewReportService(mockRepo, mockProjectRepo)
 	projectID := uuid.New()
 
 	data, err := service.GetReportGraphData(context.Background(), projectID)
@@ -229,7 +233,8 @@ func TestGetReportGraphData(t *testing.T) {
 
 func TestGetReportViolationTrend(t *testing.T) {
 	mockRepo := NewMockReportRepository()
-	service := NewReportService(mockRepo)
+	mockProjectRepo := NewMockProjectRepository()
+	service := NewReportService(mockRepo, mockProjectRepo)
 	projectID := uuid.New()
 
 	data, err := service.GetReportViolationTrend(context.Background(), projectID)
@@ -243,7 +248,8 @@ func TestGetReportViolationTrend(t *testing.T) {
 
 func TestGetReportTopViolatedDocumentURLs(t *testing.T) {
 	mockRepo := NewMockReportRepository()
-	service := NewReportService(mockRepo)
+	mockProjectRepo := NewMockProjectRepository()
+	service := NewReportService(mockRepo, mockProjectRepo)
 	projectID := uuid.New()
 
 	data, err := service.GetReportTopViolatedDocumentURLs(context.Background(), projectID)
@@ -257,7 +263,8 @@ func TestGetReportTopViolatedDocumentURLs(t *testing.T) {
 
 func TestGetReportTopViolatedDirectives(t *testing.T) {
 	mockRepo := NewMockReportRepository()
-	service := NewReportService(mockRepo)
+	mockProjectRepo := NewMockProjectRepository()
+	service := NewReportService(mockRepo, mockProjectRepo)
 	projectID := uuid.New()
 
 	data, err := service.GetReportTopViolatedDirectives(context.Background(), projectID)
@@ -271,7 +278,8 @@ func TestGetReportTopViolatedDirectives(t *testing.T) {
 
 func TestGetReportSoftwareStats(t *testing.T) {
 	mockRepo := NewMockReportRepository()
-	service := NewReportService(mockRepo)
+	mockProjectRepo := NewMockProjectRepository()
+	service := NewReportService(mockRepo, mockProjectRepo)
 	projectID := uuid.New()
 
 	data, err := service.GetReportSoftwareStats(context.Background(), projectID)
@@ -285,7 +293,8 @@ func TestGetReportSoftwareStats(t *testing.T) {
 
 func TestGetReportTopViolationSources(t *testing.T) {
 	mockRepo := NewMockReportRepository()
-	service := NewReportService(mockRepo)
+	mockProjectRepo := NewMockProjectRepository()
+	service := NewReportService(mockRepo, mockProjectRepo)
 	projectID := uuid.New()
 
 	data, err := service.GetReportTopViolationSources(context.Background(), projectID)
@@ -294,5 +303,42 @@ func TestGetReportTopViolationSources(t *testing.T) {
 	}
 	if data == nil {
 		t.Fatal("expected data, got nil")
+	}
+}
+
+func TestBatchCreateReports_ProjectStatus(t *testing.T) {
+	mockRepo := NewMockReportRepository()
+	mockProjectRepo := NewMockProjectRepository()
+	service := NewReportService(mockRepo, mockProjectRepo)
+
+	projectID := uuid.New()
+	reportDTO := &models.CSPReportCreateDTO{
+		URL: "https://example.com",
+	}
+
+	// 1. Test case: Project not found
+	err := service.BatchCreateReports(context.Background(), []*models.CSPReportCreateDTO{reportDTO}, projectID)
+	if err == nil {
+		t.Fatal("expected error for non-existent project, got nil")
+	}
+
+	// 2. Test case: Project disabled
+	mockProjectRepo.projects[projectID] = &models.Project{ID: projectID, Disabled: true}
+	err = service.BatchCreateReports(context.Background(), []*models.CSPReportCreateDTO{reportDTO}, projectID)
+	if err != nil {
+		t.Fatalf("expected no error for disabled project (skipping), got %v", err)
+	}
+	if len(mockRepo.reports) != 0 {
+		t.Errorf("expected 0 reports for disabled project, got %d", len(mockRepo.reports))
+	}
+
+	// 3. Test case: Project enabled
+	mockProjectRepo.projects[projectID].Disabled = false
+	err = service.BatchCreateReports(context.Background(), []*models.CSPReportCreateDTO{reportDTO}, projectID)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if len(mockRepo.reports) != 1 {
+		t.Errorf("expected 1 report for enabled project, got %d", len(mockRepo.reports))
 	}
 }

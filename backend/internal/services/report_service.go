@@ -13,7 +13,7 @@ import (
 )
 
 type ReportService interface {
-	ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
+	ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination, filter *models.ReportFilter) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
 	BatchCreateReports(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID uuid.UUID) error
 	GetReportSummaryStats(ctx context.Context, projectID uuid.UUID) (*models.ReportMetricsDTO, error)
 	GetReportGraphData(ctx context.Context, projectID uuid.UUID) (*models.ReportGraphDataDTO, error)
@@ -25,16 +25,27 @@ type ReportService interface {
 }
 
 type reportService struct {
-	reportRepo repositories.ReportRepository
+	reportRepo  repositories.ReportRepository
+	projectRepo repositories.ProjectRepository
 }
 
-func NewReportService(reportRepo repositories.ReportRepository) ReportService {
+func NewReportService(reportRepo repositories.ReportRepository, projectRepo repositories.ProjectRepository) ReportService {
 	return &reportService{
-		reportRepo: reportRepo,
+		reportRepo:  reportRepo,
+		projectRepo: projectRepo,
 	}
 }
 
 func (s *reportService) BatchCreateReports(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID uuid.UUID) error {
+	p, err := s.projectRepo.GetProjectByID(ctx, projectID)
+	if err != nil {
+		return err
+	}
+
+	if p == nil || p.Disabled {
+		return nil
+	}
+
 	var cspReports []*models.CSPReport
 	for _, r := range reports {
 		cspReport := r.ToCSPReport()
@@ -45,8 +56,8 @@ func (s *reportService) BatchCreateReports(ctx context.Context, reports []*model
 	return s.reportRepo.BatchCreateReports(ctx, cspReports)
 }
 
-func (s *reportService) ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
-	reports, p, err := s.reportRepo.ListReportsByProjectID(ctx, projectID, p)
+func (s *reportService) ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination, filter *models.ReportFilter) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+	reports, p, err := s.reportRepo.ListReportsByProjectID(ctx, projectID, p, filter)
 	if err != nil {
 		return nil, p, err
 	}

@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -255,6 +256,58 @@ func TestProjectHandler_DeleteProject(t *testing.T) {
 
 		if w.Code != http.StatusForbidden {
 			t.Errorf("expected status 403, got %d", w.Code)
+		}
+	})
+
+	t.Run("ProjectNotFound", func(t *testing.T) {
+		mockService := &MockProjectService{
+			DeleteProjectFunc: func(ctx context.Context, id uuid.UUID) error {
+				return apperrors.New(http.StatusNotFound, "project not found")
+			},
+		}
+		handler := NewProjectHandler(mockService)
+
+		w := httptest.NewRecorder()
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.Use(func(c *gin.Context) {
+			userCtx := auth.NewUserContext(uuid.New(), uuid.New(), "user")
+			c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
+			c.Next()
+		})
+		router.DELETE("/projects/:projectID", handler.DeleteProject)
+
+		req := httptest.NewRequest("DELETE", "/projects/"+projectID.String(), nil)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("expected status 404, got %d", w.Code)
+		}
+	})
+
+	t.Run("ServiceError", func(t *testing.T) {
+		mockService := &MockProjectService{
+			DeleteProjectFunc: func(ctx context.Context, id uuid.UUID) error {
+				return errors.New("failed to delete project")
+			},
+		}
+		handler := NewProjectHandler(mockService)
+
+		w := httptest.NewRecorder()
+		router := gin.New()
+		router.Use(middleware.ErrorHandler())
+		router.Use(func(c *gin.Context) {
+			userCtx := auth.NewUserContext(uuid.New(), uuid.New(), "user")
+			c.Request = c.Request.WithContext(auth.ContextWithUser(c.Request.Context(), userCtx))
+			c.Next()
+		})
+		router.DELETE("/projects/:projectID", handler.DeleteProject)
+
+		req := httptest.NewRequest("DELETE", "/projects/"+projectID.String(), nil)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusInternalServerError {
+			t.Errorf("expected status 500, got %d", w.Code)
 		}
 	})
 }

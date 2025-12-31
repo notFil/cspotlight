@@ -128,6 +128,14 @@ type ViolationSourceItem struct {
 	LastSeen   time.Time `json:"lastSeen"`
 }
 
+type ReportFilter struct {
+	Directive   string
+	Disposition string
+	BlockedURL  string
+	UserAgent   string
+	DocumentURL string
+}
+
 func (r *CSPReportCreateDTO) ToCSPReport() *CSPReport {
 	c := &CSPReport{
 		Age:       r.Age,

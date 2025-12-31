@@ -18,7 +18,7 @@ type User struct {
 	Image            string     `gorm:"type:varchar(255)"`
 	DefaultProjectID *uuid.UUID `gorm:"type:uuid"`
 	DefaultProject   Project    `gorm:"foreignKey:DefaultProjectID"`
-	Disabled         bool
+	Disabled         bool       `gorm:"default:null"`
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 	DeletedAt        gorm.DeletedAt `gorm:"index"`

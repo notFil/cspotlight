@@ -58,3 +58,8 @@ func (p *ProjectUpsertDTO) ToProject() *Project {
 		TeamID:      p.TeamID,
 	}
 }
+
+func (p *Project) AfterDelete(tx *gorm.DB) (err error) {
+	tx.Delete(&CSPReport{}, "project_id = ?", p.ID)
+	return
+}

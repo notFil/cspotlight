@@ -2,14 +2,11 @@ import * as React from "react"
 import {
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
 import type {
   ColumnDef,
-  ColumnFiltersState,
   SortingState,
 } from "@tanstack/react-table"
 
@@ -39,63 +36,53 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import type { Pagination as PaginationType } from "@/types"
+import type { Pagination as PaginationType, ReportFilters } from "@/types"
+import { DIRECTIVES } from "@/constants"
+import { Button } from "@/components/ui/button"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   pagination?: PaginationType
   onPageChange?: (page: number) => void
+  onPageSizeChange?: (pageSize: number) => void
+  filters?: ReportFilters
+  onFilter?: (filters: ReportFilters) => void
 }
-
-const CSP_DIRECTIVES = [
-  "default-src",
-  "script-src",
-  "style-src",
-  "img-src",
-  "connect-src",
-  "font-src",
-  "object-src",
-  "media-src",
-  "frame-src",
-  "sandbox",
-  "report-uri",
-  "child-src",
-  "form-action",
-  "frame-ancestors",
-  "plugin-types",
-  "base-uri",
-  "report-to",
-  "worker-src",
-  "manifest-src",
-  "prefetch-src",
-  "navigate-to",
-]
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   pagination,
   onPageChange,
+  onPageSizeChange,
+  filters: initialFilters,
+  onFilter,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  )
+  const [localFilters, setLocalFilters] = React.useState<ReportFilters>(initialFilters || {})
+
+  React.useEffect(() => {
+    if (initialFilters) {
+      setLocalFilters(initialFilters)
+    }
+  }, [initialFilters])
+
+  const handleFilter = () => {
+    onFilter?.(localFilters)
+  }
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
-    onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
     state: {
       sorting,
-      columnFilters,
     },
+    manualPagination: true,
+    pageCount: pagination?.totalPages ?? -1,
   })
 
   return (
@@ -103,24 +90,24 @@ export function DataTable<TData, TValue>({
       <div className="flex items-center py-4 gap-4">
         <Input
           placeholder="Filter Document URL..."
-          value={(table.getColumn("blockedURL")?.getFilterValue() as string) ?? ""}
+          value={localFilters.documentURL || ""}
           onChange={(event) =>
-            table.getColumn("blockedURL")?.setFilterValue(event.target.value)
+            setLocalFilters(prev => ({ ...prev, documentURL: event.target.value }))
           }
           className="max-w-sm"
         />
         <Input
           placeholder="Filter User Agent..."
-          value={(table.getColumn("userAgent")?.getFilterValue() as string) ?? ""}
+          value={localFilters.userAgent || ""}
           onChange={(event) =>
-            table.getColumn("userAgent")?.setFilterValue(event.target.value)
+            setLocalFilters(prev => ({ ...prev, userAgent: event.target.value }))
           }
           className="max-w-sm"
         />
         <Select
-          value={(table.getColumn("directive")?.getFilterValue() as string) ?? "all"}
+          value={localFilters.directive || "all"}
           onValueChange={(value) =>
-            table.getColumn("directive")?.setFilterValue(value === "all" ? "" : value)
+            setLocalFilters(prev => ({ ...prev, directive: value === "all" ? "" : value }))
           }
         >
           <SelectTrigger className="w-[180px]">
@@ -128,7 +115,7 @@ export function DataTable<TData, TValue>({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Directives</SelectItem>
-            {CSP_DIRECTIVES.map((directive) => (
+            {DIRECTIVES.map((directive) => (
               <SelectItem key={directive} value={directive}>
                 {directive}
               </SelectItem>
@@ -136,9 +123,9 @@ export function DataTable<TData, TValue>({
           </SelectContent>
         </Select>
         <Select
-          value={(table.getColumn("disposition")?.getFilterValue() as string) ?? "all"}
+          value={localFilters.disposition || "all"}
           onValueChange={(value) =>
-            table.getColumn("disposition")?.setFilterValue(value === "all" ? "" : value)
+            setLocalFilters(prev => ({ ...prev, disposition: value === "all" ? "" : value }))
           }
         >
           <SelectTrigger className="w-[180px]">
@@ -147,9 +134,10 @@ export function DataTable<TData, TValue>({
           <SelectContent>
             <SelectItem value="all">All Dispositions</SelectItem>
             <SelectItem value="enforce">Enforce</SelectItem>
-            <SelectItem value="report-only">Report Only</SelectItem>
+            <SelectItem value="report">Report Only</SelectItem>
           </SelectContent>
         </Select>
+        <Button onClick={handleFilter}>Filter</Button>
       </div>
       <div className="rounded-md border">
         <Table>
@@ -201,7 +189,29 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="py-4">
+      <div className="py-4 flex items-center justify-between">
+        {pagination && onPageSizeChange && (
+          <div className="flex items-center space-x-2">
+            <p className="text-sm font-medium">Rows</p>
+            <Select
+              value={`${pagination.pageSize}`}
+              onValueChange={(value) => {
+                onPageSizeChange(Number(value))
+              }}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue placeholder={pagination.pageSize} />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {[10, 20, 30, 50].map((pageSize) => (
+                  <SelectItem key={pageSize} value={`${pageSize}`}>
+                    {pageSize}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         {pagination && onPageChange && (
           <Pagination>
             <PaginationContent>
@@ -211,7 +221,6 @@ export function DataTable<TData, TValue>({
                   className={pagination.page <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                 />
               </PaginationItem>
-
               {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => {
                 if (
                   page === 1 ||
@@ -230,7 +239,6 @@ export function DataTable<TData, TValue>({
                     </PaginationItem>
                   )
                 }
-
                 if (
                   page === pagination.page - 2 ||
                   page === pagination.page + 2
@@ -241,7 +249,6 @@ export function DataTable<TData, TValue>({
                     </PaginationItem>
                   )
                 }
-
                 return null
               })}
 

@@ -20,7 +20,7 @@ import (
 
 type MockReportService struct {
 	BatchCreateReportsFunc               func(ctx context.Context, reports []*models.CSPReportCreateDTO, projectID uuid.UUID) error
-	ListReportsByProjectIDFunc           func(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
+	ListReportsByProjectIDFunc           func(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination, filter *models.ReportFilter) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
 	GetReportSummaryStatsFunc            func(ctx context.Context, projectID uuid.UUID) (*models.ReportMetricsDTO, error)
 	GetReportGraphDataFunc               func(ctx context.Context, projectID uuid.UUID) (*models.ReportGraphDataDTO, error)
 	GetReportViolationTrendFunc          func(ctx context.Context, projectID uuid.UUID) (*models.ReportViolationTrendDTO, error)
@@ -28,14 +28,14 @@ type MockReportService struct {
 	GetReportTopViolatedDirectivesFunc   func(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolatedDirectivesDTO, error)
 	GetReportSoftwareStatsFunc           func(ctx context.Context, projectID uuid.UUID) (*models.ReportSoftwareStatsDTO, error)
 	GetReportTopViolationSourcesFunc     func(ctx context.Context, projectID uuid.UUID) (*models.ReportTopViolationSourcesDTO, error)
-	mu                                   sync.Mutex // Kept for potential future use or if other tests rely on it
-	batchCalls                           int        // Kept for potential future use or if other tests rely on it
+	mu                                   sync.Mutex
+	batchCalls                           int
 	receivedReports                      []*models.CSPReportCreateDTO
 }
 
-func (m *MockReportService) ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+func (m *MockReportService) ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination, filter *models.ReportFilter) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
 	if m.ListReportsByProjectIDFunc != nil {
-		return m.ListReportsByProjectIDFunc(ctx, projectID, p)
+		return m.ListReportsByProjectIDFunc(ctx, projectID, p, filter)
 	}
 	return nil, nil, nil
 }
@@ -138,7 +138,7 @@ func TestReportHandler_ListReportsByProjectID(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := &MockReportService{
-			ListReportsByProjectIDFunc: func(ctx context.Context, pid uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+			ListReportsByProjectIDFunc: func(ctx context.Context, pid uuid.UUID, p *pagination.Pagination, filter *models.ReportFilter) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
 				return []*models.CSPReportFetchDTO{{BlockedURL: "http://example.com"}}, &pagination.Pagination{Page: 1, PageSize: 10, TotalRows: 1}, nil
 			},
 		}

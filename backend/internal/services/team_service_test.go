@@ -143,20 +143,29 @@ func TestDeleteTeam(t *testing.T) {
 	mockRepo := NewMockTeamRepository()
 	service := NewTeamService(mockRepo)
 
-	teamID := uuid.New()
-	team := &models.Team{
-		ID:   teamID,
-		Name: "To Delete",
-	}
-	mockRepo.teams[teamID] = team
+	t.Run("Success", func(t *testing.T) {
+		teamID := uuid.New()
+		team := &models.Team{
+			ID:   teamID,
+			Name: "To Delete",
+		}
+		mockRepo.teams[teamID] = team
 
-	err := service.DeleteTeam(context.Background(), teamID)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
+		err := service.DeleteTeam(context.Background(), teamID)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
-	_, err = mockRepo.GetTeamByID(context.Background(), teamID)
-	if err == nil {
-		t.Fatal("expected error getting deleted team, got nil")
-	}
+		_, err = mockRepo.GetTeamByID(context.Background(), teamID)
+		if err == nil {
+			t.Fatal("expected error getting deleted team, got nil")
+		}
+	})
+
+	t.Run("NotFound", func(t *testing.T) {
+		err := service.DeleteTeam(context.Background(), uuid.New())
+		if err == nil {
+			t.Fatal("expected error for non-existent team, got nil")
+		}
+	})
 }

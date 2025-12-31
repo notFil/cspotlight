@@ -9,7 +9,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(10) NOT NULL,
     default_project_id UUID,
-    disabled BOOLEAN DEFAULT FALSE,
+    disabled BOOLEAN DEFAULT TRUE,
     team_id UUID,
     image TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

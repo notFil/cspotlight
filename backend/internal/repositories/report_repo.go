@@ -14,7 +14,7 @@ import (
 )
 
 type ReportRepository interface {
-	ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
+	ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination, filter *models.ReportFilter) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error)
 	BatchCreateReports(ctx context.Context, reports []*models.CSPReport) error
 	GetReportSummaryStats(ctx context.Context, projectID uuid.UUID) (*models.ReportMetricsDTO, error)
 	GetReportGraphData(ctx context.Context, projectID uuid.UUID) (*models.ReportGraphDataDTO, error)
@@ -37,10 +37,35 @@ func (r *reportRepository) BatchCreateReports(ctx context.Context, reports []*mo
 	return r.db.WithContext(ctx).CreateInBatches(reports, 100).Error
 }
 
-func (r *reportRepository) ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
+func (r *reportRepository) ListReportsByProjectID(ctx context.Context, projectID uuid.UUID, p *pagination.Pagination, filter *models.ReportFilter) ([]*models.CSPReportFetchDTO, *pagination.Pagination, error) {
 	var reports []*models.CSPReportFetchDTO
 
-	// Count total unique groups for pagination
+	whereClause := "WHERE project_id = ?"
+	args := []interface{}{projectID}
+
+	if filter != nil {
+		if filter.Directive != "" {
+			whereClause += " AND directive = ?"
+			args = append(args, filter.Directive)
+		}
+		if filter.Disposition != "" {
+			whereClause += " AND disposition = ?"
+			args = append(args, filter.Disposition)
+		}
+		if filter.BlockedURL != "" {
+			whereClause += " AND blocked_url LIKE ?"
+			args = append(args, "%"+filter.BlockedURL+"%")
+		}
+		if filter.UserAgent != "" {
+			whereClause += " AND user_agent ILIKE ?"
+			args = append(args, "%"+filter.UserAgent+"%")
+		}
+		if filter.DocumentURL != "" {
+			whereClause += " AND document_url LIKE ?"
+			args = append(args, "%"+filter.DocumentURL+"%")
+		}
+	}
+
 	// Count total unique groups for pagination
 	var totalRows int64
 	countQuery := `
@@ -48,16 +73,15 @@ func (r *reportRepository) ListReportsByProjectID(ctx context.Context, projectID
 		FROM (
 			SELECT 1
 			FROM csp_reports
-			WHERE project_id = ?
+			` + whereClause + `
 			GROUP BY url, directive, blocked_url, disposition, document_url, body, source_ip, user_agent
 		) AS sub
 	`
-	r.db.WithContext(ctx).Raw(countQuery, projectID).Scan(&totalRows)
+	r.db.WithContext(ctx).Raw(countQuery, args...).Scan(&totalRows)
 	p.TotalRows = totalRows
 
 	p.TotalPages = int((p.TotalRows + int64(p.GetLimit()) - 1) / int64(p.GetLimit()))
 
-	// Fetch paginated results
 	// Fetch paginated results
 	selectQuery := `
     SELECT
@@ -72,11 +96,12 @@ func (r *reportRepository) ListReportsByProjectID(ctx context.Context, projectID
         COUNT(*) AS count,
         MAX(created_at) AS last_seen
     FROM csp_reports
-    WHERE project_id = ?
+    ` + whereClause + `
     GROUP BY url, directive, blocked_url, disposition, document_url, body, source_ip, user_agent
     LIMIT ? OFFSET ?
-`
-	result := r.db.WithContext(ctx).Raw(selectQuery, projectID, p.GetLimit(), p.GetOffset()).Scan(&reports)
+	`
+	paginationArgs := append(args, p.GetLimit(), p.GetOffset())
+	result := r.db.WithContext(ctx).Raw(selectQuery, paginationArgs...).Scan(&reports)
 
 	if result.Error != nil {
 		return nil, p, result.Error
@@ -238,7 +263,8 @@ func (r *reportRepository) GetReportTopViolatedDirectives(ctx context.Context, p
 		CROSS JOIN
 				TotalCount tc
 		ORDER BY
-				gc.count DESC;
+				gc.count DESC
+		LIMIT 10;
 	`
 	rows, err := r.db.WithContext(ctx).Raw(query, projectID, projectID).Rows()
 

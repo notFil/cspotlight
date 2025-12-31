@@ -68,14 +68,17 @@ func (s *teamService) DeleteTeam(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (s *teamService) ListTeams(ctx context.Context) (teams []*models.TeamFetchDTO, err error) {
+func (s *teamService) ListTeams(ctx context.Context) ([]*models.TeamFetchDTO, error) {
 	ts, err := s.teamRepo.ListTeams(ctx)
 	if err != nil {
 		return nil, apperrors.New(http.StatusInternalServerError, "failed to list teams")
 	}
-	var teamDTOs []*models.TeamFetchDTO
+	var teams []*models.TeamFetchDTO
 	for _, t := range ts {
-		teamDTOs = append(teamDTOs, t.ToFetchDTO())
+		teams = append(teams, t.ToFetchDTO())
 	}
-	return teamDTOs, nil
+	if teams == nil {
+		return []*models.TeamFetchDTO{}, nil
+	}
+	return teams, nil
 }

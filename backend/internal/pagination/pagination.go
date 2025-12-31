@@ -1,12 +1,27 @@
 package pagination
 
-import "gorm.io/gorm"
+import (
+	"strconv"
+
+	"gorm.io/gorm"
+)
 
 type Pagination struct {
 	Page       int   `json:"page"`
 	PageSize   int   `json:"pageSize"`
 	TotalRows  int64 `json:"totalRows"`
 	TotalPages int   `json:"totalPages"`
+}
+
+func NewPagination(page string, pageSize string) *Pagination {
+	pageInt, _ := strconv.Atoi(page)
+	pageSizeInt, _ := strconv.Atoi(pageSize)
+	return &Pagination{
+		Page:       pageInt,
+		PageSize:   pageSizeInt,
+		TotalRows:  0,
+		TotalPages: 0,
+	}
 }
 
 func Paginate(p *Pagination) func(db *gorm.DB) *gorm.DB {

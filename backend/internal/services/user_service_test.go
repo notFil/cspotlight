@@ -24,6 +24,9 @@ func NewMockUserRepository() *MockUserRepository {
 }
 
 func (m *MockUserRepository) CreateUser(ctx context.Context, user *models.User) error {
+	if user.ID == uuid.Nil {
+		user.ID = uuid.New()
+	}
 	if _, exists := m.users[user.ID]; exists {
 		return errors.New("user already exists")
 	}
@@ -111,6 +114,29 @@ func TestRegisterUser(t *testing.T) {
 	if createdUser.PasswordHash == "password123" {
 		t.Fatalf("expected password to be hashed")
 	}
+
+	// Test second user (should be disabled)
+	userDTO2 := &models.UserRegisterDTO{
+		FirstName:       "Jane",
+		LastName:        "Doe",
+		Username:        "janedoe",
+		Email:           "jane@example.com",
+		Password:        "password123",
+		ConfirmPassword: "password123",
+	}
+
+	err = service.RegisterUser(context.Background(), userDTO2)
+	if err != nil {
+		t.Fatalf("expected no error for second user, got %v", err)
+	}
+
+	createdUser2, err := mockRepo.GetUserByUsername(context.Background(), "janedoe")
+	if err != nil {
+		t.Fatalf("expected to find second user, got error: %v", err)
+	}
+	if !createdUser2.Disabled {
+		t.Fatalf("expected second user to be disabled")
+	}
 }
 
 func TestGetUserByID(t *testing.T) {
@@ -172,6 +198,7 @@ func TestAuthenticateUser(t *testing.T) {
 		ID:           uuid.New(),
 		Username:     "testuser",
 		PasswordHash: string(hashedPassword),
+		Disabled:     false,
 	}
 	mockRepo.CreateUser(context.Background(), user)
 

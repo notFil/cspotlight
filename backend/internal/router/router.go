@@ -66,7 +66,7 @@ func SetUpRouter(db store.Database, baseURL string, staticPath string, sessionCf
 	projectService := services.NewProjectService(projectRepo, baseURL)
 	teamService := services.NewTeamService(teamRepo)
 	userService := services.NewUserService(userRepo)
-	reportService := services.NewReportService(reportRepo)
+	reportService := services.NewReportService(reportRepo, projectRepo)
 
 	authHandler := handlers.NewAuthHandler(userService)
 	projectHandler := handlers.NewProjectHandler(projectService)

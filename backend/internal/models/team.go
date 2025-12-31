@@ -43,3 +43,8 @@ func (t *Team) ToFetchDTO() *TeamFetchDTO {
 		UpdatedAt:   t.UpdatedAt.Format("02 Jan 06 15:04 MST"),
 	}
 }
+
+func (t *Team) AfterDelete(tx *gorm.DB) (err error) {
+	tx.Delete(&Project{}, "team_id = ?", t.ID)
+	return
+}

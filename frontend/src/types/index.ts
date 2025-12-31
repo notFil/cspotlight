@@ -65,6 +65,14 @@ export interface CSPReport {
   lastSeen: string;
 }
 
+export interface ReportFilters {
+  directive?: string;
+  disposition?: string;
+  blockedURL?: string;
+  userAgent?: string;
+  documentURL?: string;
+}
+
 
 
 export interface AuthRequest {

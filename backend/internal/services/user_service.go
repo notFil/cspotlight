@@ -72,6 +72,9 @@ func (s *userService) RegisterUser(ctx context.Context, user *models.UserRegiste
 	}
 	if count == 0 {
 		u.Role = "superadmin"
+		u.Disabled = false
+	} else {
+		u.Disabled = true
 	}
 	if err := s.userRepo.CreateUser(ctx, u); err != nil {
 		return err
@@ -99,6 +102,9 @@ func (s *userService) UpdateUser(ctx context.Context, id uuid.UUID, user *models
 
 func (s *userService) AuthenticateUser(ctx context.Context, authRequest *models.AuthRequest) (*models.UserFetchDTO, error) {
 	u, err := s.userRepo.GetUserByUsername(ctx, authRequest.Username)
+	if u.Disabled {
+		return nil, apperrors.New(http.StatusUnauthorized, "user is disabled")
+	}
 	if err != nil {
 		return nil, apperrors.New(http.StatusUnauthorized, "invalid credentials")
 	}

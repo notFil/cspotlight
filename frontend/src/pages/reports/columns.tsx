@@ -9,13 +9,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Chrome, Globe, Smartphone } from "lucide-react"
+import { Chromium, Globe, Compass, Smartphone } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 const getBrowserIcon = (userAgent: string) => {
   const ua = userAgent.toLowerCase()
-  if (ua.includes("chrome")) return <Chrome className="h-4 w-4" />
-  if (ua.includes("safari") && !ua.includes("chrome")) return <Globe className="h-4 w-4" />
+  if (ua.includes("chrome")) return <Chromium className="h-4 w-4" />
+  if (ua.includes("safari") && !ua.includes("chrome")) return <Compass className="h-4 w-4" />
   if (ua.includes("firefox")) return <Globe className="h-4 w-4" />
   if (ua.includes("mobile")) return <Smartphone className="h-4 w-4" />
   return <Globe className="h-4 w-4" />

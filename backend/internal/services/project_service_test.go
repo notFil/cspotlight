@@ -247,4 +247,10 @@ func TestDeleteProject(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error getting deleted project, got nil")
 	}
+
+	// Test NotFound delete
+	err = service.DeleteProject(ctx, uuid.New())
+	if err == nil {
+		t.Fatal("expected error for non-existent project, got nil")
+	}
 }

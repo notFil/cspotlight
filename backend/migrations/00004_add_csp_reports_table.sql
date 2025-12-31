@@ -10,7 +10,7 @@ CREATE TABLE csp_reports (
     user_agent VARCHAR(255),
     source_ip VARCHAR(255),
     type VARCHAR(50) NOT NULL DEFAULT 'csp-violation',
-    project_id UUID REFERENCES projects(id) ON DELETE SET NULL,
+    project_id UUID,
     directive VARCHAR(50),
     blocked_url TEXT,
     document_url TEXT,
@@ -36,6 +36,12 @@ ALTER TABLE csp_reports SET (
 );
 
 SELECT add_compression_policy('csp_reports', INTERVAL '30 days');
+
+ALTER TABLE csp_reports
+  ADD CONSTRAINT csp_reports_project_id_fkey
+  FOREIGN KEY (project_id)
+  REFERENCES projects(id)
+  ON DELETE CASCADE;
 -- +goose StatementEnd
 
 -- +goose Down
