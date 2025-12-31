@@ -134,7 +134,7 @@ func TestRegisterUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected to find second user, got error: %v", err)
 	}
-	if !createdUser2.Disabled {
+	if createdUser2.Disabled != nil && !*createdUser2.Disabled {
 		t.Fatalf("expected second user to be disabled")
 	}
 }
@@ -194,11 +194,13 @@ func TestAuthenticateUser(t *testing.T) {
 	password := "password123"
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
+	disabled := false
+
 	user := &models.User{
 		ID:           uuid.New(),
 		Username:     "testuser",
 		PasswordHash: string(hashedPassword),
-		Disabled:     false,
+		Disabled:     &disabled,
 	}
 	mockRepo.CreateUser(context.Background(), user)
 

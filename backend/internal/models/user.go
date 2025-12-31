@@ -18,7 +18,7 @@ type User struct {
 	Image            string     `gorm:"type:varchar(255)"`
 	DefaultProjectID *uuid.UUID `gorm:"type:uuid"`
 	DefaultProject   Project    `gorm:"foreignKey:DefaultProjectID"`
-	Disabled         bool       `gorm:"default:null"`
+	Disabled         *bool      `gorm:"default:null"`
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 	DeletedAt        gorm.DeletedAt `gorm:"index"`
@@ -83,7 +83,7 @@ func (u *User) ToFetchDTO() *UserFetchDTO {
 		Username:  u.Username,
 		Email:     u.Email,
 		Image:     u.Image,
-		Disabled:  u.Disabled,
+		Disabled:  *u.Disabled,
 		Role:      u.Role,
 		UpdatedAt: u.UpdatedAt,
 	}
@@ -95,6 +95,11 @@ func (u *User) ToFetchDTO() *UserFetchDTO {
 		dto.DefaultProjectID = u.DefaultProjectID
 	}
 	return &dto
+}
+
+func (u *User) SetDisabled(b bool) *User {
+	u.Disabled = &b
+	return u
 }
 
 func (u *UserUpdateDTO) ToUser() *User {
