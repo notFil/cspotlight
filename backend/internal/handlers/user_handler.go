@@ -385,7 +385,7 @@ func (h *UserHandler) ChangeImage(c *gin.Context) {
 	}
 
 	uploadDir := fmt.Sprintf("%s/images/users", h.staticPath)
-	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+	if err := os.MkdirAll(uploadDir, 0750); err != nil {
 		log.Error("failed to create upload directory", zap.Error(err))
 		c.Error(apperrors.New(http.StatusInternalServerError, "failed to process image"))
 		return
