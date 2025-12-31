@@ -2,7 +2,8 @@
 
 **cspotlight** is an open-source CSP report collector and analyzer designed to help security engineers and developers monitor, analyze, and respond to browser-enforced Content Security Policy violations.
 
-Projects can be considered workspaces and are used to group CSP violation reports. All users are required to have a project created for their team before they can start using the platform.
+Reports are organized into projects, which are identified by a unique reporting URL. 
+Projects can be considered workspaces and are used to group CSP violation reports. All users are required to have a project created and have a team assigned before they can start using the platform.
 
 ---
 
