@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// MockProjectRepository is a manual mock for ProjectRepository
 type MockProjectRepository struct {
 	projects map[uuid.UUID]*models.Project
 }
@@ -92,7 +91,6 @@ func TestCreateProject(t *testing.T) {
 		TeamID:      uuid.New(),
 	}
 
-	// Test as superadmin
 	adminData := auth.UserContext{ID: uuid.New(), Role: "superadmin"}
 	ctx := auth.ContextWithUser(context.Background(), &adminData)
 	err := service.CreateProject(ctx, projectDTO)
@@ -100,7 +98,6 @@ func TestCreateProject(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	// Test as user (should force team ID)
 	userTeamID := uuid.New()
 	userData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: userTeamID}
 	projectDTOUser := &models.ProjectUpsertDTO{
@@ -115,8 +112,6 @@ func TestCreateProject(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	// Verify the user project was created with the correct team ID
-	// Since we don't have the ID returned, we can list projects by team ID to verify
 	projects, err := mockRepo.ListProjectsByTeamID(context.Background(), userTeamID)
 	if err != nil {
 		t.Fatalf("expected no error listing projects, got %v", err)
@@ -142,7 +137,6 @@ func TestGetProjectByID(t *testing.T) {
 	}
 	mockRepo.projects[projectID] = project
 
-	// Test authorized access (same team)
 	userData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: teamID}
 	ctx := auth.ContextWithUser(context.Background(), &userData)
 	fetchedProject, err := service.GetProjectByID(ctx, projectID)
@@ -153,7 +147,6 @@ func TestGetProjectByID(t *testing.T) {
 		t.Errorf("expected project ID %s, got %s", projectID, fetchedProject.ID)
 	}
 
-	// Test unauthorized access (different team)
 	otherTeamID := uuid.New()
 	otherData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: otherTeamID}
 	ctx = auth.ContextWithUser(context.Background(), &otherData)
@@ -191,7 +184,6 @@ func TestUpdateProject(t *testing.T) {
 		Name: "Updated Name",
 	}
 
-	// Test authorized update
 	userData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: teamID}
 	ctx := auth.ContextWithUser(context.Background(), &userData)
 	updatedProject, err := service.UpdateProject(ctx, projectID, updateDTO)
@@ -202,7 +194,6 @@ func TestUpdateProject(t *testing.T) {
 		t.Errorf("expected updated name, got %s", updatedProject.Name)
 	}
 
-	// Test unauthorized update
 	otherTeamID := uuid.New()
 	otherData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: otherTeamID}
 	ctx = auth.ContextWithUser(context.Background(), &otherData)
@@ -225,7 +216,6 @@ func TestDeleteProject(t *testing.T) {
 	}
 	mockRepo.projects[projectID] = project
 
-	// Test unauthorized delete
 	otherTeamID := uuid.New()
 	otherData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: otherTeamID}
 	ctx := auth.ContextWithUser(context.Background(), &otherData)
@@ -234,7 +224,6 @@ func TestDeleteProject(t *testing.T) {
 		t.Fatal("expected unauthorized error, got nil")
 	}
 
-	// Test authorized delete
 	userData := auth.UserContext{ID: uuid.New(), Role: "user", TeamID: teamID}
 	ctx = auth.ContextWithUser(context.Background(), &userData)
 	err = service.DeleteProject(ctx, projectID)
@@ -242,13 +231,11 @@ func TestDeleteProject(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	// Verify deletion
 	_, err = mockRepo.GetProjectByID(context.Background(), projectID)
 	if err == nil {
 		t.Fatal("expected error getting deleted project, got nil")
 	}
 
-	// Test NotFound delete
 	err = service.DeleteProject(ctx, uuid.New())
 	if err == nil {
 		t.Fatal("expected error for non-existent project, got nil")

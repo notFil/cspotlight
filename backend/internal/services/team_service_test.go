@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// MockTeamRepository is a manual mock for TeamRepository
 type MockTeamRepository struct {
 	teams map[uuid.UUID]*models.Team
 }

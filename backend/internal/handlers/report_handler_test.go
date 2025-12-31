@@ -45,7 +45,6 @@ func (m *MockReportService) BatchCreateReports(ctx context.Context, reports []*m
 	defer m.mu.Unlock()
 	m.batchCalls++
 
-	// Capture reports for test verification
 	m.receivedReports = append(m.receivedReports, reports...)
 
 	if m.BatchCreateReportsFunc != nil {
@@ -109,7 +108,6 @@ func TestReportHandler_CreateReport_Batching(t *testing.T) {
 		}
 	}
 
-	// Wait for batch processing
 	time.Sleep(100 * time.Millisecond)
 
 	mockService.mu.Lock()

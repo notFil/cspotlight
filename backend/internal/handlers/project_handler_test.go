@@ -93,15 +93,9 @@ func TestProjectHandler_GetProjectByID(t *testing.T) {
 	t.Run("NotFound", func(t *testing.T) {
 		mockService := &MockProjectService{
 			GetProjectByIDFunc: func(ctx context.Context, id uuid.UUID) (*models.ProjectFetchDTO, error) {
-				return nil, nil // Service returns nil, nil for not found (or should return error?)
-				// If service returns nil, nil, handler checks usually.
-				// In ProjectHandler:
-				// project, err := h.projectService.GetProjectByID(ctx, projectID)
-				// if err != nil ...
-				// if project == nil { c.Error(apperrors.New(http.StatusNotFound, "project not found")); return }
+				return nil, nil
 			},
 		}
-		// Assuming handler logic matches simulation
 		handler := NewProjectHandler(mockService)
 
 		w := httptest.NewRecorder()
@@ -117,9 +111,6 @@ func TestProjectHandler_GetProjectByID(t *testing.T) {
 		req := httptest.NewRequest("GET", "/projects/"+projectID.String(), nil)
 		router.ServeHTTP(w, req)
 
-		// Wait, if mock returns nil, nil - what does handler do?
-		// I should check handler code but assuming existing test logic was correct about expectation.
-		// Existing test expected 404.
 		if w.Code != http.StatusNotFound {
 			t.Errorf("expected status 404, got %d", w.Code)
 		}

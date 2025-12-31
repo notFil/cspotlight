@@ -87,7 +87,6 @@ func (m *MockReportRepository) ListReportsByProjectID(ctx context.Context, proje
 		}
 	}
 
-	// Simple pagination logic for mock
 	p.TotalRows = int64(len(reports))
 	if p.PageSize <= 0 {
 		p.PageSize = 50
@@ -148,7 +147,6 @@ func TestCreateReport(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	// Verify report was created
 	if len(mockRepo.reports) != 1 {
 		t.Fatalf("expected 1 report, got %d", len(mockRepo.reports))
 	}
@@ -175,10 +173,8 @@ func TestListReportsByProjectID(t *testing.T) {
 	projectID := uuid.New()
 	teamID := uuid.New()
 
-	// Setup project
 	mockProjectRepo.projects[projectID] = &models.Project{ID: projectID, TeamID: teamID}
 
-	// Add reports
 	r1 := &models.CSPReport{ID: uuid.New(), ProjectID: projectID, Body: datatypes.NewJSONType(models.ReportBody{BlockedURL: "b1"})}
 	r2 := &models.CSPReport{ID: uuid.New(), ProjectID: projectID, Body: datatypes.NewJSONType(models.ReportBody{BlockedURL: "b2"})}
 	r3 := &models.CSPReport{ID: uuid.New(), ProjectID: uuid.New(), Body: datatypes.NewJSONType(models.ReportBody{BlockedURL: "b3"})}
@@ -316,13 +312,11 @@ func TestBatchCreateReports_ProjectStatus(t *testing.T) {
 		URL: "https://example.com",
 	}
 
-	// 1. Test case: Project not found
 	err := service.BatchCreateReports(context.Background(), []*models.CSPReportCreateDTO{reportDTO}, projectID)
 	if err == nil {
 		t.Fatal("expected error for non-existent project, got nil")
 	}
 
-	// 2. Test case: Project disabled
 	mockProjectRepo.projects[projectID] = &models.Project{ID: projectID, Disabled: true}
 	err = service.BatchCreateReports(context.Background(), []*models.CSPReportCreateDTO{reportDTO}, projectID)
 	if err != nil {
@@ -332,7 +326,6 @@ func TestBatchCreateReports_ProjectStatus(t *testing.T) {
 		t.Errorf("expected 0 reports for disabled project, got %d", len(mockRepo.reports))
 	}
 
-	// 3. Test case: Project enabled
 	mockProjectRepo.projects[projectID].Disabled = false
 	err = service.BatchCreateReports(context.Background(), []*models.CSPReportCreateDTO{reportDTO}, projectID)
 	if err != nil {
