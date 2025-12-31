@@ -1,0 +1,70 @@
+import { useQuery } from '@tanstack/react-query';
+import { reportService } from '@/services/report';
+import type { ReportFilters } from '@/types';
+
+export function useReports(projectId: string, page: number = 1, pageSize: number = 10, filters?: ReportFilters) {
+  return useQuery({
+    queryKey: ['reports', projectId, page, pageSize, filters],
+    queryFn: () => reportService.getReports(projectId, page, pageSize, filters),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useReportSummaryStats(projectId: string) {
+  return useQuery({
+    queryKey: ['report-summary-stats', projectId],
+    queryFn: () => reportService.getReportSummaryStats(projectId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useReportGraphData(projectId: string) {
+  return useQuery({
+    queryKey: ['report-graph-data', projectId],
+    queryFn: () => reportService.getReportGraphData(projectId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useReportViolationTrend(projectId: string) {
+  return useQuery({
+    queryKey: ['report-violation-trend', projectId],
+    queryFn: () => reportService.getReportViolationTrend(projectId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useReportTopViolatedDirectives(projectId: string) {
+  return useQuery({
+    queryKey: ['report-top-violated-directives', projectId],
+    queryFn: () => reportService.getReportTopViolatedDirectives(projectId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useReportTopViolatedDocumentURLs(projectId: string) {
+  return useQuery({
+    queryKey: ['report-top-violated-document-urls', projectId],
+    queryFn: () => reportService.getReportTopViolatedDocumentURLs(projectId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useReportBrowserOSViolation(projectId: string) {
+  return useQuery({
+    queryKey: ['report-browser-os-violation', projectId],
+    queryFn: () => reportService.getReportBrowserOSViolation(projectId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useReportTopViolationSources(projectId: string) {
+  return useQuery({
+    queryKey: ['report-top-violation-sources', projectId],
+    queryFn: () => reportService.getReportTopViolationSources(projectId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+
+
