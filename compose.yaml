@@ -1,0 +1,54 @@
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+    working_dir: /app
+    environment:
+      - REACT_APP_API_BASE_URL=http://backend:8080
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - "cspotlight.env"
+    environment:
+      - APP_STATIC_PATH=/static
+    volumes:
+      - static_data:/static
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+  postgres:
+    image: "timescale/timescaledb:latest-pg18"
+    ports:
+      - "5434:5432"
+    env_file:
+      - "cspotlight.env"
+    volumes:
+      - ./postgres/init:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d cspotlight" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+volumes:
+  postgres_data:
+  static_data:
