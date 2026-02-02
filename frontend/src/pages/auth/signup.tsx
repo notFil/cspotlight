@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Link } from "react-router-dom"
 import { useAuth } from "@/hooks/use-auth"
 import ThemeToggle from "@/components/common/theme-toggle"
+import { passwordSchema } from "@/lib/validation"
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -32,6 +33,12 @@ export default function Signup() {
 
     if (formData.password !== formData.confirmPassword) {
       setPasswordError("Passwords do not match")
+      return
+    }
+
+    const validationResult = passwordSchema.safeParse(formData.password)
+    if (!validationResult.success) {
+      setPasswordError(validationResult.error.issues[0].message)
       return
     }
 

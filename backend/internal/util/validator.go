@@ -4,11 +4,14 @@ import (
 	"errors"
 	"io"
 	"mime/multipart"
+	"regexp"
 	"slices"
 
 	"github.com/gabriel-vasile/mimetype"
 )
 
+const minLength = 8
+const maxLength = 64
 const ImageMaxSize = 2 << 20
 
 var ImageAllowedExts = []string{"image/jpeg", "image/png", "image/gif"}
@@ -43,4 +46,17 @@ func validateImageMimeType(f multipart.File) error {
 	}
 
 	return nil
+}
+
+func IsPasswordComplex(password string) bool {
+	if len(password) < minLength || len(password) > maxLength {
+		return false
+	}
+
+	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
+	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
+	hasDigit := regexp.MustCompile(`[0-9]`).MatchString(password)
+	hasSpecial := regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{}|;:'",.<>?/]`).MatchString(password)
+
+	return hasLower && hasUpper && hasDigit && hasSpecial
 }

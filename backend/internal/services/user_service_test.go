@@ -97,8 +97,8 @@ func TestRegisterUser(t *testing.T) {
 		LastName:        "Doe",
 		Username:        "johndoe",
 		Email:           "john@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
+		Password:        "P@ssword123",
+		ConfirmPassword: "P@ssword123",
 	}
 
 	err := service.RegisterUser(context.Background(), userDTO)
@@ -111,7 +111,7 @@ func TestRegisterUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected to find user, got error: %v", err)
 	}
-	if createdUser.PasswordHash == "password123" {
+	if createdUser.PasswordHash == "P@ssword123" {
 		t.Fatalf("expected password to be hashed")
 	}
 
@@ -121,8 +121,8 @@ func TestRegisterUser(t *testing.T) {
 		LastName:        "Doe",
 		Username:        "janedoe",
 		Email:           "jane@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
+		Password:        "P@ssword123",
+		ConfirmPassword: "P@ssword123",
 	}
 
 	err = service.RegisterUser(context.Background(), userDTO2)
@@ -144,10 +144,12 @@ func TestGetUserByID(t *testing.T) {
 	service := NewUserService(mockRepo)
 
 	userID := uuid.New()
+	disabled := false
 	user := &models.User{
 		ID:       userID,
 		Username: "testuser",
 		Role:     "user",
+		Disabled: &disabled,
 	}
 	mockRepo.CreateUser(context.Background(), user)
 
@@ -191,7 +193,7 @@ func TestAuthenticateUser(t *testing.T) {
 	mockRepo := NewMockUserRepository()
 	service := NewUserService(mockRepo)
 
-	password := "password123"
+	password := "P@ssword123"
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	disabled := false
@@ -225,5 +227,88 @@ func TestAuthenticateUser(t *testing.T) {
 	_, err = service.AuthenticateUser(context.Background(), badAuthRequest)
 	if err == nil {
 		t.Fatal("expected error for wrong password, got nil")
+	}
+}
+
+func TestRegisterUser_PasswordComplexity(t *testing.T) {
+	mockRepo := NewMockUserRepository()
+	service := NewUserService(mockRepo)
+
+	tests := []struct {
+		name     string
+		password string
+		wantErr  bool
+	}{
+		{"valid complex password", "P@ssword123", false},
+		{"too short", "P@s1", true},
+		{"no uppercase", "p@ssword123", true},
+		{"no lowercase", "P@SSWORD123", true},
+		{"no digit", "P@ssword!!!", true},
+		{"no special char", "Password123", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			userDTO := &models.UserRegisterDTO{
+				FirstName:       "John",
+				LastName:        "Doe",
+				Username:        uuid.New().String(), // Random username to avoid conflict
+				Email:           "john@example.com",
+				Password:        tt.password,
+				ConfirmPassword: tt.password,
+			}
+			err := service.RegisterUser(context.Background(), userDTO)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("RegisterUser() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestChangePassword_PasswordComplexity(t *testing.T) {
+	mockRepo := NewMockUserRepository()
+	service := NewUserService(mockRepo)
+
+	userID := uuid.New()
+	currentPassword := "OldP@ssword123"
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(currentPassword), bcrypt.DefaultCost)
+	disabled := false
+
+	user := &models.User{
+		ID:           userID,
+		Username:     "testuser",
+		PasswordHash: string(hashedPassword),
+		Disabled:     &disabled,
+	}
+	mockRepo.CreateUser(context.Background(), user)
+
+	userData := auth.UserContext{ID: userID, Role: "user"}
+	ctx := auth.ContextWithUser(context.Background(), &userData)
+
+	tests := []struct {
+		name     string
+		password string
+		wantErr  bool
+	}{
+		{"valid complex password", "NewP@ssword123", false},
+		{"too short", "P@s1", true},
+		{"no uppercase", "p@ssword123", true},
+		{"no lowercase", "P@SSWORD123", true},
+		{"no digit", "P@ssword!!!", true},
+		{"no special char", "Password123", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := &models.ChangePasswordRequest{
+				CurrentPassword:    currentPassword,
+				NewPassword:        tt.password,
+				ConfirmNewPassword: tt.password,
+			}
+			err := service.ChangePassword(ctx, userID, req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ChangePassword() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
 }

@@ -9,11 +9,12 @@ import { toast } from "sonner";
 import { useChangePassword } from "@/hooks/use-users";
 import { useAuth } from "@/hooks/use-auth";
 import type { ChangePasswordRequest } from "@/types";
+import { passwordSchema } from "@/lib/validation";
 
 const passwordUpdateSchema = z
   .object({
     currentPassword: z.string().min(8, "Current password is required"),
-    newPassword: z.string().min(8, "Password must be at least 8 characters long"),
+    newPassword: passwordSchema,
     confirmNewPassword: z.string().min(8, "Please confirm your new password"),
   })
   .refine((data) => data.newPassword === data.confirmNewPassword, {

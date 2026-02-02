@@ -9,6 +9,7 @@ import (
 	apperrors "cspotlight/internal/errors"
 	"cspotlight/internal/models"
 	"cspotlight/internal/repositories"
+	"cspotlight/internal/util"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -59,6 +60,9 @@ func (s *userService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Us
 func (s *userService) RegisterUser(ctx context.Context, user *models.UserRegisterDTO) error {
 	if user.Password != user.ConfirmPassword {
 		return apperrors.New(http.StatusBadRequest, "passwords do not match")
+	}
+	if !util.IsPasswordComplex(user.Password) {
+		return apperrors.New(http.StatusBadRequest, "password does not meet complexity requirements")
 	}
 	u := user.ToUser()
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
@@ -179,13 +183,17 @@ func (s *userService) ChangePassword(ctx context.Context, id uuid.UUID, request 
 		return apperrors.New(http.StatusBadRequest, "new password and confirm new password do not match")
 	}
 
+	if !util.IsPasswordComplex(request.NewPassword) {
+		return apperrors.New(http.StatusBadRequest, "password does not meet complexity requirements")
+	}
+
 	u, err := s.userRepo.GetUserByID(ctx, id)
 	if err != nil {
 		return apperrors.New(http.StatusNotFound, "user not found")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(request.CurrentPassword)); err != nil {
-		return apperrors.New(http.StatusUnauthorized, "invalid password")
+		return apperrors.New(http.StatusBadRequest, "invalid password")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.NewPassword), bcrypt.DefaultCost)
